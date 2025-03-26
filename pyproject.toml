@@ -3,6 +3,7 @@ name = "social-network"
 version = "0.1.0"
 description = "A team educational project to create a social network."
 authors = ["Дмитрий Афанасьев <wackymc@yandex.ru>"]
+authors = ["Никита Иванович nik.popkov.98@list.ru"]
 license = "MIT"
 readme = "README.md"
 
