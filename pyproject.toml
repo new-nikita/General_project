@@ -2,21 +2,25 @@
 name = "social-network"
 version = "0.1.0"
 description = "A team educational project to create a social network."
-authors = ["Дмитрий Афанасьев <wackymc@yandex.ru>"]
-authors = ["Никита Иванович nik.popkov.98@list.ru"]
+authors = ["Дмитрий Афанасьев <wackymc@yandex.ru>", "Никита Иванович nik.popkov.98@list.ru"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-fastapi = {extras = ["standart"], version = "^0.115.12"}
+fastapi = { extras = ["standart"], version = "^0.115.12" }
 uvicorn = "^0.34.0"
-pydantic = {extras = ["email"], version = "^2.10.6"}
+pydantic = { extras = ["email"], version = "^2.10.6" }
 pydantic-settings = "^2.8.1"
 alembic = "^1.15.1"
 asyncpg = "^0.30.0"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.39"}
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.40"}
+passlib = "^1.7.4"
+bcrypt = "^4.0.1"
 
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
 
 [build-system]
 requires = ["poetry-core"]
