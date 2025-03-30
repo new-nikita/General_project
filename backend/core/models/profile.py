@@ -1,9 +1,8 @@
 from datetime import datetime
 
-from sqlalchemy import Enum as SQLAlchemyEnum, String, Text, Date
+from sqlalchemy import String, Text, Date
 from sqlalchemy.orm import Mapped, mapped_column
 
-from utils import Gender
 from .base import Base
 from .mixins import UserRelationMixin
 
@@ -19,7 +18,7 @@ class Profile(UserRelationMixin, Base):
     middle_name: Mapped[str | None] = mapped_column(String(50))
 
     birth_date: Mapped[datetime | None] = mapped_column(Date)
-    gender: Mapped[Gender | None] = mapped_column(SQLAlchemyEnum(Gender))
+    gender: Mapped[str | None]
 
     phone_number: Mapped[str | None] = mapped_column(String(20))
     country: Mapped[str | None] = mapped_column(String(50))
