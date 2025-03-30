@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-import bcrypt
+from passlib.context import CryptContext
 
 from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -9,6 +9,8 @@ from .base import Base
 if TYPE_CHECKING:
     from .profile import Profile
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 class User(Base):
     """Класс пользователя, которого определяет система."""
@@ -17,7 +19,7 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(100))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    # is_superuser: Mapped[bool] = mapped_column(Boolean, default=False) вынести в отдельынй класс для админов
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
     profile: Mapped["Profile"] = relationship(back_populates="user")
 
@@ -32,15 +34,13 @@ class User(Base):
 
     @staticmethod
     def _generate_password(password: str) -> str:
-        """Генерирует хеш пароля с использованием bcrypt."""
-        salt: bytes = bcrypt.gensalt()
-        return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+        """Генерирует хеш пароля."""
+        return pwd_context.hash(password)
 
-    def check_password(self, password: str) -> bool:
-        """Проверяет правильность пароля."""
-        return bcrypt.checkpw(
-            password.encode("utf-8"), self.hashed_password.encode("utf-8")
-        )
+    @staticmethod
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        """Проверяет, соответствует ли введенный пароль хэшированному."""
+        return pwd_context.verify(plain_password, hashed_password)
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, username={self.username!r})"
