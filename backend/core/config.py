@@ -10,11 +10,17 @@ from pydantic_settings import (
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+TEMPLATES_DIR = BASE_DIR.parent / "frontend" / "templates"
 
 LOG_DEFAULT_FORMAT = (
     "[%(asctime)s.%(msecs)03d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
 )
+
+
+class JwtConfig(BaseModel):
+    secret_key: str = "your_secret_key"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
 
 
 class LoggingConfig(BaseModel):
@@ -49,6 +55,8 @@ class Settings(BaseSettings):
     )
     logging: LoggingConfig = LoggingConfig()
     db: DatabaseConfig = DatabaseConfig()
+    jwt: JwtConfig = JwtConfig()
+    template_dir: Path = TEMPLATES_DIR
 
 
 CONVENTION = {
