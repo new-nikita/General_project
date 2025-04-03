@@ -1,10 +1,8 @@
 import logging
 from typing import Annotated
-from datetime import timedelta
-
 
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException, status, Request, Response
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Response, Cookie
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -12,11 +10,21 @@ from sqlalchemy.exc import DBAPIError
 
 from core.config import settings
 from core.models import User
-
+from users.views import router as user_router
+from users.dependencies import get_user_service
 from users.schemas import UserCreate, UserResponse
-from users.services import UserService, get_service
-from users.tokens import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from auth.authorization import authenticate_user, get_current_user
+from users.services import UserService
+from users.tokens import (
+    create_access_token,
+    refresh_access_token,
+    create_refresh_token,
+)
+from auth.authorization import (
+    authenticate_user,
+    get_current_user_from_cookie,
+)
+from core.middleware import TokenRefreshMiddleware
+
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -29,7 +37,8 @@ app = FastAPI(
     description="API для регистрации и управления пользователями",
     version="1.0.0",
 )
-
+app.include_router(user_router)
+app.add_middleware(TokenRefreshMiddleware)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 templates = Jinja2Templates(directory=settings.template_dir)
@@ -39,134 +48,85 @@ def handle_error(
     message: str, status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
 ):
     """
-    Обрабатывает ошибки и логирует их.
+    Обрабатывает ошибки и выбрасывает HTTPException.
 
-    Args:
-        message (str): Сообщение об ошибке.
-        status_code (int): HTTP-статус ошибки.
-
-    Raises:
-        HTTPException: Возвращает HTTP-ошибку с указанным статусом и сообщением.
+    :param message: Сообщение об ошибке.
+    :param status_code: Код состояния HTTP.
+    :raises HTTPException: Исключение с указанным сообщением и кодом.
     """
     logger.error(message)
     raise HTTPException(status_code=status_code, detail=message)
 
 
-@app.get(
-    "/hello",
-    response_class=HTMLResponse,
-    tags=["User"],
-    summary="Приветственная страница (с cookies)",
-    description="""
-    Страница доступна только для авторизованных пользователей.
-    Токен извлекается из HTTP-Only cookie.
-
-    Для тестирования используйте браузер или Postman, так как Swagger не поддерживает cookies.
-    """,
-    responses={
-        status.HTTP_200_OK: {
-            "description": "Успешный доступ к странице",
-            "content": {
-                "text/html": {
-                    "example": "<html><body><h1>Hello, username!</h1></body></html>"
-                }
-            },
-        },
-        status.HTTP_401_UNAUTHORIZED: {
-            "description": "Пользователь не авторизован",
-            "content": {
-                "application/json": {"example": {"detail": "Not authenticated"}}
-            },
-        },
-    },
-)
+@app.get("/hello", response_class=HTMLResponse, tags=["User"])
 async def index(
-    request: Request,
-    current_user: User = Depends(get_current_user),
+    request: Request, current_user: User = Depends(get_current_user_from_cookie)
 ):
     """
-    Приветственная страница для авторизованных пользователей.
+    Отображает главную страницу с приветствием.
 
-    Args:
-        request (Request): Запрос.
-        current_user (User): Текущий авторизованный пользователь.
-
-    Returns:
-        HTMLResponse: Отрендеренный шаблон.
+    :param request: Запрос FastAPI.
+    :param current_user: Текущий авторизованный пользователь.
+    :return: HTML-страница с приветствием.
     """
     return templates.TemplateResponse(
-        "index.html", {"request": request, "user": current_user.username}
+        "index.html", {"request": request, "user": current_user}
     )
 
 
-@app.post(
-    "/login",
-    tags=["User"],
-    response_class=Response,
-    summary="Аутентификация пользователя",
-    description="""
-    Аутентифицирует пользователя по имени пользователя и паролю.
-    Устанавливает JWT-токен в HTTP-Only cookie.
-
-    После успешной аутентификации токен можно использовать для доступа к защищенным ресурсам.
-    """,
-    responses={
-        status.HTTP_200_OK: {
-            "description": "Успешная аутентификация",
-            "content": {"text/plain": {"example": "Authentication successful"}},
-        },
-        status.HTTP_401_UNAUTHORIZED: {
-            "description": "Неверное имя пользователя или пароль",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Incorrect username or password"}
-                }
-            },
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Внутренняя ошибка сервера",
-            "content": {
-                "application/json": {"example": {"detail": "Internal Server Error"}}
-            },
-        },
-    },
-)
+@app.post("/login", tags=["User"], response_class=Response)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    service: Annotated[UserService, Depends(get_service)],
+    service: Annotated[UserService, Depends(get_user_service)],
 ):
     """
-    Аутентифицирует пользователя.
+    Аутентифицирует пользователя и устанавливает JWT-токены в HTTP-Only cookies.
 
-    Args:
-        form_data (OAuth2PasswordRequestForm): Форма с данными пользователя (username, password).
-        service (UserService): Сервис для работы с пользователями.
-
-    Returns:
-        Response: Ответ с установленной HTTP-Only cookie.
-
-    Raises:
-        HTTPException: 401 при неверных данных или 500 при внутренней ошибке.
+    :param form_data: Форма с данными пользователя (username, password).
+    :param service: Сервис для работы с пользователями.
+    :return: Ответ с установленными HTTP-Only cookies.
+    :raises HTTPException: 401 при неверных данных или 500 при внутренней ошибке.
     """
     user = await authenticate_user(service, form_data.username, form_data.password)
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-
+    access_token = create_access_token(data={"sub": user.username})
+    refresh_token = create_refresh_token(data={"sub": user.username})
     logger.info(f"User {user.username} successfully authenticated")
 
-    # Установка HTTP-Only cookie
     response = Response(content="Authentication successful", media_type="text/plain")
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
-        samesite="lax",  # Защита от CSRF
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="lax",
+        max_age=settings.jwt.access_token_expire_minutes * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="lax",
+        max_age=settings.jwt.refresh_token_expire_days * 24 * 60 * 60,
     )
     return response
+
+
+@app.post("/refresh-token", tags=["Auth"])
+async def refresh_token(
+    refresh_token: str = Cookie(...),
+):
+    """
+    Обновляет Access Token на основе Refresh Token.
+
+    :param refresh_token: Токен обновления из HTTP-Only cookie.
+    :return: Новый Access Token.
+    :raises HTTPException: 400 если Refresh Token недействителен.
+    """
+    try:
+        new_access_token = refresh_access_token(refresh_token)
+        return {"access_token": new_access_token}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post(
@@ -175,66 +135,18 @@ async def login(
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Регистрация нового пользователя",
-    description="""
-    Регистрирует нового пользователя в системе.
-
-    Требования:
-    - username: 3-20 символов
-    - email: валидный email адрес
-    - password: минимум 8 символов
-    """,
-    responses={
-        status.HTTP_201_CREATED: {
-            "description": "Пользователь успешно зарегистрирован",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "id": 1,
-                        "username": "testuser",
-                        "email": "test@example.com",
-                        "created_at": "2023-01-01T12:00:00Z",
-                    }
-                }
-            },
-        },
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "Пользователь с таким email или username уже существует",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "User with this email already exists"}
-                }
-            },
-        },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Ошибка валидации входных данных",
-            "content": {
-                "application/json": {"example": {"detail": "Invalid input data"}}
-            },
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Внутренняя ошибка сервера",
-            "content": {
-                "application/json": {"example": {"detail": "Internal Server Error"}}
-            },
-        },
-    },
 )
 async def register_user(
     user_data: UserCreate,
-    service: Annotated[UserService, Depends(get_service)],
+    service: Annotated[UserService, Depends(get_user_service)],
 ) -> UserResponse:
     """
-    Регистрация нового пользователя.
+    Регистрирует нового пользователя.
 
-    Args:
-        user_data (UserCreate): Данные для регистрации пользователя.
-        service (UserService): Сервис для работы с пользователями.
-
-    Returns:
-        UserResponse: Данные зарегистрированного пользователя.
-
-    Raises:
-        HTTPException: 400 если пользователь уже существует, 422 при невалидных данных, 500 при внутренних ошибках.
+    :param user_data: Данные для создания нового пользователя.
+    :param service: Сервис для работы с пользователями.
+    :return: Созданный пользователь.
+    :raises HTTPException: 422 при невалидных данных, 503 при ошибках базы данных, 500 при других ошибках.
     """
     try:
         user = await service.create_user_and_added_in_db(user_data)
@@ -277,27 +189,59 @@ async def register_user(
         },
     },
 )
-async def logout():
+async def logout(
+    response: Response,
+):
     """
-    Выход пользователя из системы.
+    Выходит из системы, удаляя токены из HTTP-Only cookies.
 
-    Returns:
-        Response: Ответ с удаленной cookie.
-
-    Side Effects:
-        Удаляет HTTP-Only cookie с токеном.
+    :param response: Ответ FastAPI.
+    :return: Сообщение об успешном выходе.
     """
-    response = Response(
-        content="Logout successful",
-        media_type="text/plain",
-        status_code=status.HTTP_200_OK,
-    )
-    # Удаляем токен из cookie
-    response.delete_cookie(
-        key="access_token", httponly=True, secure=True, samesite="lax"
-    )
-    logger.info("User successfully logged out")
-    return response
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+    return {"message": "Successfully logged out"}
+
+
+@app.get(
+    "/users",
+    tags=["User"],
+    response_model=list[UserResponse],
+    summary="Получить всех пользователей",
+)
+async def get_users(
+    service: Annotated[UserService, Depends(get_user_service)],
+) -> list[UserResponse]:
+    """
+    Получает список всех пользователей.
+
+    :param service: Сервис для работы с пользователями.
+    :return: Список пользователей.
+    """
+    users_db = await service.repository.get_all()
+    return [UserResponse.model_validate(user) for user in users_db]
+
+
+@app.get(
+    "/users/{user_id}",
+    tags=["User"],
+    response_model=UserResponse,
+)
+async def get_user(
+    user_id: int, service: Annotated[UserService, Depends(get_user_service)]
+) -> UserResponse:
+    """
+    Получает пользователя по его ID.
+
+    :param user_id: ID пользователя.
+    :param service: Сервис для работы с пользователями.
+    :return: Пользователь.
+    :raises HTTPException: 404 если пользователь не найден.
+    """
+    user = await service.repository.get_by_id(user_id)
+    if not user:
+        raise handle_error(status_code=404, message="User not found")
+    return UserResponse.model_validate(user)
 
 
 if __name__ == "__main__":

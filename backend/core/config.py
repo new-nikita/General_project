@@ -18,9 +18,10 @@ LOG_DEFAULT_FORMAT = (
 
 
 class JwtConfig(BaseModel):
-    secret_key: str = "your_secret_key"
+    secret_key: str = "your_secret_key"  # TODO вынести в env файл
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
 
 
 class LoggingConfig(BaseModel):
