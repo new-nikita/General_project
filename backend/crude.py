@@ -9,9 +9,11 @@ async def create_user(
     session: AsyncSession,
 ) -> User:
     user = User(
-        username="mike3",
-        password="12311114",
-        email="user3@gmail.com",
+        username="testuser",
+        hashed_password="password",
+        email="test@example.com",
+        is_active=True,
+        is_superuser=False,
     )
     session.add(user)
     await session.commit()

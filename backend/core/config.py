@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -8,6 +9,12 @@ from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
 )
+from dotenv import find_dotenv, load_dotenv
+
+if find_dotenv():
+    load_dotenv()  # take environment variables from.env.
+else:
+    raise RuntimeError("Couldn't find .env file")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = BASE_DIR.parent / "frontend" / "templates"
@@ -16,9 +23,12 @@ LOG_DEFAULT_FORMAT = (
     "[%(asctime)s.%(msecs)03d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
 )
 
+DATABASE_URL = os.getenv("APP_CONFIG__DB__URL")
+SECRET_KEY = os.getenv("SECRET_KEY")
+
 
 class JwtConfig(BaseModel):
-    secret_key: str = "your_secret_key"  # TODO вынести в env файл
+    secret_key: str = SECRET_KEY
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
@@ -40,7 +50,7 @@ class LoggingConfig(BaseModel):
 
 
 class DatabaseConfig(BaseModel):
-    url: PostgresDsn = "postgresql+asyncpg://admin:password@localhost:5433/database"
+    url: PostgresDsn = DATABASE_URL
     echo: bool = False
     echo_pool: bool = False
     pool_size: int = 50
