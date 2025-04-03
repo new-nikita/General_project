@@ -40,7 +40,7 @@ class LoggingConfig(BaseModel):
 
 
 class DatabaseConfig(BaseModel):
-    url: PostgresDsn = "postgresql+asyncpg://admin:password@localhost:5432/database"
+    url: PostgresDsn = "postgresql+asyncpg://admin:password@localhost:5433/database"
     echo: bool = False
     echo_pool: bool = False
     pool_size: int = 50
