@@ -2,7 +2,7 @@ import logging
 
 import jwt
 from jwt import PyJWTError
-from fastapi import Cookie, HTTPException, status, Depends, Request
+from fastapi import Cookie, HTTPException, status, Depends, Request, Header
 from fastapi.security import OAuth2PasswordBearer
 
 from core.config import settings
@@ -10,7 +10,7 @@ from users.services import UserService
 from core.models import User
 from users.password_helper import PasswordHelper, PasswordVerificationError
 from users.dependencies import get_user_service
-from users.tokens import refresh_access_token, decode_token
+from users.tokens import decode_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -58,7 +58,7 @@ async def authenticate_user(service: UserService, username: str, password: str) 
             PasswordHelper.verify_password(password, user.hashed_password)
         except PasswordVerificationError as e:
             logger.warning(f"Invalid password attempt for user: {username}")
-            handle_auth_error()
+            handle_auth_error(message=str(e), status_code=status.HTTP_401_UNAUTHORIZED)
         if not user.is_active:
             logger.warning(f"Login attempt for inactive user: {username}")
             handle_auth_error("Account is disabled", status.HTTP_403_FORBIDDEN)
@@ -96,32 +96,19 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Not authenticated")
 
     try:
-        # Проверяем Access Token
         if access_token:
             token = (
                 access_token[7:] if access_token.startswith("Bearer ") else access_token
             )
-            payload = decode_token(token)
-            username = payload.get("sub")
-            if username:
-                user = await service.get_user_by_username(username)
-                if user:
-                    return user
-
-        # Проверяем Refresh Token
-        if refresh_token:
-            new_access_token = refresh_access_token(refresh_token)
-            request.state.new_access_token = new_access_token  # Для middleware
-            payload = decode_token(new_access_token)
-            username = payload.get("sub")
-            if username:
-                user = await service.get_user_by_username(username)
-                if user:
-                    return user
-
     except ValueError as e:
         logger.warning(f"Ошибка при получении текущего пользователя: {e}")
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        handle_auth_error(status_code=401, message="Not authenticated")
+        payload = decode_token(token)
+        username = payload.get("sub")
+        if username:
+            user = await service.get_user_by_username(username)
+            if user:
+                return user
 
     raise HTTPException(status_code=401, detail="Not authenticated")
 

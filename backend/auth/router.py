@@ -1,8 +1,14 @@
 import logging
 from typing import Annotated
 
-import uvicorn
-from fastapi import FastAPI, Depends, HTTPException, status, Request, Response, Cookie
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    Request,
+    Response,
+)
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -10,20 +16,18 @@ from sqlalchemy.exc import DBAPIError
 
 from core.config import settings
 from core.models import User
-from users.views import router as user_router
+
 from users.dependencies import get_user_service
 from users.schemas import UserCreate, UserResponse
 from users.services import UserService
 from users.tokens import (
     create_access_token,
-    refresh_access_token,
     create_refresh_token,
 )
 from auth.authorization import (
     authenticate_user,
     get_current_user_from_cookie,
 )
-from core.middleware import TokenRefreshMiddleware
 
 
 logging.basicConfig(
@@ -32,13 +36,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 # TODO добавить количество попыток входа и хранить кол-во попыток, например в redis
 
-app = FastAPI(
-    title="User Registration API",
-    description="API для регистрации и управления пользователями",
-    version="1.0.0",
-)
-app.include_router(user_router)
-app.add_middleware(TokenRefreshMiddleware)
+router = APIRouter(tags=["Auth"])
+
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 templates = Jinja2Templates(directory=settings.template_dir)
@@ -58,7 +58,7 @@ def handle_error(
     raise HTTPException(status_code=status_code, detail=message)
 
 
-@app.get("/hello", response_class=HTMLResponse, tags=["User"])
+@router.get("/hello", response_class=HTMLResponse)
 async def index(
     request: Request, current_user: User = Depends(get_current_user_from_cookie)
 ):
@@ -74,10 +74,11 @@ async def index(
     )
 
 
-@app.post("/login", tags=["User"], response_class=Response)
+@router.post("/login", response_class=Response)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     service: Annotated[UserService, Depends(get_user_service)],
+    response: Response,
 ):
     """
     Аутентифицирует пользователя и устанавливает JWT-токены в HTTP-Only cookies.
@@ -111,27 +112,8 @@ async def login(
     return response
 
 
-@app.post("/refresh-token", tags=["Auth"])
-async def refresh_token(
-    refresh_token: str = Cookie(...),
-):
-    """
-    Обновляет Access Token на основе Refresh Token.
-
-    :param refresh_token: Токен обновления из HTTP-Only cookie.
-    :return: Новый Access Token.
-    :raises HTTPException: 400 если Refresh Token недействителен.
-    """
-    try:
-        new_access_token = refresh_access_token(refresh_token)
-        return {"access_token": new_access_token}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.post(
+@router.post(
     "/register",
-    tags=["User"],
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Регистрация нового пользователя",
@@ -173,9 +155,8 @@ async def register_user(
         )
 
 
-@app.post(
+@router.post(
     "/logout",
-    tags=["User"],
     summary="Выход пользователя из системы",
     description="""
     Выходит из системы, удаляя JWT-токен из HTTP-Only cookie.
@@ -203,9 +184,8 @@ async def logout(
     return {"message": "Successfully logged out"}
 
 
-@app.get(
+@router.get(
     "/users",
-    tags=["User"],
     response_model=list[UserResponse],
     summary="Получить всех пользователей",
 )
@@ -222,9 +202,8 @@ async def get_users(
     return [UserResponse.model_validate(user) for user in users_db]
 
 
-@app.get(
+@router.get(
     "/users/{user_id}",
-    tags=["User"],
     response_model=UserResponse,
 )
 async def get_user(
@@ -242,7 +221,3 @@ async def get_user(
     if not user:
         raise handle_error(status_code=404, message="User not found")
     return UserResponse.model_validate(user)
-
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)

@@ -1,15 +1,14 @@
-from fastapi import Request
-from fastapi.responses import Response
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp
 import time
 import logging
 
-from core.config import settings
-from users.tokens import refresh_access_token, decode_token
+from fastapi import Request
+from fastapi.responses import Response, RedirectResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
 
+from users.tokens import refresh_access_token, decode_token, set_access_token_to_cookie
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -36,46 +35,47 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
         access_token = request.cookies.get("access_token")
         refresh_token = request.cookies.get("refresh_token")
 
-        if not access_token:
-            logger.debug("Access token отсутствует")
-            return response
-
         if not refresh_token:
             logger.debug("Refresh token отсутствует")
             return response
 
         try:
-            # Проверяем срок действия Access Token
-            if access_token.startswith("Bearer "):
-                access_token = access_token[7:]  # Убираем префикс "Bearer "
-            else:
-                logger.warning("Access token не содержит префикс 'Bearer'")
-                return response
-
-            payload = decode_token(access_token)
-            if payload.get("exp", 0) > int(time.time()):
-                logger.debug("Access Token действителен")
-                return response
+            # Если Access Token отсутствует или истек, пробуем обновить его
+            if not access_token or not self.is_token_valid(access_token):
+                logger.debug("Access Token отсутствует или недействителен")
+                new_access_token = refresh_access_token(refresh_token)
+                set_access_token_to_cookie(new_access_token, response)
+                logger.info("Access Token успешно обновлен")
 
         except ValueError as e:
-            # Access Token недействителен, пробуем обновить его
-            logger.warning(f"Access Token недействителен: {e}")
-
-        try:
-            # Пытаемся обновить Access Token с помощью Refresh Token
-            new_access_token = refresh_access_token(refresh_token)
-            response.set_cookie(
-                key="access_token",
-                value=f"Bearer {new_access_token}",
-                httponly=True,
-                samesite="lax",
-                max_age=settings.jwt.access_token_expire_minutes * 60,
-            )
-            logger.info("Access Token успешно обновлен")
-
-        except ValueError as e:
+            # Refresh Token недействителен - очищаем куки
             logger.warning(f"Недействительный Refresh Token: {e}")
             response.delete_cookie("access_token")
             response.delete_cookie("refresh_token")
 
+            # Перенаправляем пользователя на страницу входа
+            return RedirectResponse(url="/login", status_code=303)
+
         return response
+
+    def is_token_valid(self, token: str) -> bool:
+        """
+        Проверяет, действителен ли Access Token.
+
+        :param token: Access Token.
+        :return: True если токен действителен, иначе False.
+        """
+        if token.startswith("Bearer "):
+            token = token[7:]  # Убираем префикс "Bearer "
+        else:
+            logger.warning("Access token не содержит префикс 'Bearer'")
+            return False
+
+        try:
+            payload = decode_token(token)
+            exp_time = payload.get("exp")
+
+            return exp_time and exp_time > int(time.time())
+        except ValueError:
+            logger.warning("Ошибка при декодировании Access Token")
+            return False

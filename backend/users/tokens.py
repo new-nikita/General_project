@@ -1,8 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import timedelta, datetime, timezone
+import logging
+
 import jwt
 from jwt.exceptions import PyJWTError
+from fastapi.responses import Response
+
 from core.config import settings
-import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,7 +21,9 @@ def create_refresh_token(data: dict) -> str:
     if not settings.jwt.secret_key or not settings.jwt.algorithm:
         raise ValueError("SECRET_KEY и ALGORITHM должны быть настроены в конфигурации.")
 
-    expire = datetime.utcnow() + timedelta(days=settings.jwt.refresh_token_expire_days)
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=settings.jwt.refresh_token_expire_days
+    )
     data.update({"exp": expire})
     try:
         encoded_jwt = jwt.encode(
@@ -44,9 +49,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(timezone.utc) + timedelta(
             minutes=settings.jwt.access_token_expire_minutes
         )
     to_encode.update({"exp": expire})
@@ -69,23 +74,11 @@ def refresh_access_token(refresh_token: str) -> str:
     :return: Новый Access Token.
     :raises ValueError: Если Refresh Token недействителен.
     """
-    if not refresh_token:
-        logger.warning("Refresh token is None")
-        raise ValueError("Refresh token is None")
-
-    try:
-        # Декодируем Refresh Token
-        payload = jwt.decode(
-            refresh_token, settings.jwt.secret_key, algorithms=[settings.jwt.algorithm]
-        )
-    except PyJWTError as e:
-        logger.warning(f"Недействительный Refresh Token: {e}")
-        raise ValueError("Invalid refresh token")
-
+    payload = decode_token(refresh_token)
     username = payload.get("sub")
     exp = payload.get("exp")
 
-    if not username or (exp and exp < int(datetime.utcnow().timestamp())):
+    if not username or (exp and exp < int(datetime.now(timezone.utc).timestamp())):
         logger.warning("Refresh Token истек или содержит некорректные данные")
         raise ValueError("Invalid refresh token")
 
@@ -112,10 +105,38 @@ def decode_token(token: str) -> dict:
             token, settings.jwt.secret_key, algorithms=[settings.jwt.algorithm]
         )
         exp = payload.get("exp")
-        if exp and exp < int(datetime.utcnow().timestamp()):
+        if exp and exp < int(datetime.now(timezone.utc).timestamp()):
             logger.warning("Token expired")
             raise ValueError("Token expired")
         return payload
     except PyJWTError as e:
         logger.warning(f"Недействительный токен: {e}")
         raise ValueError("Invalid token")
+
+
+def get_username_by_payload(payload: dict) -> str:
+    username = payload.get("sub")
+    if not username:
+        logger.warning("Username is None")
+        raise ValueError("Username is None")
+    return username
+
+
+def set_access_token_to_cookie(access_token: str, response: Response) -> None:
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,
+        samesite="lax",
+        max_age=settings.jwt.access_token_expire_minutes * 60,
+    )
+
+
+def set_refresh_token_to_cookie(refresh_token: str, response: Response) -> None:
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="lax",
+        max_age=settings.jwt.refresh_token_expire_days * 24 * 60 * 60,
+    )

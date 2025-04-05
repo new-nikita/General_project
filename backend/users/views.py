@@ -4,10 +4,13 @@ from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from users.dependencies import get_user_service
-from auth.authorization import get_current_user_from_cookie
+from users.services import UserService
+from auth.authorization import (
+    get_current_user_from_cookie,
+)
 from core.config import settings
 from core.models import User
-from users.services import UserService
+
 
 router = APIRouter(
     prefix="/profile",
@@ -23,7 +26,7 @@ async def get_user_profile(
     profile_id: int,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     service: Annotated[UserService, Depends(get_user_service)],
-):
+) -> HTMLResponse:
     """
     Отображает страницу профиля пользователя.
 
