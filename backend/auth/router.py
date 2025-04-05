@@ -23,6 +23,8 @@ from users.services import UserService
 from users.tokens import (
     create_access_token,
     create_refresh_token,
+    set_access_token_to_cookie,
+    set_refresh_token_to_cookie,
 )
 from auth.authorization import (
     authenticate_user,
@@ -95,20 +97,8 @@ async def login(
     logger.info(f"User {user.username} successfully authenticated")
 
     response = Response(content="Authentication successful", media_type="text/plain")
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {access_token}",
-        httponly=True,
-        samesite="lax",
-        max_age=settings.jwt.access_token_expire_minutes * 60,
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        samesite="lax",
-        max_age=settings.jwt.refresh_token_expire_days * 24 * 60 * 60,
-    )
+    set_access_token_to_cookie(access_token, response)
+    set_refresh_token_to_cookie(refresh_token, response)
     return response
 
 
