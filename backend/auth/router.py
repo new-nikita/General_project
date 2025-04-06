@@ -15,16 +15,15 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.exc import DBAPIError
 
 from auth.tokens_service import TokenService
+from auth.token_cookie_service import TokenCookieService
 from core.config import settings
 from core.models import User
 
 from users.dependencies import get_user_service
 from users.schemas import UserCreate, UserResponse
 from users.services import UserService
-from users.tokens import (
-    set_access_token_to_cookie,
-    set_refresh_token_to_cookie,
-)
+
+
 from auth.authorization import (
     authenticate_user,
     get_current_user_from_cookie,
@@ -78,7 +77,7 @@ async def index(
 @router.post("/login", response_class=Response)
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    service: Annotated[UserService, Depends(get_user_service)],
+    service: Annotated[UserService, Depends(get_user_service)], # экземпляр класса и создание сервиса для работы с базой данных
     response: Response,
 ):
     """
@@ -96,8 +95,8 @@ async def login(
     logger.info(f"User {user.username} successfully authenticated")
 
     response = Response(content="Authentication successful", media_type="text/plain")
-    set_access_token_to_cookie(access_token, response)
-    set_refresh_token_to_cookie(refresh_token, response)
+    TokenCookieService.set_access_token_to_cookie(access_token, response)
+    TokenCookieService.set_refresh_token_to_cookie(refresh_token, response)
     return response
 
 

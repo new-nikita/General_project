@@ -8,8 +8,7 @@ from users.services import UserService
 from core.models import User
 from users.password_helper import PasswordHelper, PasswordVerificationError
 from users.dependencies import get_user_service
-
-from users.tokens import decode_and_validate_token
+from auth.tokens_service import TokenService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -54,7 +53,7 @@ async def authenticate_user(service: UserService, username: str, password: str) 
             logger.warning(f"Login attempt for non-existent user: {username}")
             handle_auth_error(message="Incorrect username or password")
         try:
-            PasswordHelper.verify_password(password, user.hashed_password)
+            PasswordHelper.verify_password(password, user.hashed_password) # проверяет соответствие пароля
         except PasswordVerificationError as e:
             logger.warning(f"Invalid password attempt for user: {username}")
             handle_auth_error(message=str(e), status_code=status.HTTP_401_UNAUTHORIZED)
@@ -96,7 +95,7 @@ async def get_current_user_from_cookie(
     token: str = (
         access_token[7:] if access_token.startswith("Bearer ") else access_token
     )
-    payload: dict = decode_and_validate_token(token)
+    payload: dict = TokenService.decode_and_validate_token(token)
     username: str = payload.get("sub")
     user: User = await get_user_by_username_from_service(username, service)
     return user

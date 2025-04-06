@@ -6,7 +6,8 @@ from fastapi.responses import Response, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from users.tokens import refresh_access_token, decode_token, set_access_token_to_cookie
+from auth.tokens_service import TokenService
+from auth.token_cookie_service import TokenCookieService
 
 logging.basicConfig(level=logging.DEBUG, format="[%(asctime)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -40,11 +41,12 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
             return response
 
         try:
+            """удалить и проверить с токен сервис"""
             # Если Access Token отсутствует или истек, пробуем обновить его
             if not access_token or not self.is_token_valid(access_token):
                 logger.debug("Access Token отсутствует или недействителен")
-                new_access_token = refresh_access_token(refresh_token)
-                set_access_token_to_cookie(new_access_token, response)
+                new_access_token = TokenService.refresh_access_token(refresh_token)
+                TokenCookieService.set_access_token_to_cookie(new_access_token, response)
                 logger.info("Access Token успешно обновлен")
 
         except ValueError as e:
@@ -74,7 +76,7 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
             return False
 
         try:
-            payload = decode_token(token)
+            payload = TokenService.decode_and_validate_token(token)
             exp_time = payload.get("exp")
 
             return exp_time and exp_time > int(time.time())
