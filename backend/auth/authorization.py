@@ -74,6 +74,8 @@ async def authenticate_user(service: UserService, username: str, password: str) 
         )
 
 
+"""перенести в token_cookie_service.py"""
+
 async def get_current_user_from_cookie(
     request: Request,
     access_token: str | None = Cookie(default=None, alias="access_token"),
