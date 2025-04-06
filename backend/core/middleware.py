@@ -54,10 +54,12 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
             response.delete_cookie("refresh_token")
 
             # Перенаправляем пользователя на страницу входа
-            return RedirectResponse(url="/login", status_code=303)
+            # return RedirectResponse(url="/login", status_code=303)
+            # TODO сделать перенаправление на страницу аутентификации, когда она появится
 
         return response
 
+    # TODO избавиться от метода, так как е
     def is_token_valid(self, token: str) -> bool:
         """
         Проверяет, действителен ли Access Token.
