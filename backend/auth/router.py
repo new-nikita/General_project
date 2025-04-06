@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from sqlalchemy.exc import DBAPIError
 
+from auth.tokens_service import TokenService
 from core.config import settings
 from core.models import User
 
@@ -21,8 +22,6 @@ from users.dependencies import get_user_service
 from users.schemas import UserCreate, UserResponse
 from users.services import UserService
 from users.tokens import (
-    create_access_token,
-    create_refresh_token,
     set_access_token_to_cookie,
     set_refresh_token_to_cookie,
 )
@@ -92,8 +91,8 @@ async def login(
     """
     user = await authenticate_user(service, form_data.username, form_data.password)
 
-    access_token = create_access_token(data={"sub": user.username})
-    refresh_token = create_refresh_token(data={"sub": user.username})
+    access_token = TokenService.create_access_token({"sub": user.username})
+    refresh_token = TokenService.create_refresh_token({"sub": user.username})
     logger.info(f"User {user.username} successfully authenticated")
 
     response = Response(content="Authentication successful", media_type="text/plain")
