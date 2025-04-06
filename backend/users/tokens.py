@@ -1,7 +1,9 @@
 from datetime import timedelta, datetime, timezone
 import logging
+from typing import Any
 
 import jwt
+from fastapi import HTTPException
 from jwt.exceptions import PyJWTError
 from fastapi.responses import Response
 
@@ -114,14 +116,6 @@ def decode_token(token: str) -> dict:
         raise ValueError("Invalid token")
 
 
-def get_username_by_payload(payload: dict) -> str:
-    username = payload.get("sub")
-    if not username:
-        logger.warning("Username is None")
-        raise ValueError("Username is None")
-    return username
-
-
 def set_access_token_to_cookie(access_token: str, response: Response) -> None:
     response.set_cookie(
         key="access_token",
@@ -140,3 +134,24 @@ def set_refresh_token_to_cookie(refresh_token: str, response: Response) -> None:
         samesite="lax",
         max_age=settings.jwt.refresh_token_expire_days * 24 * 60 * 60,
     )
+
+
+def decode_and_validate_token(token: str) -> dict:
+    """
+    Декодирует и проверяет JWT-токен.
+
+    :param token: JWT-токен.
+    :return: Payload токена.
+    :raises HTTPException: 401 если токен недействителен.
+    """
+    payload = decode_token(token)
+    validate_token(payload)
+    return payload
+
+
+def validate_token(
+    payload: dict[str, Any],
+) -> bool:
+    if not payload.get("sub") or not payload.get("exp"):
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return True

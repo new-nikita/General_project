@@ -1,8 +1,6 @@
 import logging
 
-import jwt
-from jwt import PyJWTError
-from fastapi import Cookie, HTTPException, status, Depends, Request, Header
+from fastapi import Cookie, HTTPException, status, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 
 from core.config import settings
@@ -10,7 +8,8 @@ from users.services import UserService
 from core.models import User
 from users.password_helper import PasswordHelper, PasswordVerificationError
 from users.dependencies import get_user_service
-from users.tokens import decode_token
+
+from users.tokens import decode_and_validate_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -53,7 +52,7 @@ async def authenticate_user(service: UserService, username: str, password: str) 
         user = await service.get_user_by_username(username)
         if not user:
             logger.warning(f"Login attempt for non-existent user: {username}")
-            handle_auth_error(message="Incorrect username")
+            handle_auth_error(message="Incorrect username or password")
         try:
             PasswordHelper.verify_password(password, user.hashed_password)
         except PasswordVerificationError as e:
@@ -75,44 +74,6 @@ async def authenticate_user(service: UserService, username: str, password: str) 
         )
 
 
-async def get_current_user(
-    request: Request,
-    access_token: str = Cookie(None),
-    refresh_token: str = Cookie(None),
-    service: UserService = Depends(get_user_service),
-) -> User:
-    """
-    Получает текущего пользователя по токенам из cookies.
-
-    :param request: Запрос FastAPI.
-    :param access_token: JWT-токен доступа из cookies.
-    :param refresh_token: JWT-токен обновления из cookies.
-    :param service: Сервис для работы с пользователями.
-    :return: Текущий пользователь.
-    :raises HTTPException: 401 если пользователь не аутентифицирован.
-    """
-    if not access_token and not refresh_token:
-        logger.warning("Access token и Refresh token отсутствуют")
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    try:
-        if access_token:
-            token = (
-                access_token[7:] if access_token.startswith("Bearer ") else access_token
-            )
-    except ValueError as e:
-        logger.warning(f"Ошибка при получении текущего пользователя: {e}")
-        handle_auth_error(status_code=401, message="Not authenticated")
-        payload = decode_token(token)
-        username = payload.get("sub")
-        if username:
-            user = await service.get_user_by_username(username)
-            if user:
-                return user
-
-    raise HTTPException(status_code=401, detail="Not authenticated")
-
-
 async def get_current_user_from_cookie(
     request: Request,
     access_token: str | None = Cookie(default=None, alias="access_token"),
@@ -130,21 +91,27 @@ async def get_current_user_from_cookie(
     if not access_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    # Удаляем "Bearer " из начала токена
-    token = access_token[7:] if access_token.startswith("Bearer ") else access_token
+    token: str = (
+        access_token[7:] if access_token.startswith("Bearer ") else access_token
+    )
+    payload: dict = decode_and_validate_token(token)
+    username: str = payload.get("sub")
+    user: User = await get_user_by_username_from_service(username, service)
+    return user
 
-    try:
-        payload = jwt.decode(
-            token, settings.jwt.secret_key, algorithms=[settings.jwt.algorithm]
-        )
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
 
+async def get_user_by_username_from_service(
+    username: str, service: UserService
+) -> User:
+    """
+    Получает пользователя из сервиса по имени пользователя.
+
+    :param username: Имя пользователя.
+    :param service: Сервис для работы с пользователями.
+    :return: Пользователь.
+    :raises HTTPException: 401 если пользователь не найден.
+    """
     user = await service.get_user_by_username(username)
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
-
     return user
