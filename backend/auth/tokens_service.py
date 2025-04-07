@@ -20,6 +20,7 @@ class TokenService:
         :param expires_delta: Время жизни токена.
         :return: Новый Access Token.
         """
+
         expires_delta = expires_delta or timedelta(
             minutes=settings.jwt.access_token_expire_minutes
         )
@@ -70,6 +71,9 @@ class TokenService:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + expires_delta
         to_encode.update({"exp": expire})
+
+        if not settings.jwt.secret_key or not settings.jwt.algorithm:
+            raise ValueError("SECRET_KEY и ALGORITHM должны быть настроены в конфигурации.")
 
         try:
             encoded_jwt = jwt.encode(
