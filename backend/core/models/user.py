@@ -20,7 +20,7 @@ class User(TimestampsMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    profile: Mapped["Profile"] = relationship(back_populates="user")
+    profile: Mapped["Profile"] = relationship(back_populates="user", lazy="selectin")
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, username={self.username!r})"

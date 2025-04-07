@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.base_repository import BaseRepository
-from core.models import User
+from core.models import User, Profile
 from users.schemas import UserCreate
 from .password_helper import PasswordHelper
 
@@ -38,6 +38,10 @@ class UserRepository(BaseRepository[User]):
             email=dto_user.email,
             hashed_password=hashed_password,
         )
+        if dto_user.profile:
+            profile = Profile(**dto_user.profile.model_dump())
+            user.profile = profile
+
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)
@@ -70,3 +74,17 @@ class UserRepository(BaseRepository[User]):
     async def update(self, id_: int, data: dict[str, Any]) -> str | None: ...
 
     async def delete(self, id_: int) -> str | None: ...
+
+    async def update_user_avatar(self, user_id: int, avatar_url: str):
+        """
+        Обновляет аватар пользователя.
+
+        :param user_id: ID пользователя.
+        :param avatar_url: URL аватара.
+        """
+        user = await self.session.get(User, user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        user.profile.avatar = avatar_url
+        await self.session.commit()

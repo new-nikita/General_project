@@ -1,10 +1,32 @@
 from datetime import datetime
-from typing import Annotated
+from datetime import date
+from typing import Annotated, Optional
 from annotated_types import MinLen, MaxLen
 
 from pydantic import BaseModel, EmailStr, ConfigDict, Field, constr
 from pydantic.functional_validators import AfterValidator
 from utils.validated import validate_username
+
+
+class ProfileCreate(BaseModel):
+    """
+    Схема для создания профиля пользователя.
+    Все поля являются необязательными.
+    """
+
+    first_name: Optional[str] = Field(None, min_length=2, max_length=50)
+    last_name: Optional[str] = Field(None, min_length=2, max_length=50)
+    middle_name: Optional[str] = Field(None, max_length=50)
+
+    birth_date: Optional[date] = Field(None)
+    gender: Optional[str] = Field(None, max_length=10)
+
+    phone_number: Optional[str] = Field(None, max_length=20)
+    country: Optional[str] = Field(None, max_length=50)
+    city: Optional[str] = Field(None, max_length=50)
+    street: Optional[str] = Field(None, max_length=100)
+
+    bio: Optional[str] = Field(None)
 
 
 class UserBase(BaseModel):
@@ -26,6 +48,7 @@ class UserCreate(BaseModel):
         description="Password must contain at least 8 characters",
     )
     email: EmailStr = Field(..., max_length=100)
+    profile: ProfileCreate | None = None
 
 
 class UserUpdate(BaseModel):
@@ -44,12 +67,3 @@ class UserResponse(UserBase):
     id: int
     is_active: bool = True
     created_at: datetime
-
-
-class UserInDB(UserBase):
-    id: int
-    hashed_password: str
-    is_active: bool
-    is_superuser: bool = False
-    created_at: datetime
-    updated_at: datetime | None = None
