@@ -1,0 +1,185 @@
+/* Фон страницы */
+body {
+    background: linear-gradient(135deg, #f5f7fa, #e8edf3);
+    font-family: 'Arial', sans-serif;
+}
+
+/* Шапка */
+header {
+    background: linear-gradient(135deg, #412659, #2575fc);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Контейнер профиля */
+.profile-container {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Аватар */
+.user-avatar {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Информация о пользователе */
+.user-info p {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+/* Иконки */
+.info-icon {
+    color: #6c757d;
+    margin-right: 0.5rem;
+}
+
+/* Кнопка редактирования */
+.btn-edit {
+    background: linear-gradient(135deg, #3d3838, #2575fc);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    color: white;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-edit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Подвал */
+footer {
+    background: #ffffff;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Стили для бокового меню */
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 250px;
+    height: 100%;
+    background-color: #f8f9fa;
+    border-left: 1px solid #dee2e6;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.sidebar-header {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.sidebar-body {
+    overflow-y: auto;
+    height: calc(100% - 60px); /* Вычитаем высоту заголовка */
+}
+
+/* Стили для основного контента */
+.main-content {
+    margin-right: 270px; /* Учитываем ширину бокового меню + отступ */
+    padding-top: 20px;
+}
+
+.profile-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    padding: 30px;
+}
+
+.user-avatar {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 5px solid #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
+}
+
+.user-info {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 25px;
+    margin-top: 20px;
+}
+
+.info-section {
+    margin-bottom: 25px;
+}
+
+.info-section h4 {
+    color: #4a76a8;
+    border-bottom: 2px solid #eaeaea;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.info-section h4 i {
+    margin-right: 10px;
+}
+
+.info-item {
+    display: flex;
+    margin-bottom: 12px;
+    align-items: flex-start;
+}
+
+.info-icon {
+    color: #4a76a8;
+    width: 24px;
+    text-align: center;
+    margin-right: 12px;
+    margin-top: 2px;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #555;
+    min-width: 120px;
+}
+
+.info-value {
+    color: #333;
+    flex: 1;
+}
+
+.btn-edit {
+    background-color: #4a76a8;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(74, 118, 168, 0.3);
+}
+
+.btn-edit:hover {
+    background-color: #3a5f8a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(74, 118, 168, 0.4);
+}
+
+.empty-value {
+    color: #999;
+    font-style: italic;
+}

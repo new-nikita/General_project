@@ -26,7 +26,7 @@ class Profile(UserRelationMixin, Base):
     street: Mapped[str | None] = mapped_column(String(100))
 
     bio: Mapped[str | None] = mapped_column(Text())
-    # TODO Добавить аватарку
+    avatar: Mapped[str] = mapped_column(Text(), server_default="фото")
 
     @property
     def full_name(self) -> str:
