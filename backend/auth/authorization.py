@@ -53,7 +53,9 @@ async def authenticate_user(service: UserService, username: str, password: str) 
             logger.warning(f"Login attempt for non-existent user: {username}")
             handle_auth_error(message="Incorrect username or password")
         try:
-            PasswordHelper.verify_password(password, user.hashed_password) # проверяет соответствие пароля
+            PasswordHelper.verify_password(
+                password, user.hashed_password
+            )  # проверяет соответствие пароля
         except PasswordVerificationError as e:
             logger.warning(f"Invalid password attempt for user: {username}")
             handle_auth_error(message=str(e), status_code=status.HTTP_401_UNAUTHORIZED)
@@ -75,11 +77,12 @@ async def authenticate_user(service: UserService, username: str, password: str) 
 
 """перенести в token_cookie_service.py"""
 
+
 async def get_current_user_from_cookie(
     request: Request,
-    access_token: str | None = Cookie(default=None, alias="access_token"),
+    access_token: str | None = Cookie(default=None, alias="access-token"),
     service: UserService = Depends(get_user_service),
-) -> User:
+) -> User | None:
     """
     Получает текущего пользователя по JWT-токену из cookies.
 
@@ -87,10 +90,9 @@ async def get_current_user_from_cookie(
     :param access_token: JWT-токен доступа из cookies.
     :param service: Сервис для работы с пользователями.
     :return: Текущий пользователь.
-    :raises HTTPException: 401 если токен недействителен или пользователь не найден.
     """
     if not access_token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        return
 
     token: str = (
         access_token[7:] if access_token.startswith("Bearer ") else access_token

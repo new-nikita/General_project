@@ -43,10 +43,12 @@ async def get_user_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Пользователь с ID {profile_id} не найден",
         )
+    if current_user is not None:
+        # Определяем, является ли профиль собственным
 
-    # Определяем, является ли профиль собственным
-    is_own_profile = current_user.id == profile_user.id
-
+        is_own_profile = current_user.id == profile_user.id
+    else:
+        is_own_profile = False
     return templates.TemplateResponse(
         "profile.html",
         {
