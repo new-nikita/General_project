@@ -38,16 +38,19 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
 
         if not refresh_token:
             logger.debug("Refresh token отсутствует")
-            return response
+        #     return response
 
         try:
             """удалить и проверить с токен сервис"""
             # Если Access Token отсутствует или истек, пробуем обновить его
             if not access_token or not self.is_token_valid(access_token):
                 logger.debug("Access Token отсутствует или недействителен")
-                new_access_token = TokenService.refresh_access_token(refresh_token)
-                TokenCookieService.set_access_token_to_cookie(new_access_token, response)
-                logger.info("Access Token успешно обновлен")
+                if refresh_token:
+                    new_access_token = TokenService.refresh_access_token(refresh_token)
+                    TokenCookieService.set_access_token_to_cookie(
+                        new_access_token, response
+                    )
+                    logger.info("Access Token успешно обновлен")
 
         except ValueError as e:
             # Refresh Token недействителен - очищаем куки

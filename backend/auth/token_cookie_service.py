@@ -10,12 +10,11 @@ logger = logging.getLogger(__name__)
 
 class TokenCookieService:
     @classmethod
-    def set_access_token_to_cookie(
-            cls, access_token: str, response: Response) -> None:
+    def set_access_token_to_cookie(cls, access_token: str, response: Response) -> None:
         """Добавление access_token в cookie"""
 
         response.set_cookie(
-            key="access_token",
+            key="access-token",
             value=f"Bearer {access_token}",
             httponly=True,
             samesite="lax",
@@ -24,11 +23,12 @@ class TokenCookieService:
 
     @classmethod
     def set_refresh_token_to_cookie(
-            cls, refresh_token: str, response: Response) -> None:
+        cls, refresh_token: str, response: Response
+    ) -> None:
         """Добавление refresh_token в cookie"""
 
         response.set_cookie(
-            key="refresh_token",
+            key="refresh-token",
             value=refresh_token,
             httponly=True,
             samesite="lax",

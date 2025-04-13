@@ -8,11 +8,13 @@ from fastapi import (
     status,
     Request,
     Response,
+    Form,
 )
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from sqlalchemy.exc import DBAPIError
+from starlette.responses import RedirectResponse
 
 from auth.tokens_service import TokenService
 from auth.token_cookie_service import TokenCookieService
@@ -41,7 +43,7 @@ router = APIRouter(tags=["Auth"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-templates = Jinja2Templates(directory=settings.template_dir)
+templates = Jinja2Templates(directory=settings.template_dir / "users")
 
 
 def handle_error(
@@ -58,7 +60,7 @@ def handle_error(
     raise HTTPException(status_code=status_code, detail=message)
 
 
-@router.get("/hello", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def index(
     request: Request, current_user: User = Depends(get_current_user_from_cookie)
 ):
@@ -74,30 +76,77 @@ async def index(
     )
 
 
-@router.post("/login", response_class=Response)
-async def login(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    service: Annotated[UserService, Depends(get_user_service)], # экземпляр класса и создание сервиса для работы с базой данных
-    response: Response,
+@router.get("/login", response_class=HTMLResponse)
+async def login_page(
+    request: Request,
+    current_user: User = Depends(
+        get_current_user_from_cookie
+    ),  # Получение текущего пользователя
 ):
     """
-    Аутентифицирует пользователя и устанавливает JWT-токены в HTTP-Only cookies.
+    Отображает страницу входа с формой.
 
-    :param form_data: Форма с данными пользователя (username, password).
+    :param request: Запрос для передачи в шаблон.
+    :param current_user: Текущий авторизованный пользователь.
+    :return: HTML-страница с формой входа.
+    """
+    return templates.TemplateResponse(
+        "login.html",  # Имя HTML-шаблона
+        {
+            "request": request,
+            "current_user": current_user,
+        },
+    )
+
+
+@router.post("/login", response_class=HTMLResponse)
+async def login(
+    response: Response,
+    service: Annotated[UserService, Depends(get_user_service)],
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+):
+    """
+    Аутентифицирует пользователя и перенаправляет на профиль.
+
+    :param response:
+    :param request: Запрос для передачи в шаблон.
+    :param username: Имя пользователя из формы.
+    :param password: Пароль из формы.
     :param service: Сервис для работы с пользователями.
-    :return: Ответ с установленными HTTP-Only cookies.
+    :return: HTML-страница после успешной аутентификации.
     :raises HTTPException: 401 при неверных данных или 500 при внутренней ошибке.
     """
-    user = await authenticate_user(service, form_data.username, form_data.password)
+    try:
+        # Аутентификация пользователя
+        user = await authenticate_user(service, username, password)
 
-    access_token = TokenService.create_access_token({"sub": user.username})
-    refresh_token = TokenService.create_refresh_token({"sub": user.username})
-    logger.info(f"User {user.username} successfully authenticated")
+        # Создание JWT-токенов
+        access_token = TokenService.create_access_token({"sub": user.username})
+        refresh_token = TokenService.create_refresh_token({"sub": user.username})
 
-    response = Response(content="Authentication successful", media_type="text/plain")
-    TokenCookieService.set_access_token_to_cookie(access_token, response)
-    TokenCookieService.set_refresh_token_to_cookie(refresh_token, response)
-    return response
+        TokenCookieService.set_access_token_to_cookie(access_token, response)
+        TokenCookieService.set_refresh_token_to_cookie(refresh_token, response)
+
+        # Логирование успешной аутентификации
+        logger.info(f"User {user.username} successfully authenticated")
+
+        # Перенаправление на страницу профиля
+        redirect = RedirectResponse(
+            url=f"/profile/{user.id}",
+            status_code=303,
+        )
+        redirect.set_cookie("access-token", access_token, path=f"/profile/{user.id}")
+        redirect.set_cookie("refresh-token", refresh_token, path=f"/profile/{user.id}")
+        return redirect
+
+    except Exception as e:
+        logger.error(f"Authentication failed: {e}")
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": "Неверное имя пользователя или пароль."},
+        )
 
 
 @router.post(
@@ -143,7 +192,7 @@ async def register_user(
         )
 
 
-@router.post(
+@router.get(
     "/logout",
     summary="Выход пользователя из системы",
     description="""
