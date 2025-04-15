@@ -33,8 +33,8 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Получаем токены из cookies
-        access_token = request.cookies.get("access_token")
-        refresh_token = request.cookies.get("refresh_token")
+        access_token = request.cookies.get("access-token")
+        refresh_token = request.cookies.get("refresh-token")
 
         if not refresh_token:
             logger.debug("Refresh token отсутствует")
