@@ -5,7 +5,7 @@ from core.config import settings
 
 from create_app import create_app
 
-from auth.router import router as auth_router
+from auth.views import router as auth_router
 from users.views import router as profile_router
 from core.middleware import TokenRefreshMiddleware
 

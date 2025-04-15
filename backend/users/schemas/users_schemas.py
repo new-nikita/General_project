@@ -1,32 +1,19 @@
 from datetime import datetime
-from datetime import date
-from typing import Annotated, Optional
+
+from typing import Annotated
 from annotated_types import MinLen, MaxLen
 
-from pydantic import BaseModel, EmailStr, ConfigDict, Field, constr
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    ConfigDict,
+    Field,
+    constr,
+)
 from pydantic.functional_validators import AfterValidator
+
 from utils.validated import validate_username
-
-
-class ProfileCreate(BaseModel):
-    """
-    Схема для создания профиля пользователя.
-    Все поля являются необязательными.
-    """
-
-    first_name: Optional[str] = Field(None, min_length=2, max_length=50)
-    last_name: Optional[str] = Field(None, min_length=2, max_length=50)
-    middle_name: Optional[str] = Field(None, max_length=50)
-
-    birth_date: Optional[date] = Field(None)
-    gender: Optional[str] = Field(None, max_length=10)
-
-    phone_number: Optional[str] = Field(None, max_length=20)
-    country: Optional[str] = Field(None, max_length=50)
-    city: Optional[str] = Field(None, max_length=50)
-    street: Optional[str] = Field(None, max_length=100)
-
-    bio: Optional[str] = Field(None)
+from users.schemas.profile_schemas import ProfileCreate
 
 
 class UserBase(BaseModel):

@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
 from users.repository import UserRepository
-from users.schemas import UserCreate
+from users.schemas.users_schemas import UserCreate
 from core.models import User
 
 
