@@ -118,15 +118,14 @@ async def login(
 
 
 @router.get("/logout")
-async def logout(
-    response: Response,
-):
+async def logout():
     """
     Выходит из системы, удаляя токены из HTTP-Only cookies.
 
     :param response: Ответ FastAPI.
     :return: Сообщение об успешном выходе.
     """
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
-    return RedirectResponse(url="/login", status_code=303)
+    redirect_response = RedirectResponse(status_code=303, url="/login")
+    redirect_response.delete_cookie("access-token")
+    redirect_response.delete_cookie("refresh-token")
+    return redirect_response
