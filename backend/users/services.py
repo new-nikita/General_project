@@ -29,12 +29,14 @@ class UserService:
         """
         if await self.repository.get_user_by_email(dto_user.email):
             raise HTTPException(
-                status_code=400, detail="Пользователь с таким email уже существует."
+                status_code=400,
+                detail=f"Пользователь с email {dto_user.email!r} уже существует.",
             )
 
         if await self.repository.get_user_by_username(dto_user.username):
             raise HTTPException(
-                status_code=400, detail="Пользователь с таким username уже существует."
+                status_code=400,
+                detail=f"Пользователь с username {dto_user.username!r} уже существует.",
             )
 
         return await self.repository.create(dto_user)
