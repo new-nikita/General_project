@@ -11,13 +11,14 @@ from fastapi import (
 )
 
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import EmailStr, ValidationError
 
 from core.config import settings
 from core.models import User
 
 from users.dependencies import get_user_service
+from users.schemas.register_schema import RegisterForm
 
 from users.schemas.users_schemas import ProfileCreate, UserCreate
 from users.services import UserService
@@ -39,13 +40,48 @@ router = APIRouter()
 templates = Jinja2Templates(directory=settings.template_dir / "users")
 
 
+async def get_register_form(
+    username: str = Form(...),
+    email: EmailStr = Form(...),
+    password: str = Form(...),
+    password2: str = Form(...),
+    first_name: Optional[str] = Form(None),
+    last_name: Optional[str] = Form(None),
+    middle_name: Optional[str] = Form(None),
+    birth_date: Optional[date] | str = Form(None),
+    gender: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
+    country: Optional[str] = Form(None),
+    city: Optional[str] = Form(None),
+    street: Optional[str] = Form(None),
+    bio: Optional[str] = Form(None),
+) -> RegisterForm:
+    """Возвращает экземпляр RegisterForm с переданными данными."""
+    return RegisterForm(
+        username=username,
+        email=email,
+        password=password,
+        password2=password2,
+        first_name=first_name,
+        last_name=last_name,
+        middle_name=middle_name,
+        birth_date=birth_date,
+        gender=gender,
+        phone_number=phone_number,
+        country=country,
+        city=city,
+        street=street,
+        bio=bio,
+    )
+
+
 @router.get("/register", response_class=HTMLResponse)
 async def get_register_page(
     request: Request,
     current_user: Annotated[
         Optional[User], Depends(get_current_user_from_cookie)
     ] = None,
-):
+) -> Response:
     """
     Отображает страницу регистрации.
 
@@ -72,69 +108,25 @@ async def get_register_page(
 async def register_user(
     request: Request,
     service: Annotated[UserService, Depends(get_user_service)],
-    username: str = Form(...),
-    password: str = Form(...),
-    password2: str = Form(...),
-    email: EmailStr = Form(...),
-    first_name: Optional[str] = Form(None),
-    last_name: Optional[str] = Form(None),
-    middle_name: Optional[str] = Form(None),
-    birth_date: Optional[date] = Form(None),
-    gender: Optional[str] = Form(None),
-    phone_number: Optional[str] = Form(None),
-    country: Optional[str] = Form(None),
-    city: Optional[str] = Form(None),
-    street: Optional[str] = Form(None),
-    bio: Optional[str] = Form(None),
-):
-    """
-    Обрабатывает регистрацию нового пользователя.
-
-    :return: Редирект на страницу входа при успехе или форму с ошибками.
-    """
-    # Сохраняем введенные данные для повторного отображения формы при ошибке
-    form_data = {
-        "username": username,
-        "email": email,
-        "first_name": first_name,
-        "last_name": last_name,
-        "middle_name": middle_name,
-        "birth_date": birth_date.isoformat() if birth_date else "",
-        "gender": gender,
-        "phone_number": phone_number,
-        "country": country,
-        "city": city,
-        "street": street,
-        "bio": bio,
-    }
-
+    form_data: Annotated[RegisterForm, Depends(get_register_form)],
+) -> Response:
+    """Обрабатывает регистрацию нового пользователя."""
     try:
-        if password != password2:
-            raise HTTPException(status_code=400, detail="Пароли не совпадают")
+        profile_data = form_data.model_dump(
+            exclude={"username", "password", "password2", "email"}
+        )
+        profile = ProfileCreate(**profile_data)
 
-        # Создание объекта UserCreate
         user_create = UserCreate(
-            username=username,
-            password=password,
-            email=email,
-            profile=ProfileCreate(
-                first_name=first_name,
-                last_name=last_name,
-                birth_date=birth_date,
-                gender=gender,
-                phone_number=phone_number,
-                country=country,
-                city=city,
-                street=street,
-                bio=bio,
-            ),
+            username=form_data.username,
+            password=form_data.password,
+            email=form_data.email,
+            profile=profile,
         )
 
-        # Создание пользователя
         user = await service.create_user_and_added_in_db(user_create)
         logger.info(f"New user registered: {user.username}")
 
-        # Перенаправление с сообщением об успехе
         response = RedirectResponse(url="/login", status_code=303)
         response.set_cookie(
             "register_success",
@@ -151,8 +143,8 @@ async def register_user(
             {
                 "request": request,
                 "current_user": None,
-                "form_data": form_data,
-                "errors": {"__all__": e.detail},
+                "form_data": form_data.model_dump(),
+                "errors": {"": e.detail},
             },
             status_code=e.status_code,
         )
@@ -170,7 +162,7 @@ async def register_user(
             {
                 "request": request,
                 "current_user": None,
-                "form_data": form_data,
+                "form_data": form_data.model_dump(),
                 "errors": errors,
             },
             status_code=400,
@@ -183,7 +175,7 @@ async def register_user(
             {
                 "request": request,
                 "current_user": None,
-                "form_data": form_data,
+                "form_data": form_data.model_dump(),
                 "errors": {"": "Произошла ошибка при регистрации"},
             },
             status_code=500,
