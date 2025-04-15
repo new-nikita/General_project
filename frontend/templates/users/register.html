@@ -22,10 +22,6 @@
         text-align: center;
     }
 
-    .registration-body {
-        padding: 2rem;
-    }
-
     .section-title {
         color: #4a76a8;
         font-weight: 600;
@@ -67,17 +63,6 @@
         transform: translateY(-2px);
     }
 
-    .error-message {
-        color: #dc3545;
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-
-    .hint-text {
-        font-size: 0.875rem;
-        color: #6c757d;
-    }
-
     .form-section {
         margin-bottom: 2rem;
         background: #f9fafb;
@@ -96,188 +81,145 @@
         {% if errors %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {% for field, message in errors.items() %}
-                <strong>{{ field | upper }}</strong> {{ message }}<br>
+            <strong> {{ message }}</strong><br>
             {% endfor %}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endif %}
-            <form method="post" action="/register">
-                <!-- Основная информация -->
-                <div class="form-section">
-                    <h4 class="section-title">Основная информация</h4>
+        <form method="post" action="/register">
+            <!-- Основная информация -->
+            <div class="form-section">
+                <h4 class="section-title">Основная информация</h4>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="username" class="form-label">Имя пользователя*</label>
-                            <input type="text" id="username" name="username" class="form-control"
-                                   required minlength="3" maxlength="20" pattern="^[a-zA-Z0-9_]+$"
-                                   value="{{ form_data.username if form_data }}">
-                            {% if field_errors and field_errors.username %}
-                            <div class="error-message">{{ field_errors.username }}</div>
-                            {% else %}
-                            <div class="hint-text">Только буквы, цифры и подчеркивания</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label">Email*</label>
-                            <input type="email" id="email" name="email" class="form-control"
-                                   required value="{{ form_data.email if form_data }}">
-                            {% if field_errors and field_errors.email %}
-                            <div class="error-message">{{ field_errors.email }}</div>
-                            {% endif %}
-                        </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="username" class="form-label">Имя пользователя*</label>
+                        <input type="text" id="username" name="username" class="form-control"
+                               required minlength="3" maxlength="20" pattern="^[a-zA-Z0-9_]+$"
+                               value="{{ form_data.username if form_data }}">
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="password" class="form-label">Пароль*</label>
-                            <input type="password" id="password" name="password" class="form-control"
-                                   required minlength="8">
-                            {% if field_errors and field_errors.password %}
-                            <div class="error-message">{{ field_errors.password }}</div>
-                            {% else %}
-                            <div class="hint-text">Минимум 8 символов</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label for="password2" class="form-label">Подтверждение пароля*</label>
-                            <input type="password" id="password2" name="password2" class="form-control"
-                                   required minlength="8">
-                            {% if field_errors and field_errors.password2 %}
-                            <div class="error-message">{{ field_errors.password2 }}</div>
-                            {% endif %}
-                        </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="email" class="form-label">Email*</label>
+                        <input type="email" id="email" name="email" class="form-control"
+                               required value="{{ form_data.email if form_data }}">
                     </div>
                 </div>
 
-                <!-- Личная информация -->
-                <div class="form-section">
-                    <h4 class="section-title">Личная информация</h4>
-
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="first_name" class="form-label">Имя</label>
-                            <input type="text" id="first_name" name="first_name" class="form-control"
-                                   minlength="2" maxlength="50" value="{{ form_data.first_name if form_data }}">
-                            {% if field_errors and field_errors.first_name %}
-                            <div class="error-message">{{ field_errors.first_name }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label for="last_name" class="form-label">Фамилия</label>
-                            <input type="text" id="last_name" name="last_name" class="form-control"
-                                   minlength="2" maxlength="50" value="{{ form_data.last_name if form_data }}">
-                            {% if field_errors and field_errors.last_name %}
-                            <div class="error-message">{{ field_errors.last_name }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label for="middle_name" class="form-label">Отчество</label>
-                            <input type="text" id="middle_name" name="middle_name" class="form-control"
-                                   minlength="2" maxlength="50" value="{{ form_data.middle_name if form_data }}">
-                            {% if field_errors and field_errors.middle_name %}
-                            <div class="error-message">{{ field_errors.middle_name }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="col-md-4 mb-3">
-                            <label for="birth_date" class="form-label">Дата рождения</label>
-                            <input type="date" id="birth_date" name="birth_date" class="form-control"
-                                   value="{{ form_data.birth_date if form_data }}">
-                            {% if field_errors and field_errors.birth_date %}
-                            <div class="error-message">{{ field_errors.birth_date }}</div>
-                            {% endif %}
-                        </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="password" class="form-label">Пароль*</label>
+                        <input type="password" id="password" name="password" class="form-control"
+                               required minlength="8">
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="gender" class="form-label">Пол</label>
-                            <select id="gender" name="gender" class="form-select">
-                                <option value="">Не указано</option>
-                                <option value="male" {% if form_data and form_data.gender == 'male' %}selected{% endif %}>Мужской</option>
-                                <option value="female" {% if form_data and form_data.gender == 'female' %}selected{% endif %}>Женский</option>
-                                <option value="other" {% if form_data and form_data.gender == 'other' %}selected{% endif %}>Другое</option>
-                            </select>
-                            {% if field_errors and field_errors.gender %}
-                            <div class="error-message">{{ field_errors.gender }}</div>
-                            {% endif %}
-                        </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="password2" class="form-label">Подтверждение пароля*</label>
+                        <input type="password" id="password2" name="password2" class="form-control"
+                               required minlength="8">
+                    </div>
+                </div>
+            </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label for="phone_number" class="form-label">Телефон</label>
-                            <input type="tel" id="phone_number" name="phone_number" class="form-control"
-                                   maxlength="20" value="{{ form_data.phone_number if form_data }}">
-                            {% if field_errors and field_errors.phone_number %}
-                            <div class="error-message">{{ field_errors.phone_number }}</div>
-                            {% endif %}
-                        </div>
+            <!-- Личная информация -->
+            <div class="form-section">
+                <h4 class="section-title">Личная информация</h4>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="first_name" class="form-label">Имя</label>
+                        <input type="text" id="first_name" name="first_name" class="form-control"
+                               minlength="2" maxlength="50" value="{{ form_data.first_name if form_data }}">
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="last_name" class="form-label">Фамилия</label>
+                        <input type="text" id="last_name" name="last_name" class="form-control"
+                               minlength="2" maxlength="50" value="{{ form_data.last_name if form_data }}">
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="middle_name" class="form-label">Отчество</label>
+                        <input type="text" id="middle_name" name="middle_name" class="form-control"
+                               minlength="2" maxlength="50" value="{{ form_data.middle_name if form_data }}">
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label for="birth_date" class="form-label">Дата рождения</label>
+                        <input type="date" id="birth_date" name="birth_date" class="form-control"
+                               value="{{ form_data.birth_date if form_data else '' }}">
                     </div>
                 </div>
 
-                <!-- Адресная информация -->
-                <div class="form-section">
-                    <h4 class="section-title">Адрес</h4>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="country" class="form-label">Страна</label>
-                            <input type="text" id="country" name="country" class="form-control"
-                                   maxlength="50" value="{{ form_data.country if form_data }}">
-                            {% if field_errors and field_errors.country %}
-                            <div class="error-message">{{ field_errors.country }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label for="city" class="form-label">Город</label>
-                            <input type="text" id="city" name="city" class="form-control"
-                                   maxlength="50" value="{{ form_data.city if form_data }}">
-                            {% if field_errors and field_errors.city %}
-                            <div class="error-message">{{ field_errors.city }}</div>
-                            {% endif %}
-                        </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="gender" class="form-label">Пол</label>
+                        <select id="gender" name="gender" class="form-select">
+                            <option value="">Не указано</option>
+                            <option value="мужчина" {% if form_data and form_data.gender==
+                            'male' %}selected{% endif %}>Мужской</option>
+                            <option value="женщина" {% if form_data and form_data.gender==
+                            'female' %}selected{% endif %}>Женский</option>
+                            <option value="другое" {% if form_data and form_data.gender==
+                            'other' %}selected{% endif %}>Другое</option>
+                        </select>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="street" class="form-label">Улица и дом</label>
-                        <input type="text" id="street" name="street" class="form-control"
-                               maxlength="100" value="{{ form_data.street if form_data }}">
-                        {% if field_errors and field_errors.street %}
-                        <div class="error-message">{{ field_errors.street }}</div>
-                        {% endif %}
+                    <div class="col-md-6 mb-3">
+                        <label for="phone_number" class="form-label">Телефон</label>
+                        <input type="tel" id="phone_number" name="phone_number" class="form-control"
+                               maxlength="20" value="{{ form_data.phone_number if form_data }}">
                     </div>
                 </div>
+            </div>
 
-                <!-- Дополнительная информация -->
-                <div class="form-section">
-                    <h4 class="section-title">О себе</h4>
+            <!-- Адресная информация -->
+            <div class="form-section">
+                <h4 class="section-title">Адрес</h4>
 
-                    <div class="mb-3">
-                        <label for="bio" class="form-label">Краткая биография</label>
-                        <textarea id="bio" name="bio" class="form-control" rows="3"
-                                  placeholder="Расскажите немного о себе">{% if form_data %}{{ form_data.bio }}{% endif %}</textarea>
-                        {% if field_errors and field_errors.bio %}
-                        <div class="error-message">{{ field_errors.bio }}</div>
-                        {% endif %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="country" class="form-label">Страна</label>
+                        <input type="text" id="country" name="country" class="form-control"
+                               maxlength="50" value="{{ form_data.country if form_data }}">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="city" class="form-label">Город</label>
+                        <input type="text" id="city" name="city" class="form-control"
+                               maxlength="50" value="{{ form_data.city if form_data }}">
                     </div>
                 </div>
 
-                <div class="d-grid mt-4">
-                    <button type="submit" class="btn btn-register btn-lg">
-                        Зарегистрироваться
-                    </button>
+                <div class="mb-3">
+                    <label for="street" class="form-label">Улица и дом</label>
+                    <input type="text" id="street" name="street" class="form-control"
+                           maxlength="100" value="{{ form_data.street if form_data }}">
                 </div>
+            </div>
 
-                <div class="text-center mt-3">
-                    <small class="text-muted">Уже есть аккаунт? <a href="/login">Войти</a></small>
+            <!-- Дополнительная информация -->
+            <div class="form-section">
+                <h4 class="section-title">О себе</h4>
+
+                <div class="mb-3">
+                    <label for="bio" class="form-label">Краткая биография</label>
+                    <textarea id="bio" name="bio" class="form-control" rows="3"
+                              placeholder="Расскажите немного о себе">{% if form_data %}{{ form_data.bio }}{% endif %}</textarea>
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-register btn-lg">
+                    Зарегистрироваться
+                </button>
+            </div>
+
+            <div class="text-center mt-3">
+                <small class="text-muted">Уже есть аккаунт? <a href="/login">Войти</a></small>
+            </div>
+        </form>
     </div>
+</div>
 </div>
 {% endblock %}
