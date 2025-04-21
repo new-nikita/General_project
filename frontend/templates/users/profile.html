@@ -10,7 +10,7 @@
 <div class="main-content">
     <div class="container py-4">
         <div class="row justify-content-center">
-            <div class="col-12 col-lg-16"> <!-- Карточка теперь шире -->
+            <div class="col-12 col-lg-16">
                 <div class="profile-container">
                     <!-- Аватар и основная информация -->
                     <div class="text-center mb-4">
@@ -109,12 +109,30 @@
                         {% endif %}
                     </div>
 
-                    <!-- Кнопка редактирования -->
                     {% if is_own_profile %}
-                    <div class="text-center mt-4">
-                        <a href="" class="btn btn-edit">
-                            <i class="fas fa-edit me-2"></i>Редактировать профиль
-                        </a>
+                    <div class="add-post-block mb-4">
+                        <form action="/posts/create" method="post" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="post-content" class="form-label">Создать пост</label>
+                                <textarea class="form-control" id="post-content" name="content" rows="3"
+                                          placeholder="Что у вас нового?" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="post-image" class="form-label">Изображение (необязательно)</label>
+                                <input class="form-control" type="file" id="post-image" name="image" accept="image/*">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Опубликовать
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="post-list" id="post-list">
+                        {% if posts %}
+                        {% include "posts/_post_list.html" %}
+                        {% else %}
+                        <p class="text-center">Постов пока нет</p>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>

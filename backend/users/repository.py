@@ -5,9 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.base_repository import BaseRepository
-from core.models import User, Profile
+from core.models import User, Profile, Post
 from users.schemas.users_schemas import UserCreate
 from .password_helper import PasswordHelper
+
+# from .views import PostSchema
 
 
 class UserRepository(BaseRepository[User]):
@@ -88,3 +90,27 @@ class UserRepository(BaseRepository[User]):
 
         user.profile.avatar = avatar_url
         await self.session.commit()
+
+    # async def get_posts_by_user_id(self, user_id: int) -> Sequence[Post | None]:
+    #     """
+    #     Получает все посты пользователя по его ID.
+    #
+    #     :param user_id: ID пользователя.
+    #     :return: Последовательность объектов постов или None, если посты не найдены.
+    #     """
+    #
+    #     result = await self.session.execute(
+    #         select(Post).where(Post.author_id == user_id)
+    #     )
+    #     return result.scalars().all()
+    #
+    # async def create_post(self, post: PostSchema) -> None:
+    #     """
+    #     Создает новый пост для пользователя.
+    #
+    #     :param post: DTO с данными для создания поста.
+    #     :return: None
+    #     """
+    #     post = Post(**post.model_dump())
+    #     self.session.add(post)
+    #     await self.session.commit()

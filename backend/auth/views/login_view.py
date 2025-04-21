@@ -94,9 +94,6 @@ async def login(
         access_token = TokenService.create_access_token({"sub": user.username})
         refresh_token = TokenService.create_refresh_token({"sub": user.username})
 
-        TokenCookieService.set_access_token_to_cookie(access_token, response)
-        TokenCookieService.set_refresh_token_to_cookie(refresh_token, response)
-
         # Логирование успешной аутентификации
         logger.info(f"User {user.username} successfully authenticated")
 
@@ -105,8 +102,8 @@ async def login(
             url=f"/profile/{user.id}",
             status_code=303,
         )
-        redirect.set_cookie("access-token", access_token, path=f"/profile/{user.id}")
-        redirect.set_cookie("refresh-token", refresh_token, path=f"/profile/{user.id}")
+        redirect.set_cookie("access-token", access_token, path="/")
+        redirect.set_cookie("refresh-token", refresh_token, path="/")
         return redirect
 
     except Exception as e:
