@@ -78,10 +78,7 @@ async def get_register_form(
 @router.get("/register", response_class=HTMLResponse)
 async def get_register_page(
     request: Request,
-    current_user: Annotated[
-        Optional[User], Depends(get_current_user_from_cookie)
-    ] = None,
-) -> Response:
+    current_user: Annotated[Optional[User], Depends(get_current_user_from_cookie)] = None,) -> Response:
     """
     Отображает страницу регистрации.
 

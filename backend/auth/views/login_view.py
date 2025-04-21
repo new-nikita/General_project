@@ -16,6 +16,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import EmailStr
 
+from auth.redis_client import RedisClient
 from auth.tokens_service import TokenService
 from auth.token_cookie_service import TokenCookieService
 from core.config import settings
@@ -94,8 +95,12 @@ async def login(
         access_token = TokenService.create_access_token({"sub": user.username})
         refresh_token = TokenService.create_refresh_token({"sub": user.username})
 
+        # Добавления токенов в куки
         TokenCookieService.set_access_token_to_cookie(access_token, response)
         TokenCookieService.set_refresh_token_to_cookie(refresh_token, response)
+
+        # Создание пользователя в redis
+        RedisClient.set_redis_client(user.id, access_token)
 
         # Логирование успешной аутентификации
         logger.info(f"User {user.username} successfully authenticated")
