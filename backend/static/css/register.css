@@ -1,0 +1,65 @@
+.registration-container {
+    max-width: 800px;
+    margin: 2rem auto;
+}
+
+.registration-card {
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.registration-header {
+    background-color: #4a76a8;
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.section-title {
+    color: #4a76a8;
+    font-weight: 600;
+    margin: 1.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4a76a8;
+    box-shadow: 0 0 0 0.25rem rgba(74, 118, 168, 0.2);
+}
+
+.btn-register {
+    background-color: #4a76a8;
+    border: none;
+    padding: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-register:hover {
+    background-color: #3a5f8a;
+    transform: translateY(-2px);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 10px;
+}
