@@ -3,141 +3,180 @@
 {% block title %}{{ user.username }} - Профиль{% endblock %}
 
 {% block extra_css %}
-
+    <link rel="stylesheet" href="/static/css/profile.css">
 {% endblock %}
-<link href="/static/css/style.css">
+
 {% block content %}
-<div class="main-content">
-    <div class="container py-4">
-        <div class="row justify-content-center">
-            <div class="col-12 col-lg-16">
-                <div class="profile-container">
-                    <!-- Аватар и основная информация -->
-                    <div class="text-center mb-4">
-                        <img src="{{ user.profile.avatar }}"
-                             alt="Аватар" class="user-avatar">
-                        <h1 class="mt-3 mb-1">{{ user.username }}</h1>
-                        {% if user.profile.first_name or user.profile.last_name %}
-                        <h3 class="text-muted">{{ user.profile.first_name or '' }} {{ user.profile.last_name or ''
-                            }}</h3>
-                        {% endif %}
-                        {% if user.email %}
-                        <p class="text-muted mb-0">
-                            <i class="fas fa-envelope me-1"></i> {{ user.email }}
-                        </p>
-                        {% endif %}
+    <div class="profile-container">
+        <!-- Аватар и основная информация -->
+        <div class="text-center mb-4">
+            <img src="{{ user.profile.avatar }}" alt="Аватар" class="user-avatar">
+            {% if user.profile.first_name or user.profile.last_name %}
+                <h3 class="text-muted">{{ user.profile.first_name or '' }} {{ user.profile.last_name or '' }}</h3>
+            {% endif %}
+            {% if user.email %}
+                <p class="text-muted mb-0">
+                    <i class="fas fa-envelope me-1"></i> {{ user.email }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Личная информация -->
+        <div class="user-info">
+            <div class="info-section">
+                <h4><i class="fas fa-info-circle"></i> Основная информация</h4>
+                {% if user.profile.birth_date %}
+                    <div class="info-item">
+                        <i class="fas fa-calendar-alt info-icon"></i>
+                        <span class="info-label">Дата рождения:</span>
+                        <span class="info-value">{{ user.profile.birth_date.strftime('%d.%m.%Y') }}</span>
                     </div>
+                {% endif %}
+                {% if user.profile.gender %}
+                    <div class="info-item">
+                        <i class="fas fa-venus-mars info-icon"></i>
+                        <span class="info-label">Пол:</span>
+                        <span class="info-value">{{ user.profile.gender }}</span>
+                    </div>
+                {% endif %}
+                {% if user.created_at %}
+                    <div class="info-item">
+                        <i class="fas fa-clock info-icon"></i>
+                        <span class="info-label">Дата регистрации:</span>
+                        <span class="info-value">{{ user.created_at.strftime('%d.%m.%Y') }}</span>
+                    </div>
+                {% endif %}
+            </div>
 
-                    <!-- Личная информация -->
-                    <div class="user-info">
-                        <div class="info-section">
-                            <h4><i class="fas fa-info-circle"></i> Основная информация</h4>
-
-                            {% if user.profile.birth_date %}
-                            <div class="info-item">
-                                <i class="fas fa-calendar-alt info-icon"></i>
-                                <span class="info-label">Дата рождения:</span>
-                                <span class="info-value">{{ user.profile.birth_date.strftime('%d.%m.%Y') }}</span>
-                            </div>
-                            {% endif %}
-
-                            {% if user.profile.gender %}
-                            <div class="info-item">
-                                <i class="fas fa-venus-mars info-icon"></i>
-                                <span class="info-label">Пол:</span>
-                                <span class="info-value">{{ user.profile.gender }}</span>
-                            </div>
-                            {% endif %}
-
-                            {% if user.created_at %}
-                            <div class="info-item">
-                                <i class="fas fa-clock info-icon"></i>
-                                <span class="info-label">Дата регистрации:</span>
-                                <span class="info-value">{{ user.created_at.strftime('%d.%m.%Y') }}</span>
-                            </div>
-                            {% endif %}
+            <!-- Контактная информация -->
+            {% if user.profile.phone_number or user.profile.country or user.profile.city %}
+                <div class="info-section">
+                    <h4><i class="fas fa-address-book"></i> Контакты</h4>
+                    {% if user.profile.phone_number %}
+                        <div class="info-item">
+                            <i class="fas fa-phone info-icon"></i>
+                            <span class="info-label">Телефон:</span>
+                            <span class="info-value">{{ user.profile.phone_number }}</span>
                         </div>
-
-                        <!-- Контактная информация -->
-                        {% if user.profile.phone_number or user.profile.country or user.profile.city %}
-                        <div class="info-section">
-                            <h4><i class="fas fa-address-book"></i> Контакты</h4>
-
-                            {% if user.profile.phone_number %}
-                            <div class="info-item">
-                                <i class="fas fa-phone info-icon"></i>
-                                <span class="info-label">Телефон:</span>
-                                <span class="info-value">{{ user.profile.phone_number }}</span>
-                            </div>
-                            {% endif %}
-
-                            {% if user.profile.country %}
-                            <div class="info-item">
-                                <i class="fas fa-globe info-icon"></i>
-                                <span class="info-label">Страна:</span>
-                                <span class="info-value">{{ user.profile.country }}</span>
-                            </div>
-                            {% endif %}
-
-                            {% if user.profile.city %}
-                            <div class="info-item">
-                                <i class="fas fa-city info-icon"></i>
-                                <span class="info-label">Город:</span>
-                                <span class="info-value">{{ user.profile.city }}</span>
-                            </div>
-                            {% endif %}
-
-                            {% if user.profile.street %}
-                            <div class="info-item">
-                                <i class="fas fa-map-marker-alt info-icon"></i>
-                                <span class="info-label">Адрес:</span>
-                                <span class="info-value">{{ user.profile.street }}</span>
-                            </div>
-                            {% endif %}
+                    {% endif %}
+                    {% if user.profile.country %}
+                        <div class="info-item">
+                            <i class="fas fa-globe info-icon"></i>
+                            <span class="info-label">Страна:</span>
+                            <span class="info-value">{{ user.profile.country }}</span>
                         </div>
-                        {% endif %}
-
-                        <!-- О себе -->
-                        {% if user.profile.bio %}
-                        <div class="info-section">
-                            <h4><i class="fas fa-quote-left"></i> О себе</h4>
-                            <div class="info-item">
-                                <i class="fas fa-align-left info-icon"></i>
-                                <div class="info-value" style="white-space: pre-line;">{{ user.profile.bio }}</div>
-                            </div>
+                    {% endif %}
+                    {% if user.profile.city %}
+                        <div class="info-item">
+                            <i class="fas fa-city info-icon"></i>
+                            <span class="info-label">Город:</span>
+                            <span class="info-value">{{ user.profile.city }}</span>
                         </div>
-                        {% endif %}
-                    </div>
-
-                    {% if is_own_profile %}
-                    <div class="add-post-block mb-4">
-                        <form action="/posts/create" method="post" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <label for="post-content" class="form-label">Создать пост</label>
-                                <textarea class="form-control" id="post-content" name="content" rows="3"
-                                          placeholder="Что у вас нового?" required></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label for="post-image" class="form-label">Изображение (необязательно)</label>
-                                <input class="form-control" type="file" id="post-image" name="image" accept="image/*">
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane me-2"></i>Опубликовать
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="post-list" id="post-list">
-                        {% if posts %}
-                        {% include "posts/_post_list.html" %}
-                        {% else %}
-                        <p class="text-center">Постов пока нет</p>
-                        {% endif %}
-                    </div>
+                    {% endif %}
+                    {% if user.profile.street %}
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt info-icon"></i>
+                            <span class="info-label">Адрес:</span>
+                            <span class="info-value">{{ user.profile.street }}</span>
+                        </div>
                     {% endif %}
                 </div>
-            </div>
+            {% endif %}
+
+            <!-- О себе -->
+            {% if user.profile.bio %}
+                <div class="info-section">
+                    <h4><i class="fas fa-quote-left"></i> О себе</h4>
+                    <div class="info-item">
+                        <i class="fas fa-align-left info-icon"></i>
+                        <div class="info-value" style="white-space: pre-line;">{{ user.profile.bio }}</div>
+                    </div>
+                </div>
+            {% endif %}
         </div>
+
+        <!-- Блок для создания поста -->
+        {% if is_own_profile %}
+            <button id="toggle-post-form" class="btn-toggle-post-form d-flex align-items-center justify-content-center">
+                <i class="fas fa-plus me-2"></i>Создать новый пост
+            </button>
+
+            <div id="post-form-container" class="add-post-block mt-3">
+                <form id="post-form" action="/posts/create" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="post-content" class="form-label">Создать пост</label>
+                        <textarea class="form-control" id="post-content" name="content" rows="3"
+                                  placeholder="Что у вас нового?"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="post-image" class="form-label">Изображение (необязательно)</label>
+                        <input class="form-control" type="file" id="post-image" name="image" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-publish">
+                        <i class="fas fa-paper-plane me-2"></i>Опубликовать
+                    </button>
+                </form>
+            </div>
+
+            <!-- Список постов -->
+            <div class="post-list" id="post-list">
+                {% if posts %}
+                    {% for post in posts %}
+                        <div class="post-item">
+                            <div class="post-header">
+                                <img src="{{ post.author.profile.avatar }}"
+                                     alt="Автор" class="post-author-avatar">
+                                <div>
+                                    <span class="post-author">{{ post.author.profile.full_name or post.author.username }}</span>
+                                </div>
+                            </div>
+
+                            {% if post.image %}
+                                <div class="post-image-container">
+                                    <img src="{{ post.image }}" alt="Пост" class="post-image">
+                                </div>
+                            {% endif %}
+
+                            {% if post.content %}
+                                <div class="post-content">{{ post.content }}</div>
+                            {% endif %}
+
+
+
+                            <div class="post-actions">
+                                <div class="post-action">
+                                    <i class="far fa-heart"></i>
+                                    <span>Нравится</span>
+                                </div>
+                                <div class="post-action">
+                                    <i class="far fa-comment"></i>
+                                    <span>Комментировать</span>
+                                </div>
+                                {% if is_own_profile or current_user.is_admin %}
+                                    <div class="post-action">
+                                        <i class="far fa-trash-alt"></i>
+                                        <span>Удалить</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="post-date">
+                                {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-posts">
+                        <i class="far fa-newspaper fa-2x mb-3"></i>
+                        <p>Постов пока нет</p>
+                        {% if is_own_profile %}
+                            <p>Создайте первый пост, чтобы поделиться новостями</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
     </div>
-</div>
+
+    <script src=/static/js/posts.js type=text/javascript></script>
 {% endblock %}
