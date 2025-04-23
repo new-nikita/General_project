@@ -3,223 +3,161 @@
 {% block title %}Регистрация{% endblock %}
 
 {% block extra_css %}
-<style>
-    .registration-container {
-        max-width: 800px;
-        margin: 2rem auto;
-    }
-
-    .registration-card {
-        border-radius: 12px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-    }
-
-    .registration-header {
-        background-color: #4a76a8;
-        color: white;
-        padding: 1.5rem;
-        text-align: center;
-    }
-
-    .section-title {
-        color: #4a76a8;
-        font-weight: 600;
-        margin: 1.5rem 0 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #f0f0f0;
-    }
-
-    .form-label {
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-        color: #555;
-    }
-
-    .form-control, .form-select {
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        border: 1px solid #ddd;
-        transition: all 0.3s ease;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: #4a76a8;
-        box-shadow: 0 0 0 0.25rem rgba(74, 118, 168, 0.2);
-    }
-
-    .btn-register {
-        background-color: #4a76a8;
-        border: none;
-        padding: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-
-    .btn-register:hover {
-        background-color: #3a5f8a;
-        transform: translateY(-2px);
-    }
-
-    .form-section {
-        margin-bottom: 2rem;
-        background: #f9fafb;
-        padding: 1.5rem;
-        border-radius: 10px;
-    }
-</style>
+    <link rel="stylesheet" href="/static/css/register.css">
 {% endblock %}
 
 {% block content %}
-<div class="registration-container">
-    <div class="registration-card">
-        <div class="registration-header">
-            <h2 class="mb-0">Создайте новый аккаунт</h2>
+    <div class="registration-container">
+        <div class="registration-card">
+            <div class="registration-header">
+                <h2 class="mb-0">Создайте новый аккаунт</h2>
+            </div>
+            {% if errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {% for field, message in errors.items() %}
+                        <strong> {{ message }}</strong><br>
+                    {% endfor %}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+            <form method="post" action="/register">
+                <!-- Основная информация -->
+                <div class="form-section">
+                    <h4 class="section-title">Основная информация</h4>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Имя пользователя*</label>
+                            <input type="text" id="username" name="username" class="form-control"
+                                   required minlength="3" maxlength="20" pattern="^[a-zA-Z0-9_]+$"
+                                   value="{{ form_data.username if form_data }}">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email*</label>
+                            <input type="email" id="email" name="email" class="form-control"
+                                   required value="{{ form_data.email if form_data }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Пароль*</label>
+                            <input type="password" id="password" name="password" class="form-control"
+                                   required minlength="8">
+                            <small class="form-text text-muted">Пароль должен содержать не менее 8 символов.</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="password2" class="form-label">Подтверждение пароля*</label>
+                            <input type="password" id="password2" name="password2" class="form-control"
+                                   required minlength="8">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Личная информация -->
+                <div class="form-section">
+                    <h4 class="section-title">Личная информация</h4>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="first_name" class="form-label">Имя</label>
+                            <input type="text" id="first_name" name="first_name" class="form-control"
+                                   minlength="2" maxlength="50" value="{{ form_data.first_name if form_data }}">
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="last_name" class="form-label">Фамилия</label>
+                            <input type="text" id="last_name" name="last_name" class="form-control"
+                                   minlength="2" maxlength="50" value="{{ form_data.last_name if form_data }}">
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="middle_name" class="form-label">Отчество</label>
+                            <input type="text" id="middle_name" name="middle_name" class="form-control"
+                                   minlength="2" maxlength="50" value="{{ form_data.middle_name if form_data }}">
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="birth_date" class="form-label">Дата рождения</label>
+                            <input type="date" id="birth_date" name="birth_date" class="form-control"
+                                   value="{{ form_data.birth_date if form_data else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="gender" class="form-label">Пол</label>
+                            <select id="gender" name="gender" class="form-select">
+                                <option value="">Не указано</option>
+                                <option value="мужской" {% if form_data and form_data.gender==
+                            'male' %}selected{% endif %}>Мужской
+                                </option>
+                                <option value="женский" {% if form_data and form_data.gender==
+                            'female' %}selected{% endif %}>Женский
+                                </option>
+                                <option value="другое" {% if form_data and form_data.gender==
+                            'other' %}selected{% endif %}>Другое
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="phone_number" class="form-label">Телефон</label>
+                            <input type="tel" id="phone_number" name="phone_number" class="form-control"
+                                   maxlength="20" value="{{ form_data.phone_number if form_data }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Адресная информация -->
+                <div class="form-section">
+                    <h4 class="section-title">Адрес</h4>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="country" class="form-label">Страна</label>
+                            <input type="text" id="country" name="country" class="form-control"
+                                   maxlength="50" value="{{ form_data.country if form_data }}">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="city" class="form-label">Город</label>
+                            <input type="text" id="city" name="city" class="form-control"
+                                   maxlength="50" value="{{ form_data.city if form_data }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="street" class="form-label">Улица и дом</label>
+                        <input type="text" id="street" name="street" class="form-control"
+                               maxlength="100" value="{{ form_data.street if form_data }}">
+                    </div>
+                </div>
+
+                <!-- Дополнительная информация -->
+                <div class="form-section">
+                    <h4 class="section-title">О себе</h4>
+
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Краткая биография</label>
+                        <textarea id="bio" name="bio" class="form-control" rows="3"
+                                  placeholder="Расскажите немного о себе">{% if form_data %}
+                            {{ form_data.bio }}{% endif %}</textarea>
+                    </div>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-register btn-lg">
+                        Зарегистрироваться
+                    </button>
+                </div>
+
+                <div class="text-center mt-3">
+                    <small class="text-muted">Уже есть аккаунт? <a href="/login">Войти</a></small>
+                </div>
+            </form>
         </div>
-        {% if errors %}
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {% for field, message in errors.items() %}
-            <strong> {{ message }}</strong><br>
-            {% endfor %}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endif %}
-        <form method="post" action="/register">
-            <!-- Основная информация -->
-            <div class="form-section">
-                <h4 class="section-title">Основная информация</h4>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="username" class="form-label">Имя пользователя*</label>
-                        <input type="text" id="username" name="username" class="form-control"
-                               required minlength="3" maxlength="20" pattern="^[a-zA-Z0-9_]+$"
-                               value="{{ form_data.username if form_data }}">
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="email" class="form-label">Email*</label>
-                        <input type="email" id="email" name="email" class="form-control"
-                               required value="{{ form_data.email if form_data }}">
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="password" class="form-label">Пароль*</label>
-                        <input type="password" id="password" name="password" class="form-control"
-                               required minlength="8">
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="password2" class="form-label">Подтверждение пароля*</label>
-                        <input type="password" id="password2" name="password2" class="form-control"
-                               required minlength="8">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Личная информация -->
-            <div class="form-section">
-                <h4 class="section-title">Личная информация</h4>
-
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="first_name" class="form-label">Имя</label>
-                        <input type="text" id="first_name" name="first_name" class="form-control"
-                               minlength="2" maxlength="50" value="{{ form_data.first_name if form_data }}">
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="last_name" class="form-label">Фамилия</label>
-                        <input type="text" id="last_name" name="last_name" class="form-control"
-                               minlength="2" maxlength="50" value="{{ form_data.last_name if form_data }}">
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="middle_name" class="form-label">Отчество</label>
-                        <input type="text" id="middle_name" name="middle_name" class="form-control"
-                               minlength="2" maxlength="50" value="{{ form_data.middle_name if form_data }}">
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="birth_date" class="form-label">Дата рождения</label>
-                        <input type="date" id="birth_date" name="birth_date" class="form-control"
-                               value="{{ form_data.birth_date if form_data else '' }}">
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="gender" class="form-label">Пол</label>
-                        <select id="gender" name="gender" class="form-select">
-                            <option value="">Не указано</option>
-                            <option value="мужчина" {% if form_data and form_data.gender==
-                            'male' %}selected{% endif %}>Мужской</option>
-                            <option value="женщина" {% if form_data and form_data.gender==
-                            'female' %}selected{% endif %}>Женский</option>
-                            <option value="другое" {% if form_data and form_data.gender==
-                            'other' %}selected{% endif %}>Другое</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="phone_number" class="form-label">Телефон</label>
-                        <input type="tel" id="phone_number" name="phone_number" class="form-control"
-                               maxlength="20" value="{{ form_data.phone_number if form_data }}">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Адресная информация -->
-            <div class="form-section">
-                <h4 class="section-title">Адрес</h4>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="country" class="form-label">Страна</label>
-                        <input type="text" id="country" name="country" class="form-control"
-                               maxlength="50" value="{{ form_data.country if form_data }}">
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="city" class="form-label">Город</label>
-                        <input type="text" id="city" name="city" class="form-control"
-                               maxlength="50" value="{{ form_data.city if form_data }}">
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="street" class="form-label">Улица и дом</label>
-                    <input type="text" id="street" name="street" class="form-control"
-                           maxlength="100" value="{{ form_data.street if form_data }}">
-                </div>
-            </div>
-
-            <!-- Дополнительная информация -->
-            <div class="form-section">
-                <h4 class="section-title">О себе</h4>
-
-                <div class="mb-3">
-                    <label for="bio" class="form-label">Краткая биография</label>
-                    <textarea id="bio" name="bio" class="form-control" rows="3"
-                              placeholder="Расскажите немного о себе">{% if form_data %}{{ form_data.bio }}{% endif %}</textarea>
-                </div>
-            </div>
-
-            <div class="d-grid mt-4">
-                <button type="submit" class="btn btn-register btn-lg">
-                    Зарегистрироваться
-                </button>
-            </div>
-
-            <div class="text-center mt-3">
-                <small class="text-muted">Уже есть аккаунт? <a href="/login">Войти</a></small>
-            </div>
-        </form>
     </div>
-</div>
-</div>
 {% endblock %}
