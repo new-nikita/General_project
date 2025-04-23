@@ -57,6 +57,12 @@ class DatabaseConfig(BaseModel):
     max_overflow: int = 10
 
 
+class RedisConfig(BaseModel):
+    host: str = 'localhost'
+    port: int = 6379
+    db: int = 0
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(
@@ -68,6 +74,7 @@ class Settings(BaseSettings):
     db: DatabaseConfig = DatabaseConfig()
     jwt: JwtConfig = JwtConfig()
     template_dir: Path = TEMPLATES_DIR
+    redis: RedisConfig = RedisConfig()
 
 
 CONVENTION = {

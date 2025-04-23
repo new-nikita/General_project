@@ -18,7 +18,7 @@ class TokenService:
 
         :param data: Данные для кодирования в токене.
         :param expires_delta: Время жизни токена.
-        :return: Новый Access Token.
+        :return: Новый Access Token
         """
 
         expires_delta = expires_delta or timedelta(

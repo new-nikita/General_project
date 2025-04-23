@@ -53,9 +53,8 @@ async def authenticate_user(service: UserService, username: str, password: str) 
             logger.warning(f"Login attempt for non-existent user: {username}")
             handle_auth_error(message="Incorrect username or password")
         try:
-            PasswordHelper.verify_password(
-                password, user.hashed_password
-            )  # проверяет соответствие пароля
+            PasswordHelper.verify_password(password, user.hashed_password)  # проверяет соответствие пароля
+
         except PasswordVerificationError as e:
             logger.warning(f"Invalid password attempt for user: {username}")
             handle_auth_error(message=str(e), status_code=status.HTTP_401_UNAUTHORIZED)
