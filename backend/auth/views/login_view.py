@@ -94,13 +94,10 @@ async def login(
         # Создание JWT-токенов
         access_token = TokenService.create_access_token({"sub": user.username})
         refresh_token = TokenService.create_refresh_token({"sub": user.username})
-
-        # Добавления токенов в куки
-        TokenCookieService.set_access_token_to_cookie(access_token, response)
-        TokenCookieService.set_refresh_token_to_cookie(refresh_token, response)
-
-        # Создание пользователя в redis
-        RedisClient.set_redis_client(user.id, access_token)
+        
+#         # Добавления токенов в куки
+#         TokenCookieService.set_access_token_to_cookie(access_token, response)
+#         TokenCookieService.set_refresh_token_to_cookie(refresh_token, response)
 
         # Логирование успешной аутентификации
         logger.info(f"User {user.username} successfully authenticated")
@@ -110,8 +107,8 @@ async def login(
             url=f"/profile/{user.id}",
             status_code=303,
         )
-        redirect.set_cookie("access-token", access_token, path=f"/profile/{user.id}")
-        redirect.set_cookie("refresh-token", refresh_token, path=f"/profile/{user.id}")
+        redirect.set_cookie("access-token", access_token, path="/")
+        redirect.set_cookie("refresh-token", refresh_token, path="/")
         return redirect
 
     except Exception as e:

@@ -7,6 +7,7 @@ from create_app import create_app
 
 from auth.views import router as auth_router
 from users.views import router as profile_router
+from posts.views import router as posts_router
 from core.middleware import TokenRefreshMiddleware
 
 logging.basicConfig(
@@ -18,6 +19,7 @@ main_app = create_app()
 
 main_app.include_router(profile_router)
 main_app.include_router(auth_router)
+main_app.include_router(posts_router)
 
 main_app.add_middleware(TokenRefreshMiddleware)
 

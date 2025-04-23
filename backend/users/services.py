@@ -1,8 +1,10 @@
+from typing import Sequence
+
 from fastapi import HTTPException
 
 from users.repository import UserRepository
 from users.schemas.users_schemas import UserCreate
-from core.models import User
+from core.models import User, Post
 
 
 class UserService:
@@ -50,3 +52,9 @@ class UserService:
         """
 
         return await self.repository.get_user_by_username(username)
+
+    # async def get_posts_by_user_id(self, user_id: int) -> Sequence[Post] | None:
+    #     return await self.repository.get_posts_by_user_id(user_id)
+    #
+    # async def create_post(self, dto_post: PostSchema) -> None:
+    #     await self.repository.create_post(dto_post)

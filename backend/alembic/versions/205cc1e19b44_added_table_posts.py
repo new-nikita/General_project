@@ -1,8 +1,8 @@
-"""Added Post, Tag models
+"""added table Posts
 
-Revision ID: 783972503e8b
+Revision ID: 205cc1e19b44
 Revises: f5990ced5cd5
-Create Date: 2025-04-07 18:21:03.259685
+Create Date: 2025-04-21 19:29:26.095833
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '783972503e8b'
+revision: str = '205cc1e19b44'
 down_revision: Union[str, None] = 'f5990ced5cd5'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -34,6 +34,8 @@ def upgrade() -> None:
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('is_published', sa.Boolean(), nullable=False),
     sa.Column('author_id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['author_id'], ['users.id'], name=op.f('fk_posts_author_id_users')),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_posts'))
     )

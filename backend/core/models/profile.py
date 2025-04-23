@@ -26,13 +26,11 @@ class Profile(UserRelationMixin, Base):
     street: Mapped[str | None] = mapped_column(String(100))
 
     bio: Mapped[str | None] = mapped_column(Text())
-    avatar: Mapped[str] = mapped_column(Text(), server_default="фото")
+    avatar: Mapped[str] = mapped_column(
+        Text(), server_default="/static/profiles_avatar/дефолтный_аватар.jpg"
+    )
 
     @property
     def full_name(self) -> str:
         """Возвращает полное имя пользователя."""
-        parts = [self.first_name]
-        if self.middle_name:
-            parts.append(self.middle_name)
-        parts.append(self.last_name)
-        return " ".join(parts)
+        return f"{self.first_name} {self.last_name}"

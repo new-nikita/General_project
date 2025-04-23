@@ -1,24 +1,22 @@
-from typing import List, Optional
-from pydantic import BaseModel, Field, ConfigDict, constr
-
-
-class TagBase(BaseModel):
-    """
-    Определяет минимальную схему для тегов.
-    """
-    id: Optional[int] = Field(None, description="ID тега")
-    name: constr(min_length=1, max_length=50) = Field(..., description="Название тега")
-
-    model_config = ConfigDict(from_attributes=True)
+from typing import Optional
+from pydantic import (
+    BaseModel,
+    Field,
+    ConfigDict,
+    constr,
+    field_validator,
+    ValidationError,
+)
 
 
 class PostBase(BaseModel):
     """
     Базовая схема для поста
     """
-    title: constr(min_length=1, max_length=100) = Field(..., description="Заголовок поста")
-    content: constr(min_length=1) = Field(..., description="Содержимое поста")
-    is_published: bool = Field(default=False, description="Опубликован ли пост")
+
+    content: constr(min_length=0) = Field(..., description="Содержимое поста")
+    is_published: bool = Field(default=True, description="Опубликован ли пост")
+    image: Optional[str] = Field(default=None, description="Изображение поста")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -27,17 +25,25 @@ class PostCreate(PostBase):
     """
     Схема для создания поста
     """
+
     author_id: int = Field(..., description="ID автора поста")
-    # При создании поста можно передавать список названий тегов,
-    # которые потом будут сопоставлены с моделью Tag
-    tags: List[str] = Field(default=[], description="Список названий тегов")
+
+    @field_validator("image")
+    def validate_image(cls, image: str) -> Optional[str]:
+        if not image:
+            return
+
+        if not image.endswith((".jpg", ".png", ".jpeg")):
+            raise ValidationError("Некорректное расширение файла изображения")
+        if image.startswith("http://") or image.startswith("https://"):
+            raise ValidationError("Изображение не должно быть ссылкой из интернета")
+        return image
 
 
 class PostRead(PostBase):
     """
     Схема для отображения информации о посте
     """
+
     id: int = Field(..., description="ID поста")
     author_id: int = Field(..., description="ID автора поста")
-    # При чтении поста возвращаем список тегов в виде объектов TagBase
-    tags: List[TagBase] = Field(default=[], description="Список тегов, связанных с постом")

@@ -5,9 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.base_repository import BaseRepository
-from core.models import User, Profile
+from core.models import User, Profile, Post
 from users.schemas.users_schemas import UserCreate
 from .password_helper import PasswordHelper
+
+# from .views import PostSchema
 
 
 class UserRepository(BaseRepository[User]):

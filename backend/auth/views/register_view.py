@@ -48,7 +48,7 @@ async def get_register_form(
     first_name: Optional[str] = Form(None),
     last_name: Optional[str] = Form(None),
     middle_name: Optional[str] = Form(None),
-    birth_date: Optional[date] | str = Form(None),
+    birth_date: date | str = Form(None),
     gender: Optional[str] = Form(None),
     phone_number: Optional[str] = Form(None),
     country: Optional[str] = Form(None),
