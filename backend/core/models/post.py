@@ -22,14 +22,17 @@ class Post(TimestampsMixin, Base):
     __tablename__ = "posts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    title: Mapped[str] = mapped_column(String(100), nullable=False)
+    # title: Mapped[str] = mapped_column(String(100), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     author_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=False
     )
 
-    author: Mapped["User"] = relationship("User", back_populates="posts")
+    author: Mapped["User"] = relationship(
+        "User", back_populates="posts", lazy="selectin"
+    )
     tags: Mapped[list["Tag"]] = relationship(
         "Tag", secondary=post_tags, back_populates="posts"
     )
+    image: Mapped[str | None] = mapped_column(Text, server_default=None)
