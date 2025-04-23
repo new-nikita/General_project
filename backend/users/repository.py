@@ -90,27 +90,3 @@ class UserRepository(BaseRepository[User]):
 
         user.profile.avatar = avatar_url
         await self.session.commit()
-
-    # async def get_posts_by_user_id(self, user_id: int) -> Sequence[Post | None]:
-    #     """
-    #     Получает все посты пользователя по его ID.
-    #
-    #     :param user_id: ID пользователя.
-    #     :return: Последовательность объектов постов или None, если посты не найдены.
-    #     """
-    #
-    #     result = await self.session.execute(
-    #         select(Post).where(Post.author_id == user_id)
-    #     )
-    #     return result.scalars().all()
-    #
-    # async def create_post(self, post: PostSchema) -> None:
-    #     """
-    #     Создает новый пост для пользователя.
-    #
-    #     :param post: DTO с данными для создания поста.
-    #     :return: None
-    #     """
-    #     post = Post(**post.model_dump())
-    #     self.session.add(post)
-    #     await self.session.commit()
