@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from typing import Optional, Any
+from typing import Optional, Any, Sequence
 
 from core.base_repository import BaseRepository
 from core.models import Post, Tag
@@ -27,19 +27,18 @@ class PostRepository(BaseRepository[Post]):
         :return: объект поста
         """
         new_post = Post(
-            title=dto_post.title,
             content=dto_post.content,
-            is_published=dto_post.is_published,
-            author_id=dto_post.author_id
+            author_id=dto_post.author_id,
+            image=dto_post.image,
         )
-        if dto_post.tags:
-            tag_objects = list()
-            for tag_name in dto_post.tags:
-                # TODO сделать отдельный репозиторий для Tag
-                tag = Tag(name=tag_name)
-                tag_objects.append(tag)
-
-            new_post.tags = tag_objects
+        # if dto_post.tags:
+        #     tag_objects = list()
+        #     for tag_name in dto_post.tags:
+        #         # TODO сделать отдельный репозиторий для Tag
+        #         tag = Tag(name=tag_name)
+        #         tag_objects.append(tag)
+        #
+        #     new_post.tags = tag_objects
 
         self.session.add(new_post)
         await self.session.commit()
@@ -58,8 +57,20 @@ class PostRepository(BaseRepository[Post]):
         )
         return result.scalar_one_or_none()
 
-    async def update(self, id_: int, data: dict[str, Any]) -> str | None:
-        ...
+    async def update(self, id_: int, data: dict[str, Any]) -> str | None: ...
 
-    async def delete(self, id_: int) -> str | None:
-        ...
+    async def delete(self, id_: int) -> str | None: ...
+
+    async def get_all_posts_by_author_id(self, author_id: int) -> Sequence[Post]:
+        """
+        Возвращает все посты пользователя по его ID.
+
+        :param author_id: ID пользователя.
+        :return: Последовательность постов или пустой список, если пост не найден.
+        """
+        result = await self.session.execute(
+            select(self.model)
+            .where(self.model.author_id == author_id)
+            .order_by(self.model.created_at.desc())  # сортировка по дате создания
+        )
+        return result.scalars().all()
