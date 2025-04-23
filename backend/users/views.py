@@ -1,11 +1,11 @@
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Request, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-
+from posts.dependencies import get_post_service
+from posts.services import PostService
 from users.dependencies import get_user_service
 from users.services import UserService
 from auth.authorization import (
@@ -13,11 +13,6 @@ from auth.authorization import (
 )
 from core.config import settings
 from core.models import User
-
-
-# class PostSchema(BaseModel):
-#     content: str
-#     image: Image
 
 
 router = APIRouter(
@@ -33,7 +28,9 @@ async def get_user_profile(
     request: Request,
     profile_id: int,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-    service: Annotated[UserService, Depends(get_user_service)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    post_service: Annotated[PostService, Depends(get_post_service)],
+    is_own_profile: bool = False,
 ) -> HTMLResponse:
     """
     Отображает страницу профиля пользователя.
@@ -41,11 +38,13 @@ async def get_user_profile(
     :param request: Запрос FastAPI.
     :param profile_id: ID профиля пользователя.
     :param current_user: Текущий авторизованный пользователь.
-    :param service: Сервис для работы с пользователями.
+    :param user_service: Сервис для работы с пользователями.
+    :param post_service: Сервис для работы с постами.
+    :param is_own_profile: Флаг, указывающий, является ли профиль собственным.
     :return: HTML-страница профиля пользователя.
     :raises HTTPException: 404 если пользователь с указанным ID не найден.
     """
-    profile_user = await service.repository.get_by_id(profile_id)
+    profile_user = await user_service.repository.get_by_id(profile_id)
     if not profile_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -53,12 +52,9 @@ async def get_user_profile(
         )
     if current_user is not None:
         # Определяем, является ли профиль собственным
-
         is_own_profile = current_user.id == profile_user.id
-    else:
-        is_own_profile = False
 
-    # posts = await service.repository.get_posts_by_user_id(user_id=profile_id)
+    posts = await post_service.repository.get_all_posts_by_author_id(profile_id)
     return templates.TemplateResponse(
         "profile.html",
         {
@@ -66,27 +62,6 @@ async def get_user_profile(
             "user": profile_user,
             "is_own_profile": is_own_profile,
             "current_user": current_user,
-            "posts": [],
+            "posts": posts,
         },
     )
-
-
-# @router.post("/{profile_id}", response_class=HTMLResponse)
-# async def get_user_profile(
-#     request: Request,
-#     profile_id: int,
-#     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-#     service: Annotated[UserService, Depends(get_user_service)],
-#     # posts: Annotated[Post, Depends(Post)],
-# ):
-#     """
-#     Обрабатывает POST-запрос на страницу профиля пользователя.
-#
-#     :param request: Запрос FastAPI.
-#     :param profile_id: ID профиля пользователя.
-#     :param current_user: Текущий авторизованный пользователь.
-#     :param service: Сервис для работы с пользователями.
-#     """
-#
-#     # service.repository.create_post(posts)
-#     return RedirectResponse(url=f"/profile/{profile_id}")
