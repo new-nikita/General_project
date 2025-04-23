@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from typing import Annotated
@@ -9,6 +10,9 @@ from core.models import User
 from posts.services import PostService
 from posts.dependencies import get_post_service
 from posts.schemas import PostCreate
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -124,3 +128,39 @@ async def create_new_post(
             "created_at": new_post.created_at.strftime("%Y-%m-%d %H:%M:%S"),
         },
     }
+
+
+@router.post("/posts/delete/{post_id}")
+async def delete_post(
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    post_service: Annotated[PostService, Depends(get_post_service)],
+    post_id: int,
+) -> dict[str, str]:
+    """
+    Удаляет пост по его ID.
+
+    :param current_user: Текущий авторизованный пользователь.
+    :param post_service: Сервис для работы с постами.
+    :param post_id: ID поста.
+
+    :return: Сообщение об успешном удалении.
+    :raises HTTPException: Если пост не найден или у пользователя недостаточно прав.
+    """
+    # Получаем пост из базы данных
+    post = await post_service.repository.get_post_by_id(post_id=post_id)
+    if not post:
+        logger.error(f"Пост с ID {post_id} не найден")
+        raise HTTPException(status_code=404, detail="Пост не найден")
+
+    # Проверяем права пользователя
+    if post.author_id != current_user.id and not current_user.is_superuser:
+        logger.error(
+            f"Пользователь с ID {current_user.id} не имеет прав на удаление поста с ID {post_id}"
+        )
+        raise HTTPException(
+            status_code=403, detail="У вас нет прав на удаление этого поста"
+        )
+
+    # Удаляем пост
+    await post_service.repository.delete(id_=post_id)
+    return {"message": "Пост успешно удален"}

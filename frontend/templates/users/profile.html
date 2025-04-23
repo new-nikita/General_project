@@ -141,8 +141,6 @@
                                 <div class="post-content">{{ post.content }}</div>
                             {% endif %}
 
-
-
                             <div class="post-actions">
                                 <div class="post-action">
                                     <i class="far fa-heart"></i>
@@ -152,10 +150,13 @@
                                     <i class="far fa-comment"></i>
                                     <span>Комментировать</span>
                                 </div>
-                                {% if is_own_profile or current_user.is_admin %}
+                                {% if is_own_profile or current_user.is_superuser %}
                                     <div class="post-action">
                                         <i class="far fa-trash-alt"></i>
-                                        <span>Удалить</span>
+                                        <button class="delete-post-btn" data-post-id="{{ post.id }}"
+                                                style="background: none; border: none; color: red; cursor: pointer;">
+                                            Удалить
+                                        </button>
                                     </div>
                                 {% endif %}
                             </div>

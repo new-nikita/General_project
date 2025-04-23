@@ -83,3 +83,35 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+    const postList = document.getElementById("post-list");
+
+    // Делегирование событий для кнопок удаления
+    postList.addEventListener("click", async function (event) {
+        // Проверяем, что клик был по кнопке удаления
+        if (event.target.closest(".delete-post-btn")) {
+            const button = event.target.closest(".delete-post-btn");
+            const postId = button.getAttribute("data-post-id"); // Получаем ID поста
+            const postElement = document.getElementById(`post-${postId}`); // Находим элемент поста
+
+            try {
+                // Отправляем запрос на удаление
+                const response = await fetch(`/posts/delete/${postId}`, {
+                    method: "POST",
+                });
+
+                if (response.ok) {
+                    // Удаляем пост из DOM
+                    postElement.remove();
+                } else {
+                    const errorData = await response.json();
+                    alert(errorData.detail || "Произошла ошибка при удалении поста");
+                }
+            } catch (error) {
+                console.error("Ошибка:", error);
+                alert("Не удалось удалить пост. Попробуйте позже.");
+            }
+        }
+    });
+});

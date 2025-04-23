@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from typing import Optional, Any, Sequence
 
 from core.base_repository import BaseRepository
@@ -59,7 +59,24 @@ class PostRepository(BaseRepository[Post]):
 
     async def update(self, id_: int, data: dict[str, Any]) -> str | None: ...
 
-    async def delete(self, id_: int) -> str | None: ...
+    async def delete(self, id_: int) -> str | None:
+        """
+        Удаляет пост по его ID.
+
+        :param id_: ID поста.
+        :return: Сообщение об успешном удалении или None, если пост не найден.
+        """
+        result = await self.session.execute(
+            select(self.model).where(self.model.id == id_)
+        )
+        post = result.scalars().first()
+
+        if not post:
+            return
+
+        await self.session.execute(delete(self.model).where(self.model.id == id_))
+        await self.session.commit()
+        return "Post deleted successfully"
 
     async def get_all_posts_by_author_id(self, author_id: int) -> Sequence[Post]:
         """
