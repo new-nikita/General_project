@@ -20,6 +20,18 @@
                 </p>
             {% endif %}
         </div>
+        <!-- Форма загрузки аватара -->
+        <div id="avatar-upload-form" class="add-avatar-block mt-3" style="display: none;">
+            <form id="avatar-form" action="/profile/avatar" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="avatar" class="form-label">Выберете фотографию</label>
+                    <input class="form-control" type="file" id="avatar" name="avatar" accept="image/*" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-upload me-2"></i>Загрузить
+                </button>
+            </form>
+        </div>
 
         <!-- Личная информация -->
         <div class="user-info">
@@ -117,67 +129,68 @@
                     </button>
                 </form>
             </div>
-
-            <!-- Список постов -->
-            <div class="post-list" id="post-list">
-                {% if posts %}
-                    {% for post in posts %}
-                        <div class="post-item" id="post-{{ post.id }}">
-                            <div class="post-header">
-                                <img src="{{ post.author.profile.avatar }}"
-                                     alt="Автор" class="post-author-avatar">
-                                <div>
-                                    <span class="post-author">{{ post.author.profile.full_name or post.author.username }}</span>
-                                </div>
-                            </div>
-
-                            {% if post.image %}
-                                <div class="post-image-container">
-                                    <img src="{{ post.image }}" alt="Пост" class="post-image">
-                                </div>
-                            {% endif %}
-
-                            {% if post.content %}
-                                <div class="post-content">{{ post.content }}</div>
-                            {% endif %}
-
-                            <div class="post-actions">
-                                <div class="post-action">
-                                    <i class="far fa-heart"></i>
-                                    <span>Нравится</span>
-                                </div>
-                                <div class="post-action">
-                                    <i class="far fa-comment"></i>
-                                    <span>Комментировать</span>
-                                </div>
-                                {% if is_own_profile or current_user.is_superuser %}
-                                    <div class="post-action">
-                                        <i class="far fa-trash-alt"></i>
-                                        <button class="delete-post-btn" data-post-id="{{ post.id }}"
-                                                style="background: none; border: none; color: red; cursor: pointer;">
-                                            Удалить
-                                        </button>
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="post-date">
-                                {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}
+        {% endif %}
+        <!-- Список постов -->
+        <div class="post-list" id="post-list">
+            {% if posts %}
+                {% for post in posts %}
+                    <div class="post-item" id="post-{{ post.id }}">
+                        <div class="post-header">
+                            <img src="{{ post.author.profile.avatar }}"
+                                 alt="Автор" class="post-author-avatar">
+                            <div>
+                                <span class="post-author">{{ post.author.profile.full_name or post.author.username }}</span>
                             </div>
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="no-posts">
-                        <i class="far fa-newspaper fa-2x mb-3"></i>
-                        <p>Постов пока нет</p>
-                        {% if is_own_profile %}
-                            <p>Создайте первый пост, чтобы поделиться новостями</p>
+
+                        {% if post.image %}
+                            <div class="post-image-container">
+                                <img src="{{ post.image }}" alt="Пост" class="post-image">
+                            </div>
                         {% endif %}
+
+                        {% if post.content %}
+                            <div class="post-content">{{ post.content }}</div>
+                        {% endif %}
+
+                        <div class="post-actions">
+                            <div class="post-action">
+                                <i class="far fa-heart"></i>
+                                <span>Нравится</span>
+                            </div>
+                            <div class="post-action">
+                                <i class="far fa-comment"></i>
+                                <span>Комментировать</span>
+                            </div>
+                            {% if is_own_profile or current_user.is_superuser %}
+                                <div class="post-action">
+                                    <i class="far fa-trash-alt"></i>
+                                    <button class="delete-post-btn" data-post-id="{{ post.id }}"
+                                            style="background: none; border: none; color: red; cursor: pointer;">
+                                        Удалить
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="post-date">
+                            {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}
+                        </div>
                     </div>
-                {% endif %}
-            </div>
-        {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="no-posts">
+                    <i class="far fa-newspaper fa-2x mb-3"></i>
+                    <p>Постов пока нет</p>
+                    {% if is_own_profile %}
+                        <p>Создайте первый пост, чтобы поделиться новостями</p>
+                    {% endif %}
+                </div>
+
+                </div>
+            {% endif %}
     </div>
 
     <script src=/static/js/posts.js type=text/javascript></script>
+    <script src=/static/js/avatar_upload.js type=text/javascript></script>
 {% endblock %}

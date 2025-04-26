@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Request, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Request, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from posts.dependencies import get_post_service
 from posts.services import PostService
@@ -13,6 +14,8 @@ from auth.authorization import (
 )
 from core.config import settings
 from core.models import User
+from core.common_dependencies import get_db_session
+from utils.save_images import upload_image
 
 
 router = APIRouter(
@@ -65,3 +68,29 @@ async def get_user_profile(
             "posts": posts,
         },
     )
+
+
+@router.post("/avatar")
+async def upload_avatar(
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    avatar: UploadFile = File(...),
+) -> JSONResponse:
+    try:
+        image_url = await upload_image(
+            user_id=current_user.id,
+            image_file=avatar,
+            content_path="profiles_avatar",
+        )
+
+        current_user.profile.avatar = image_url
+        await session.commit()
+
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Аватар успешно обновлен", "avatar_url": image_url},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=400, detail=f"Ошибка при загрузке аватара: {str(e)}"
+        )
