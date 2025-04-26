@@ -33,10 +33,8 @@ class PostCreate(PostBase):
         if not image:
             return
 
-        if not image.endswith((".jpg", ".png", ".jpeg")):
-            raise ValidationError("Некорректное расширение файла изображения")
-        if image.startswith("http://") or image.startswith("https://"):
-            raise ValidationError("Изображение не должно быть ссылкой из интернета")
+        if not image.endswith((".jpg", ".png", ".jpeg", ".gif")):
+            raise ValueError("Некорректное расширение файла изображения")
         return image
 
 
