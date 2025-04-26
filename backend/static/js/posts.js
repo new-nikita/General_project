@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
         setTimeout(() => {
             toast.classList.remove("show");
             setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        }, 2000);
     }
 
     // Переключение видимости формы
@@ -71,31 +71,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 newPost.className = "post-item";
                 newPost.id = `post-${result.post.id}`;
                 newPost.innerHTML = `
-                    <div class="post-header">
-                        <img src="${result.post.author.profile.avatar}" alt="Автор" class="post-author-avatar">
-                        <span class="post-author">${result.post.author.profile.full_name}</span>
+                <div class="post-header">
+                    <img src="${result.post.author.profile.avatar}" alt="Автор" class="post-author-avatar">
+                    <span class="post-author">${result.post.author.profile.full_name}</span>
+                </div>
+                ${result.post.content ? `<div class="post-content">${result.post.content}</div>` : ''}
+                ${result.post.image ? `<div class="post-image-container"><img src="${result.post.image}" alt="Пост" class="post-image"></div>` : ''}
+                <div class="post-date">${result.post.created_at}</div>
+                <div class="post-actions">
+                    <div class="post-action">
+                        <i class="far fa-heart"></i>
+                        <span>Нравится</span>
                     </div>
-                    ${result.post.content ? `<div class="post-content">${result.post.content}</div>` : ''}
-                    ${result.post.image ? `<div class="post-image-container"><img src="${result.post.image}" alt="Пост" class="post-image"></div>` : ''}
-                    <div class="post-date">${result.post.created_at}</div>
-                    <div class="post-actions">
-                        <div class="post-action">
-                            <i class="far fa-heart"></i>
-                            <span>Нравится</span>
-                        </div>
-                        <div class="post-action">
-                            <i class="far fa-comment"></i>
-                            <span>Комментировать</span>
-                        </div>
-                        <div class="post-action">
-                            <i class="far fa-trash-alt"></i>
-                            <button class="delete-post-btn" data-post-id="${result.post.id}"
-                                    style="background: none; border: none; color: red; cursor: pointer;">
-                                Удалить
-                            </button>
-                        </div>
+                    <div class="post-action">
+                        <i class="far fa-comment"></i>
+                        <span>Комментировать</span>
                     </div>
-                `;
+                    <div class="post-action">
+                        <i class="far fa-trash-alt"></i>
+                        <button class="delete-post-btn" data-post-id="${result.post.id}"
+                                style="background: none; border: none; color: red; cursor: pointer;">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+            `;
 
                 // Добавляем новый пост в начало списка
                 postList.insertAdjacentElement("afterbegin", newPost);
@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         } catch (error) {
             console.error("Ошибка:", error);
-            showToast("Не удалось создать пост. Попробуйте позже.", false);
+            showToast("Не удалось создать пост.", false);
         } finally {
             submitButton.disabled = false;
             submitButton.innerHTML = originalButtonText;
