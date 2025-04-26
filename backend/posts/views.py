@@ -117,6 +117,7 @@ async def create_new_post(
 
     return {
         "post": {
+            "id": new_post.id,
             "content": new_post.content,
             "image": new_post.image,
             "author": {

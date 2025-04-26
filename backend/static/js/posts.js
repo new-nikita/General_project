@@ -1,36 +1,56 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // Переменные для формы создания поста
     const toggleButton = document.getElementById("toggle-post-form");
     const formContainer = document.getElementById("post-form-container");
-    let isFormVisible = false;
-
-    toggleButton.addEventListener("click", function () {
-        if (!isFormVisible) {
-            formContainer.style.display = "block";
-            setTimeout(() => {
-                formContainer.classList.add("show");
-            }, 10);
-            toggleButton.innerHTML = 'Свернуть';
-            isFormVisible = true;
-        } else {
-            formContainer.classList.remove("show");
-            setTimeout(() => {
-                formContainer.style.display = "none";
-            }, 10);
-            toggleButton.innerHTML = '<i class="fas fa-plus me-2"></i>Создать новый пост';
-            isFormVisible = false;
-        }
-    });
-});
-
-document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("post-form");
     const postList = document.getElementById("post-list");
+    let isFormVisible = false;
 
-    form.addEventListener("submit", async function (event) {
+    // Функция для показа уведомлений
+    function showToast(message, isSuccess = true) {
+        const toast = document.createElement("div");
+        toast.className = `toast ${isSuccess ? 'success' : 'error'}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add("show");
+        }, 10);
+
+        setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // Переключение видимости формы
+    toggleButton?.addEventListener("click", function () {
+        isFormVisible = !isFormVisible;
+        formContainer.style.display = isFormVisible ? "block" : "none";
+
+        if (isFormVisible) {
+            setTimeout(() => {
+                formContainer.classList.add("show");
+                formContainer.scrollIntoView({behavior: "smooth", block: "center"});
+            }, 10);
+            toggleButton.innerHTML = '<i class="fas fa-minus me-2"></i>Свернуть';
+        } else {
+            formContainer.classList.remove("show");
+            toggleButton.innerHTML = '<i class="fas fa-plus me-2"></i>Создать новый пост';
+        }
+    });
+
+    // Обработка отправки формы
+    form?.addEventListener("submit", async function (event) {
         event.preventDefault();
-        const formData = new FormData(form);
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.innerHTML;
 
         try {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Создание...';
+
+            const formData = new FormData(form);
             const response = await fetch("/posts/create", {
                 method: "POST",
                 body: formData,
@@ -40,78 +60,117 @@ document.addEventListener("DOMContentLoaded", function () {
                 const result = await response.json();
                 form.reset();
 
-                const newPost = `
-                        <div class="post-item">
-                            <div class="post-header">
-                                <img src="${result.post.author.profile.avatar}" alt="Автор" class="post-author-avatar">
-                                <div>
-                                    <span class="post-author">${result.post.author.profile.full_name}</span>
-                                </div>
-                            </div>
-                            <div class="post-content">${result.post.content}</div>
-                            ${result.post.image ? `
-                                <div class="post-image-container">
-                                    <img src="${result.post.image}" alt="Пост" class="post-image">
-                                </div>
-                            ` : ""}
-                            <div class="post-actions">
-                                <div class="post-action">
-                                    <i class="far fa-heart"></i>
-                                    <span>Нравится</span>
-                                </div>
-                                <div class="post-action">
-                                    <i class="far fa-comment"></i>
-                                    <span>Комментировать</span>
-                                </div>
-                                <div class="post-action">
-                                    <i class="far fa-trash-alt"></i>
-                                    <span>Удалить</span>
-                                </div>
-                            </div>
-                            <div class="post-date">
-                                ${result.post.created_at}
-                            </div>
+                // Удаляем блок "Постов пока нет", если он есть
+                const noPostsBlock = postList.querySelector(".no-posts");
+                if (noPostsBlock) {
+                    noPostsBlock.remove();
+                }
+
+                // Создаем новый элемент поста
+                const newPost = document.createElement("div");
+                newPost.className = "post-item";
+                newPost.id = `post-${result.post.id}`;
+                newPost.innerHTML = `
+                    <div class="post-header">
+                        <img src="${result.post.author.profile.avatar}" alt="Автор" class="post-author-avatar">
+                        <span class="post-author">${result.post.author.profile.full_name}</span>
+                    </div>
+                    ${result.post.content ? `<div class="post-content">${result.post.content}</div>` : ''}
+                    ${result.post.image ? `<div class="post-image-container"><img src="${result.post.image}" alt="Пост" class="post-image"></div>` : ''}
+                    <div class="post-date">${result.post.created_at}</div>
+                    <div class="post-actions">
+                        <div class="post-action">
+                            <i class="far fa-heart"></i>
+                            <span>Нравится</span>
                         </div>
-                    `;
-                postList.insertAdjacentHTML("afterbegin", newPost);
+                        <div class="post-action">
+                            <i class="far fa-comment"></i>
+                            <span>Комментировать</span>
+                        </div>
+                        <div class="post-action">
+                            <i class="far fa-trash-alt"></i>
+                            <button class="delete-post-btn" data-post-id="${result.post.id}"
+                                    style="background: none; border: none; color: red; cursor: pointer;">
+                                Удалить
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                // Добавляем новый пост в начало списка
+                postList.insertAdjacentElement("afterbegin", newPost);
+
+                // Скрываем форму после успешного создания
+                formContainer.style.display = "none";
+                formContainer.classList.remove("show");
+                toggleButton.innerHTML = '<i class="fas fa-plus me-2"></i>Создать новый пост';
+                isFormVisible = false;
             } else {
-                alert("Произошла ошибка при создании поста.");
+                const errorData = await response.json();
+                showToast(errorData.detail || "Произошла ошибка при создании поста.", false);
             }
         } catch (error) {
             console.error("Ошибка:", error);
-            alert("Не удалось создать пост.");
+            showToast("Не удалось создать пост. Попробуйте позже.", false);
+        } finally {
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonText;
         }
     });
-});
 
-document.addEventListener("DOMContentLoaded", function () {
-    const postList = document.getElementById("post-list");
+    // Обработка удаления поста (делегирование событий)
+    postList?.addEventListener("click", async function (event) {
+        const deleteButton = event.target.closest(".delete-post-btn");
+        if (!deleteButton) return;
 
-    // Делегирование событий для кнопок удаления
-    postList.addEventListener("click", async function (event) {
-        // Проверяем, что клик был по кнопке удаления
-        if (event.target.closest(".delete-post-btn")) {
-            const button = event.target.closest(".delete-post-btn");
-            const postId = button.getAttribute("data-post-id"); // Получаем ID поста
-            const postElement = document.getElementById(`post-${postId}`); // Находим элемент поста
+        const postId = deleteButton.getAttribute("data-post-id");
+        const postElement = document.getElementById(`post-${postId}`);
 
-            try {
-                // Отправляем запрос на удаление
-                const response = await fetch(`/posts/delete/${postId}`, {
-                    method: "POST",
-                });
+        if (!postElement) {
+            console.error(`Элемент с id "post-${postId}" не найден.`);
+            return;
+        }
 
-                if (response.ok) {
-                    // Удаляем пост из DOM
+        try {
+            deleteButton.disabled = true;
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const response = await fetch(`/posts/delete/${postId}`, {
+                method: "POST",
+            });
+
+            if (response.ok) {
+                // Добавляем анимацию удаления
+                postElement.classList.add("fade-out");
+
+                // Удаляем элемент из DOM после завершения анимации
+                setTimeout(() => {
                     postElement.remove();
-                } else {
-                    const errorData = await response.json();
-                    alert(errorData.detail || "Произошла ошибка при удалении поста");
-                }
-            } catch (error) {
-                console.error("Ошибка:", error);
-                alert("Не удалось удалить пост. Попробуйте позже.");
+
+                    // Проверяем, остались ли посты в списке
+                    const remainingPosts = postList.querySelectorAll(".post-item");
+                    if (remainingPosts.length === 0) {
+                        // Добавляем блок "Постов пока нет"
+                        postList.innerHTML = `
+        <div class="no-posts text-center">
+            <i class="far fa-newspaper fa-2x mb-3"></i>
+            <p>Постов пока нет</p>
+            <p>Создайте первый пост, чтобы поделиться новостями</p>
+        </div>
+    `;
+                    }
+
+                }, 50);
+            } else {
+                const errorData = await response.json();
+                showToast(errorData.detail || "Произошла ошибка при удалении поста", false);
             }
+        } catch (error) {
+            console.error("Ошибка:", error);
+            showToast("Не удалось удалить пост. Попробуйте позже.", false);
+        } finally {
+            deleteButton.disabled = false;
+            deleteButton.innerHTML = 'Удалить';
         }
     });
 });
