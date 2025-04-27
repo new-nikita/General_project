@@ -87,10 +87,25 @@ async def upload_avatar(
         await session.commit()
 
         return JSONResponse(
-            status_code=200,
+            status_code=status.HTTP_200_OK,
             content={"message": "Аватар успешно обновлен", "avatar_url": image_url},
         )
     except Exception as e:
         raise HTTPException(
             status_code=400, detail=f"Ошибка при загрузке аватара: {str(e)}"
         )
+
+
+@router.post("/avatar/remove")
+async def remove_avatar(
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> JSONResponse:
+    default_avatar = "/static/profiles_avatar/дефолтный_аватар.jpg"
+    current_user.profile.avatar = default_avatar
+    await session.commit()
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"new_avatar": default_avatar, "message": "Аватар удален"},
+    )

@@ -6,23 +6,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const postList = document.getElementById("post-list");
     let isFormVisible = false;
 
-    // Функция для показа уведомлений
-    function showToast(message, isSuccess = true) {
-        const toast = document.createElement("div");
-        toast.className = `toast ${isSuccess ? 'success' : 'error'}`;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.classList.add("show");
-        }, 10);
-
-        setTimeout(() => {
-            toast.classList.remove("show");
-            setTimeout(() => toast.remove(), 300);
-        }, 2000);
-    }
-
     // Переключение видимости формы
     toggleButton?.addEventListener("click", function () {
         isFormVisible = !isFormVisible;
