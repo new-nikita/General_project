@@ -20,8 +20,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endif %}
-            <form method="post" action="/register">
-                <!-- Основная информация -->
+            <form method="post" action="/register" enctype="multipart/form-data">
+
                 <div class="form-section">
                     <h4 class="section-title">Основная информация</h4>
 
@@ -148,6 +148,42 @@
                     </div>
                 </div>
 
+                <div class="form-section">
+                    <h4 class="section-title">Аватар профиля</h4>
+                    <div class="avatar-upload-container">
+                        <!-- Основной контейнер для загрузки -->
+                        <div class="avatar-upload-wrapper">
+                            <!-- Превью аватара -->
+                            <div class="avatar-preview" id="avatar-preview">
+                                <div class="avatar-default">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <img src="#" alt="Preview" class="avatar-image">
+                            </div>
+
+                            <!-- Кнопки управления -->
+                            <div class="avatar-actions">
+                                <label for="avatar" class="btn btn-upload">
+                                    <i class="fas fa-camera me-2"></i>Выбрать фото
+                                </label>
+                                <button type="button" class="btn btn-remove" id="remove-avatar" disabled>
+                                    <i class="fas fa-trash-alt me-2"></i>Удалить
+                                </button>
+                            </div>
+
+                            <!-- Подсказки -->
+                            <div class="avatar-hints">
+                                <small class="text-muted">Рекомендуемый размер: 500×500px</small>
+                                <small class="text-muted">Форматы: JPG, PNG, GIF</small>
+                            </div>
+                        </div>
+
+                        <!-- Скрытый инпут -->
+                        <input type="file" id="avatar" name="avatar" accept="image/*" class="d-none">
+                    </div>
+                </div>
+
+
                 <div class="d-grid mt-4">
                     <button type="submit" class="btn btn-register btn-lg">
                         Зарегистрироваться
@@ -160,4 +196,5 @@
             </form>
         </div>
     </div>
+    <script src="/static/js/register.js"></script>
 {% endblock %}

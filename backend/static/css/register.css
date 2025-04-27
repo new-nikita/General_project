@@ -63,3 +63,173 @@
     padding: 1.5rem;
     border-radius: 10px;
 }
+
+/* Контейнер для загрузки аватара */
+.avatar-upload-container {
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px dashed #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.avatar-upload-container:hover {
+    border-color: #4a76a8;
+    background-color: #f0f7ff;
+}
+
+/* Обертка для элементов аватара */
+.avatar-upload-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Превью аватара */
+.avatar-preview {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-default {
+    font-size: 5rem;
+    color: #adb5bd;
+}
+
+.avatar-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+}
+
+/* Кнопки управления */
+.avatar-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.btn-upload {
+    background-color: #4a76a8;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-upload:hover {
+    background-color: #3a5f8a;
+    transform: translateY(-2px);
+}
+
+.btn-upload:active {
+    transform: translateY(0);
+}
+
+.btn-remove {
+    background-color: #f8f9fa;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-remove:hover {
+    background-color: #f1f1f1;
+}
+
+.btn-remove:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f8f9fa;
+}
+
+/* Подсказки */
+.avatar-hints {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+/* Анимация при наведении */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.avatar-upload-container:hover .avatar-preview {
+    animation: pulse 1.5s infinite;
+}
+
+/* Общие стили для секций формы */
+.form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    color: #2c3e50;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+/* Контейнер для загрузки аватара */
+.avatar-upload-container {
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px dashed #dee2e6;
+    transition: all 0.3s ease;
+    width: 100%; /* Занимает всю ширину родителя */
+    margin-top: 1rem;
+}
+
+/* Остальные стили остаются такими же, как у вас были */
+.avatar-upload-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.form-section + .form-section {
+    margin-top: 1.5rem;
+}
