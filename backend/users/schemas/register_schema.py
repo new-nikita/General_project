@@ -3,6 +3,7 @@ import re
 from datetime import date, datetime
 from typing import Optional
 
+from fastapi import UploadFile
 from pydantic import (
     BaseModel,
     Field,
@@ -37,6 +38,7 @@ class RegisterForm(BaseModel):
     city: Optional[str] = None
     street: Optional[str] = None
     bio: Optional[str] = None
+    avatar: UploadFile | str | None = None
 
     @field_validator("birth_date")
     def validate_birth_date(cls, birth_date: str | None):
@@ -44,7 +46,7 @@ class RegisterForm(BaseModel):
         Валидирует дату рождения.
         Проверяет, что дата рождения не в будущем.
         """
-        if birth_date is None:
+        if not birth_date:
             return
 
         date_object: date = datetime.strptime(birth_date, "%Y-%m-%d").date()
