@@ -80,7 +80,7 @@ async def upload_avatar(
         image_url = await upload_image(
             user_id=current_user.id,
             image_file=avatar,
-            content_path="profiles_avatar",
+            content_path="users/avatars",
         )
 
         current_user.profile.avatar = image_url
