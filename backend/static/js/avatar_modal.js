@@ -2,70 +2,58 @@ document.addEventListener("DOMContentLoaded", function () {
     const avatar = document.querySelector(".user-avatar");
     const modal = document.getElementById("avatar-modal");
     const fullscreenView = document.getElementById("fullscreen-view");
-    const closeFullscreen = document.querySelector(".close-fullscreen");
-    const isOwner = modal !== null; // Проверяем, есть ли модальное окно (значит это владелец)
+    const isOwner = modal !== null;
 
-    // Функция для восстановления прокрутки страницы
     function restoreScroll() {
         document.body.style.overflow = "auto";
     }
 
-    // Обработчик клика на аватар
+    // ===== Клик по аватару =====
     avatar?.addEventListener("click", function (e) {
         e.stopPropagation();
 
         if (isOwner) {
-            // Для владельца - показываем меню
             modal.style.display = "block";
             document.body.style.overflow = "hidden";
         } else {
-            // Для других - сразу фуллскрин
             fullscreenView.style.display = "block";
             document.body.style.overflow = "hidden";
             document.querySelector(".fullscreen-avatar").src = this.src;
         }
     });
 
-    // Закрытие фуллскрина
-    function closeFullscreenView() {
+    // ===== Фуллскрин =====
+    document.querySelector(".close-fullscreen")?.addEventListener("click", closeFullscreen);
+    fullscreenView?.addEventListener("click", function (e) {
+        if (e.target === this || e.target.classList.contains("fullscreen-avatar")) {
+            closeFullscreen();
+        }
+    });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && fullscreenView.style.display === "block") {
+            closeFullscreen();
+        }
+    });
+
+    function closeFullscreen() {
         fullscreenView.style.display = "none";
         restoreScroll();
     }
 
-    // Кнопка закрытия фуллскрина
-    closeFullscreen?.addEventListener("click", closeFullscreenView);
-
-    // Закрытие по клику на затемненную область
-    fullscreenView?.addEventListener("click", function (e) {
-        if (e.target === this || e.target.classList.contains("fullscreen-avatar")) {
-            closeFullscreenView();
-        }
-    });
-
-    // Закрытие по ESC
-    document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && fullscreenView.style.display === "block") {
-            closeFullscreenView();
-        }
-    });
-
-    // Остальной код для владельца (если isOwner)
+    // ===== Модальное окно управления аватаром =====
     if (isOwner) {
         const closeModal = document.querySelector(".close-modal");
         const viewFullscreenBtn = document.getElementById("view-fullscreen");
         const changeAvatarBtn = document.getElementById("change-avatar");
         const removeAvatarBtn = document.getElementById("remove-avatar");
-        const avatarUploadForm = document.getElementById("avatar-upload-form");
+        const avatarUploadModal = document.getElementById("avatar-upload-modal");
         const cancelUploadBtn = document.getElementById("cancel-upload");
-        const avatarForm = document.getElementById("avatar-form");
 
-        // Закрытие модального окна
         closeModal?.addEventListener("click", function () {
             modal.style.display = "none";
             restoreScroll();
         });
 
-        // Закрытие модального окна по клику вне его
         window.addEventListener("click", function (e) {
             if (e.target === modal) {
                 modal.style.display = "none";
@@ -73,7 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-        // Открытие фуллскрина из модального окна
         viewFullscreenBtn?.addEventListener("click", function () {
             modal.style.display = "none";
             fullscreenView.style.display = "block";
@@ -81,65 +68,103 @@ document.addEventListener("DOMContentLoaded", function () {
             document.querySelector(".fullscreen-avatar").src = avatar.src;
         });
 
-        // Открытие формы загрузки аватара
+        // ===== Обработчик для кнопки "Загрузить новый" =====
         changeAvatarBtn?.addEventListener("click", function () {
-            document.querySelector(".modal-actions").style.display = "none";
-            avatarUploadForm.style.display = "block";
+            modal.style.display = "none"; // Скрываем основное модальное окно
+            avatarUploadModal.style.display = "block"; // Показываем модальное окно загрузки
         });
 
-        // Отмена загрузки аватара
+        // Закрытие модального окна загрузки
+        document.querySelector("#avatar-upload-modal .close-modal")?.addEventListener("click", function () {
+            avatarUploadModal.style.display = "none";
+            restoreScroll();
+        });
+
         cancelUploadBtn?.addEventListener("click", function () {
-            document.querySelector(".modal-actions").style.display = "flex";
-            avatarUploadForm.style.display = "none";
+            avatarUploadModal.style.display = "none";
             document.getElementById("avatar").value = "";
+            document.getElementById("file-name").textContent = "Файл не выбран";
+            document.getElementById("preview-avatar").style.display = "none";
+            document.getElementById("upload-btn").disabled = true;
         });
 
-        // Обработчик отправки формы аватара
+        // ===== Предварительный просмотр и загрузка аватара =====
+        const avatarInput = document.getElementById("avatar");
+        const previewAvatar = document.getElementById("preview-avatar");
+        const fileNameDisplay = document.getElementById("file-name");
+        const avatarForm = document.getElementById("avatar-form");
+        const uploadBtn = document.getElementById("upload-btn");
+
+        // Предварительный просмотр
+        avatarInput?.addEventListener("change", function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewAvatar.src = e.target.result;
+                    previewAvatar.style.display = "block";
+                };
+                reader.readAsDataURL(file);
+                fileNameDisplay.textContent = file.name;
+            } else {
+                fileNameDisplay.textContent = "Файл не выбран";
+                previewAvatar.style.display = "none";
+            }
+        });
+
+        // Активация кнопки после выбора файла
+        avatarInput?.addEventListener("change", function () {
+            uploadBtn.disabled = !this.files.length;
+        });
+
+        // Обработка формы
         avatarForm?.addEventListener("submit", async function (e) {
             e.preventDefault();
 
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.innerHTML;
+            const formData = new FormData(this);
+            const originalBtnText = uploadBtn.innerHTML;
+
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
 
             try {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
-
-                const formData = new FormData(this);
                 const response = await fetch("/profile/avatar", {
                     method: "POST",
                     body: formData,
                 });
 
-                if (response.ok) {
-                    const result = await response.json();
-
-                    // Обновляем аватар везде
-                    document.querySelectorAll(".user-avatar, .modal-avatar, .fullscreen-avatar").forEach(
-                        (img) => (img.src = result.avatar_url)
-                    );
-
-                    // Сбрасываем форму
-                    this.reset();
-                    document.querySelector(".modal-actions").style.display = "flex";
-                    avatarUploadForm.style.display = "none";
-                    modal.style.display = "none";
-
-                    // Восстанавливаем прокрутку
-                    restoreScroll();
-
-                    // Показываем уведомление
-                    showToast("Аватар успешно обновлен");
-                } else {
-                    const error = await response.json();
-                    showToast(error.detail || "Ошибка при загрузке аватара", false);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    showToast(errorData.detail || "Ошибка при загрузке аватара", false);
+                    return;
                 }
+
+                const result = await response.json();
+
+                document.querySelectorAll(".user-avatar, .modal-avatar, .fullscreen-avatar, .post-author-avatar").forEach(
+                    (img) => {
+                        img.src = result.avatar_url;
+                    }
+                );
+
+                // Скрываем модальное окно загрузки
+                avatarUploadModal.style.display = "none";
+
+                // Сбрасываем форму
+                avatarForm.reset();
+                previewAvatar.style.display = "none";
+                fileNameDisplay.textContent = "Файл не выбран";
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = originalBtnText;
+
+                restoreScroll();
+                showToast("Аватар успешно обновлён");
+
             } catch (error) {
                 console.error("Ошибка:", error);
                 showToast("Не удалось загрузить аватар", false);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = originalBtnText;
             }
         });
 
@@ -155,30 +180,30 @@ document.addEventListener("DOMContentLoaded", function () {
                     },
                 });
 
-                if (response.ok) {
-                    const result = await response.json();
-
-                    // Обновляем аватар на всех экземплярах
-                    document.querySelectorAll(".user-avatar, .modal-avatar, .fullscreen-avatar").forEach(
-                        (img) => (img.src = result.new_avatar)
-                    );
-
-                    // Скрываем кнопку удаления, если установлен дефолтный аватар
-                    if (result.new_avatar.includes("default_avatar")) {
-                        removeAvatarBtn.style.display = "none";
-                    }
-
-                    // Закрываем модальное окно
-                    modal.style.display = "none";
-
-                    // Восстанавливаем прокрутку
-                    restoreScroll();
-
-                    showToast("Аватар успешно удален");
-                } else {
-                    const error = await response.json();
-                    showToast(error.detail || "Ошибка при удалении аватара", false);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    showToast(errorData.detail || "Ошибка при удалении аватара", false);
+                    return;
                 }
+
+                const result = await response.json();
+
+                // Обновляем аватар везде
+                document.querySelectorAll(".user-avatar, .modal-avatar, .fullscreen-avatar, .post-author-avatar").forEach(
+                    (img) => {
+                        img.src = result.new_avatar;
+                    }
+                );
+
+                // Скрываем кнопку удаления
+                if (result.new_avatar.includes("default_avatar")) {
+                    removeAvatarBtn.style.display = "none";
+                }
+
+                modal.style.display = "none";
+                restoreScroll();
+                showToast("Аватар успешно удален");
+
             } catch (error) {
                 console.error("Ошибка:", error);
                 showToast("Не удалось удалить аватар", false);

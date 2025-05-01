@@ -10,8 +10,13 @@
     <div class="profile-container">
         <!-- Аватар и основная информация -->
         <div class="text-center mb-4">
-            <img src="{{ user.profile.avatar }}"
-                 alt="Аватар" class="user-avatar">
+            <img src="{{ user.profile.avatar }}" alt="Аватар" class="user-avatar">
+
+            <!-- Кнопка "Подробнее" под аватаром -->
+            <button id="profile-info-btn" class="profile-info-btn">
+                <i class="fas fa-info-circle"></i> Подробнее
+            </button>
+
             {% if user.profile.first_name or user.profile.last_name %}
                 <h3 class="text-muted">{{ user.profile.first_name or '' }} {{ user.profile.last_name or '' }}</h3>
             {% endif %}
@@ -22,128 +27,164 @@
             {% endif %}
         </div>
 
-        <!-- Личная информация -->
-        <div class="user-info">
-            <div class="info-section">
-                <h4><i class="fas fa-info-circle"></i> Основная информация</h4>
-                {% if user.profile.birth_date %}
-                    <div class="info-item">
-                        <i class="fas fa-calendar-alt info-icon"></i>
-                        <span class="info-label">Дата рождения:</span>
-                        <span class="info-value">{{ user.profile.birth_date.strftime('%d.%m.%Y') }}</span>
+        <!-- Модальное окно с информацией профиля -->
+        <div id="profile-modal" class="profile-modal">
+            <span class="close-modal">&times;</span>
+            <div class="user-info">
+                <!-- Основная информация -->
+                <div class="info-section">
+                    <h4><i class="fas fa-info-circle"></i> Основная информация</h4>
+                    {% if user.profile.birth_date %}
+                        <div class="info-item">
+                            <i class="fas fa-calendar-alt info-icon"></i>
+                            <span class="info-label">Дата рождения:</span>
+                            <span class="info-value">{{ user.profile.birth_date.strftime('%d.%m.%Y') }}</span>
+                        </div>
+                    {% endif %}
+                    {% if user.profile.gender %}
+                        <div class="info-item">
+                            <i class="fas fa-venus-mars info-icon"></i>
+                            <span class="info-label">Пол:</span>
+                            <span class="info-value">{{ user.profile.gender }}</span>
+                        </div>
+                    {% endif %}
+                    {% if user.created_at %}
+                        <div class="info-item">
+                            <i class="fas fa-clock info-icon"></i>
+                            <span class="info-label">Дата регистрации:</span>
+                            <span class="info-value">{{ user.created_at.strftime('%d.%m.%Y') }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Контактная информация -->
+                {% if user.profile.phone_number or user.profile.country or user.profile.city %}
+                    <div class="info-section">
+                        <h4><i class="fas fa-address-book"></i> Контакты</h4>
+                        {% if user.profile.phone_number %}
+                            <div class="info-item">
+                                <i class="fas fa-phone info-icon"></i>
+                                <span class="info-label">Телефон:</span>
+                                <span class="info-value">{{ user.profile.phone_number }}</span>
+                            </div>
+                        {% endif %}
+                        {% if user.profile.country %}
+                            <div class="info-item">
+                                <i class="fas fa-globe info-icon"></i>
+                                <span class="info-label">Страна:</span>
+                                <span class="info-value">{{ user.profile.country }}</span>
+                            </div>
+                        {% endif %}
+                        {% if user.profile.city %}
+                            <div class="info-item">
+                                <i class="fas fa-city info-icon"></i>
+                                <span class="info-label">Город:</span>
+                                <span class="info-value">{{ user.profile.city }}</span>
+                            </div>
+                        {% endif %}
+                        {% if user.profile.street %}
+                            <div class="info-item">
+                                <i class="fas fa-map-marker-alt info-icon"></i>
+                                <span class="info-label">Адрес:</span>
+                                <span class="info-value">{{ user.profile.street }}</span>
+                            </div>
+                        {% endif %}
                     </div>
                 {% endif %}
-                {% if user.profile.gender %}
-                    <div class="info-item">
-                        <i class="fas fa-venus-mars info-icon"></i>
-                        <span class="info-label">Пол:</span>
-                        <span class="info-value">{{ user.profile.gender }}</span>
-                    </div>
-                {% endif %}
-                {% if user.created_at %}
-                    <div class="info-item">
-                        <i class="fas fa-clock info-icon"></i>
-                        <span class="info-label">Дата регистрации:</span>
-                        <span class="info-value">{{ user.created_at.strftime('%d.%m.%Y') }}</span>
+
+                <!-- О себе -->
+                {% if user.profile.bio %}
+                    <div class="info-section">
+                        <h4><i class="fas fa-quote-left"></i> О себе</h4>
+                        <div class="info-item">
+                            <i class="fas fa-align-left info-icon"></i>
+                            <div class="info-value" style="white-space: pre-line;">{{ user.profile.bio }}</div>
+                        </div>
                     </div>
                 {% endif %}
             </div>
+        </div>
 
-            <!-- Контактная информация -->
-            {% if user.profile.phone_number or user.profile.country or user.profile.city %}
-                <div class="info-section">
-                    <h4><i class="fas fa-address-book"></i> Контакты</h4>
-                    {% if user.profile.phone_number %}
-                        <div class="info-item">
-                            <i class="fas fa-phone info-icon"></i>
-                            <span class="info-label">Телефон:</span>
-                            <span class="info-value">{{ user.profile.phone_number }}</span>
-                        </div>
-                    {% endif %}
-                    {% if user.profile.country %}
-                        <div class="info-item">
-                            <i class="fas fa-globe info-icon"></i>
-                            <span class="info-label">Страна:</span>
-                            <span class="info-value">{{ user.profile.country }}</span>
-                        </div>
-                    {% endif %}
-                    {% if user.profile.city %}
-                        <div class="info-item">
-                            <i class="fas fa-city info-icon"></i>
-                            <span class="info-label">Город:</span>
-                            <span class="info-value">{{ user.profile.city }}</span>
-                        </div>
-                    {% endif %}
-                    {% if user.profile.street %}
-                        <div class="info-item">
-                            <i class="fas fa-map-marker-alt info-icon"></i>
-                            <span class="info-label">Адрес:</span>
-                            <span class="info-value">{{ user.profile.street }}</span>
-                        </div>
-                    {% endif %}
-                </div>
-            {% endif %}
+        <!-- Фон затемнения для модального окна -->
+        <div id="modal-overlay" class="modal-overlay"></div>
 
-            <!-- О себе -->
-            {% if user.profile.bio %}
-                <div class="info-section">
-                    <h4><i class="fas fa-quote-left"></i> О себе</h4>
-                    <div class="info-item">
-                        <i class="fas fa-align-left info-icon"></i>
-                        <div class="info-value" style="white-space: pre-line;">{{ user.profile.bio }}</div>
-                    </div>
-                </div>
-            {% endif %}
-
-            {% if is_own_profile %}
-                <div id="avatar-modal" class="modal" style="display: none;">
+        {% if is_own_profile %}
+            <!-- Остальной код для аватара и постов -->
+            <div id="avatar-modal" class="modal" style="display: none;">
                 <div class="modal-content">
-                <span class="close-modal">&times;</span>
-                <div class="modal-avatar-container">
-                    <img src="{{ user.profile.avatar }}" alt="Аватар" class="modal-avatar">
-                </div>
-                <div class="modal-actions">
-                    <button id="view-fullscreen" class="modal-btn">
-                        <i class="fas fa-expand"></i> Открыть в полном размере
-                    </button>
-                    <button id="change-avatar" class="modal-btn">
-                        <i class="fas fa-upload"></i> Загрузить новый
-                    </button>
-                    {% if user.profile.avatar != '/static/images/default_avatar.png' %}
-                        <button id="remove-avatar" class="modal-btn btn-danger">
-                            <i class="fas fa-trash"></i> Удалить аватар
-                        </button>
-                    {% endif %}
-                </div>
-            {% endif %}
-
-            <!-- Форма для загрузки (изначально скрыта) -->
-            <div id="avatar-upload-form" class="add-avatar-block mt-3" style="display: none;">
-                <form id="avatar-form" action="/profile/avatar" method="post" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="avatar" class="form-label">Выберите новую фотографию</label>
-                        <input class="form-control" type="file" id="avatar" name="avatar" accept="image/*"
-                               required>
+                    <span class="close-modal">&times;</span>
+                    <div class="modal-avatar-container">
+                        <img src="{{ user.profile.avatar }}" alt="Аватар" class="modal-avatar">
                     </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1">
-                            <i class="fas fa-upload me-2"></i>Загрузить
+                    <div class="modal-actions">
+                        <button id="view-fullscreen" class="modal-btn">
+                            <i class="fas fa-expand"></i> Открыть в полном размере
                         </button>
-                        <button type="button" id="cancel-upload" class="btn btn-secondary">
-                            Отмена
+                        <button id="change-avatar" class="modal-btn">
+                            <i class="fas fa-upload"></i> Загрузить новый
                         </button>
+                        {% if user.profile.avatar != '/static/images/default_avatar.png' %}
+                            <button id="remove-avatar" class="modal-btn btn-danger">
+                                <i class="fas fa-trash"></i> Удалить аватар
+                            </button>
+                        {% endif %}
                     </div>
-                </form>
-            </div>
-            </div>
+                </div>
             </div>
 
-            <!-- Фуллскрин просмотр -->
+            <!-- Модальное окно для загрузки аватара -->
+            <div id="avatar-upload-modal" class="modal" style="display: none;">
+                <div class="modal-content" style="max-width: 500px;">
+                    <span class="close-modal">&times;</span>
+                    <div class="avatar-upload-container">
+                        <h4 class="text-center mb-3">Загрузка новой фотографии</h4>
+                        <p class="text-muted text-center mb-4">
+                            Друзьям будет проще узнать вас, если вы загрузите свою настоящую фотографию.
+                        </p>
+
+                        <form id="avatar-form" action="/profile/avatar" method="post" enctype="multipart/form-data">
+                            <div class="text-center mb-4">
+                                <img id="preview-avatar" src="" alt="Предварительный просмотр" class="preview-avatar"
+                                     style="width: 150px; height: 150px; object-fit: cover; display: none; border-radius: 50%;">
+
+                                <div class="file-upload-wrapper">
+                                    <label for="avatar" class="file-upload-label btn btn-primary">
+                                        <i class="fas fa-camera me-2"></i> Выбрать файл
+                                    </label>
+                                    <input class="form-control d-none" type="file" id="avatar" name="avatar"
+                                           accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
+                                           required>
+                                    <div id="file-name" class="mt-2 small text-muted">Файл не выбран</div>
+                                </div>
+                            </div>
+
+                            <p class="small text-muted text-center mb-4">
+                                Вы можете загрузить изображение в формате JPG, GIF, PNG, WEBP или HEIC/HEIF.
+                            </p>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-grow-1" id="upload-btn" disabled>
+                                    <i class="fas fa-upload me-2"></i> Загрузить
+                                </button>
+                                <button type="button" id="cancel-upload" class="btn btn-secondary">
+                                    Отмена
+                                </button>
+                            </div>
+                        </form>
+
+                        <p class="small text-muted text-center mt-3">
+                            Если у вас возникают проблемы с загрузкой, попробуйте выбрать фотографию меньшего размера.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Фуллскрин просмотр аватара -->
             <div id="fullscreen-view" class="fullscreen-view" style="display: none;">
                 <span class="close-fullscreen">&times;</span>
                 <img src="{{ user.profile.avatar }}" alt="Аватар" class="fullscreen-avatar">
             </div>
-        </div>
+        {% endif %}
 
         <!-- Блок для создания поста -->
         {% if is_own_profile %}
@@ -168,6 +209,7 @@
                 </form>
             </div>
         {% endif %}
+
         <!-- Список постов -->
         <div class="post-list" id="post-list">
             {% if posts %}
@@ -224,10 +266,11 @@
                         <p>Создайте первый пост, чтобы поделиться новостями</p>
                     {% endif %}
                 </div>
-
-                </div>
             {% endif %}
+        </div>
     </div>
+    <script src=/static/js/profile_info.js type=text/javascript></script>
+
     <script src=/static/js/posts.js type=text/javascript></script>
     <script src=/static/js/avatar_modal.js type="text/javascript"></script>
     <script src=/static/js/show_toast.js type=text/javascript></script>
