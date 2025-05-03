@@ -93,7 +93,10 @@ class TokenService:
         :return: Payload токена.
         :raises HTTPException: 401 если токен недействителен.
         """
-        payload = cls._decode_token(token)
+        try:
+            payload = cls._decode_token(token)
+        except HTTPException:
+            raise HTTPException(status_code=401, detail="Не угадал")
         cls._validate_payload(payload)
         return payload
 

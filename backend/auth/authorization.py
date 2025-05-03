@@ -2,6 +2,7 @@ import logging
 
 from fastapi import Cookie, HTTPException, status, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
+from starlette.responses import Response
 
 from core.config import settings
 from users.services import UserService
@@ -53,7 +54,9 @@ async def authenticate_user(service: UserService, username: str, password: str) 
             logger.warning(f"Login attempt for non-existent user: {username}")
             handle_auth_error(message="Incorrect username or password")
         try:
-            PasswordHelper.verify_password(password, user.hashed_password)  # проверяет соответствие пароля
+            PasswordHelper.verify_password(
+                password, user.hashed_password
+            )  # проверяет соответствие пароля
 
         except PasswordVerificationError as e:
             logger.warning(f"Invalid password attempt for user: {username}")
@@ -81,7 +84,7 @@ async def get_current_user_from_cookie(
     request: Request,
     access_token: str | None = Cookie(default=None, alias="access-token"),
     service: UserService = Depends(get_user_service),
-) -> User | None:
+) -> User | Response | None:
     """
     Получает текущего пользователя по JWT-токену из cookies.
 
@@ -90,13 +93,18 @@ async def get_current_user_from_cookie(
     :param service: Сервис для работы с пользователями.
     :return: Текущий пользователь.
     """
+    if hasattr(request.state, "new_access_token"):
+        access_token = request.state.new_access_token
+
     if not access_token:
         return
 
-    token: str = (
-        access_token[7:] if access_token.startswith("Bearer ") else access_token
-    )
-    payload: dict = TokenService.decode_and_validate_token(token)
+    try:
+        payload: dict = TokenService.decode_and_validate_token(access_token)
+    except HTTPException as e:
+        request.cookies.pop("access-token")
+        return Response(status_code=202, content={"message": e.detail})
+
     username: str = payload.get("sub")
     user: User = await get_user_by_username_from_service(username, service)
     return user

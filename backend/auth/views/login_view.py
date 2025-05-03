@@ -48,9 +48,8 @@ templates = Jinja2Templates(directory=settings.template_dir / "users")
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(
     request: Request,
-    current_user: User = Depends(
-        get_current_user_from_cookie
-    ),  # Получение текущего пользователя
+    # current_user: User = Depends(
+    #     get_current_user_from_cookie),  # Получение текущего пользователя
 ):
     """
     Отображает страницу входа с формой.
@@ -63,7 +62,7 @@ async def login_page(
         "login.html",  # Имя HTML-шаблона
         {
             "request": request,
-            "current_user": current_user,
+            "current_user": None,
         },
     )
 
@@ -88,27 +87,19 @@ async def login(
     :raises HTTPException: 401 при неверных данных или 500 при внутренней ошибке.
     """
     try:
-        # Аутентификация пользователя
         user = await authenticate_user(service, username, password)
 
-        # Создание JWT-токенов
         access_token = TokenService.create_access_token({"sub": user.username})
         refresh_token = TokenService.create_refresh_token({"sub": user.username})
-        
-#         # Добавления токенов в куки
-#         TokenCookieService.set_access_token_to_cookie(access_token, response)
-#         TokenCookieService.set_refresh_token_to_cookie(refresh_token, response)
 
-        # Логирование успешной аутентификации
         logger.info(f"User {user.username} successfully authenticated")
 
-        # Перенаправление на страницу профиля
         redirect = RedirectResponse(
             url=f"/profile/{user.id}",
             status_code=303,
         )
-        redirect.set_cookie("access-token", access_token, path="/")
-        redirect.set_cookie("refresh-token", refresh_token, path="/")
+        redirect.set_cookie("access-token", access_token, domain="my-vk")
+        redirect.set_cookie("refresh-token", refresh_token)
         return redirect
 
     except Exception as e:

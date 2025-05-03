@@ -15,7 +15,7 @@ class TokenCookieService:
 
         response.set_cookie(
             key="access-token",
-            value=f"Bearer {access_token}",
+            value=access_token,
             httponly=True,
             samesite="lax",
             max_age=settings.jwt.access_token_expire_minutes * 60,
