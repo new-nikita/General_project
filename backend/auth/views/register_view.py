@@ -39,9 +39,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-templates = Jinja2Templates(directory=settings.template_dir / "users")
-
-
 async def get_register_form(
     username: str = Form(...),
     email: EmailStr = Form(...),
@@ -96,8 +93,8 @@ async def get_register_page(
     if current_user:
         return RedirectResponse(url="/", status_code=303)
 
-    return templates.TemplateResponse(
-        "register.html",
+    return settings.templates.template_dir.TemplateResponse(
+        "users/register.html",
         {
             "request": request,
             "current_user": current_user,
@@ -160,7 +157,6 @@ async def register_user(
             "register.html",
             {
                 "request": request,
-                "current_user": None,
                 "form_data": form_data.model_dump(),
                 "errors": {"": e.detail},
             },
@@ -174,8 +170,8 @@ async def register_user(
             errors[field] = msg
 
         logger.warning(f"Registration validation failed: {errors}")
-        return templates.TemplateResponse(
-            "register.html",
+        return settings.templates.template_dir.TemplateResponse(
+            "users/register.html",
             {
                 "request": request,
                 "current_user": None,

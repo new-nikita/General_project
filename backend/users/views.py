@@ -23,8 +23,6 @@ router = APIRouter(
     include_in_schema=False,  # Исключаем из OpenAPI документации
 )
 
-templates = Jinja2Templates(directory=settings.template_dir / "users")
-
 
 @router.get("/{profile_id}", response_class=HTMLResponse)
 async def get_user_profile(
@@ -58,8 +56,8 @@ async def get_user_profile(
         is_own_profile = current_user.id == profile_user.id
 
     posts = await post_service.repository.get_all_posts_by_author_id(profile_id)
-    return templates.TemplateResponse(
-        "profile.html",
+    return settings.templates.template_dir.TemplateResponse(
+        "users/profile.html",
         {
             "request": request,
             "user": profile_user,

@@ -1,11 +1,11 @@
 import logging
+from typing import Annotated
 
 from fastapi import (
     APIRouter,
     Depends,
     Request,
 )
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
 from core.config import settings
@@ -29,12 +29,10 @@ router.include_router(login_router)
 router.include_router(register_router)
 
 
-templates = Jinja2Templates(directory=settings.template_dir)
-
-
 @router.get("/", response_class=HTMLResponse)
 async def index(
-    request: Request, current_user: User = Depends(get_current_user_from_cookie)
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
 ):
     """
     Отображает главную страницу с приветствием.
@@ -43,6 +41,10 @@ async def index(
     :param current_user: Текущий авторизованный пользователь.
     :return: HTML-страница с приветствием.
     """
-    return templates.TemplateResponse(
-        "index.html", {"request": request, "user": current_user}
+    return settings.templates.template_dir.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "current_user": current_user,
+        },
     )

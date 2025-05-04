@@ -178,28 +178,28 @@
 
             <nav class="d-none d-lg-block">
                 <ul class="nav">
-                    {% if current_user %}
-                    <li class="nav-item">
-                        <a href="/profile/{{ current_user.id }}" class="nav-link text-white">
-                            <i class="fas fa-user-circle me-1"></i> Профиль
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/logout" class="nav-link text-white">
-                            <i class="fas fa-sign-out-alt me-1"></i> Выйти
-                        </a>
-                    </li>
+                    {% if current_user | default(None) %}
+                        <li class="nav-item">
+                            <a href="/profile/{{ current_user.id }}" class="nav-link text-white">
+                                <i class="fas fa-user-circle me-1"></i> Профиль
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/logout" class="nav-link text-white">
+                                <i class="fas fa-sign-out-alt me-1"></i> Выйти
+                            </a>
+                        </li>
                     {% else %}
-                    <li class="nav-item">
-                        <a href="/login" class="nav-link text-white">
-                            <i class="fas fa-sign-in-alt me-1"></i> Войти
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/register" class="nav-link text-white">
-                            <i class="fas fa-user-plus me-1"></i> Регистрация
-                        </a>
-                    </li>
+                        <li class="nav-item">
+                            <a href="/login" class="nav-link text-white">
+                                <i class="fas fa-sign-in-alt me-1"></i> Войти
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/register" class="nav-link text-white">
+                                <i class="fas fa-user-plus me-1"></i> Регистрация
+                            </a>
+                        </li>
                     {% endif %}
                 </ul>
             </nav>

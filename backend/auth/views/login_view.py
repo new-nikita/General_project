@@ -1,35 +1,20 @@
 import logging
-from datetime import date
 from typing import Annotated
 
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
-    status,
     Request,
     Response,
     Form,
 )
-from fastapi.security import OAuth2PasswordBearer
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
-from pydantic import EmailStr
 
-from auth.redis_client import RedisClient
-from auth.tokens_service import TokenService
-from auth.token_cookie_service import TokenCookieService
 from core.config import settings
-from core.models import User
-
 from users.dependencies import get_user_service
 from users.services import UserService
-
-from auth.authorization import (
-    authenticate_user,
-    get_current_user_from_cookie,
-)
-
+from auth.authorization import authenticate_user
+from auth.tokens_service import TokenService
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -40,29 +25,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-templates = Jinja2Templates(directory=settings.template_dir / "users")
-
-
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(
     request: Request,
-    # current_user: User = Depends(
-    #     get_current_user_from_cookie),  # Получение текущего пользователя
 ):
     """
     Отображает страницу входа с формой.
 
     :param request: Запрос для передачи в шаблон.
-    :param current_user: Текущий авторизованный пользователь.
     :return: HTML-страница с формой входа.
     """
-    return templates.TemplateResponse(
-        "login.html",  # Имя HTML-шаблона
+    return settings.templates.template_dir.TemplateResponse(
+        "users/login.html",
         {
             "request": request,
-            "current_user": None,
         },
     )
 
@@ -106,7 +82,10 @@ async def login(
         logger.error(f"Authentication failed: {e}")
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "Неверное имя пользователя или пароль."},
+            {
+                "request": request,
+                "error": "Неверное имя пользователя или пароль.",
+            },
         )
 
 
