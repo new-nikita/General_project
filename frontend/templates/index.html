@@ -1,10 +1,29 @@
 {% extends "users/base.html" %}
-Тут будет какая-то страница
-
 {% block content %}
     {% if current_user %}
-        <h1>Привет, {{ current_user.profile.first_name }}</h1>
+        <h1 class="mb-4">Привет, {{ current_user.profile.first_name }}!</h1>
     {% else %}
-        <h1>Hello, Anonymous!</h1>
+        <h1 class="mb-4">Hello, Anonymous!</h1>
     {% endif %}
+
+    <div class="post-container">
+        {% for post in posts %}
+            <div class="post-card">
+                <div class="post-header d-flex align-items-center">
+                    <img src="{{ post.author.profile.avatar or '/static/profiles_avatar/дефолтный_аватар.jpg' }}"
+                         alt="Avatar" class="rounded-circle me-3" style="width:40px; height:40px; object-fit: cover;">
+                    <div>
+                        <h6 class="mb-0">{{ post.author.profile.full_name }}</h6>
+                        <small class="text-muted">{{ post.created_at.strftime('%d %b %Y, %H:%M') if post.created_at else '' }}</small>
+                    </div>
+                </div>
+                <div class="post-body">
+                    <p class="post-text">{{ post.content }}</p>
+                </div>
+                
+            </div>
+        {% else %}
+            <p class="text-muted">Постов пока нет.</p>
+        {% endfor %}
+    </div>
 {% endblock %}

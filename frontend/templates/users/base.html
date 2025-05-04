@@ -178,7 +178,7 @@
 
             <nav class="d-none d-lg-block">
                 <ul class="nav">
-                    {% if current_user | default(None) %}
+                    {% if current_user %}
                         <li class="nav-item">
                             <a href="/profile/{{ current_user.id }}" class="nav-link text-white">
                                 <i class="fas fa-user-circle me-1"></i> Профиль
@@ -191,12 +191,12 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a href="/login" class="nav-link text-white">
+                            <a href="/login" class="btn btn-light btn-sm ms-2 rounded-pill shadow-sm">
                                 <i class="fas fa-sign-in-alt me-1"></i> Войти
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/register" class="nav-link text-white">
+                            <a href="/register" class="btn btn-primary btn-sm ms-2 rounded-pill shadow-sm">
                                 <i class="fas fa-user-plus me-1"></i> Регистрация
                             </a>
                         </li>
@@ -207,63 +207,75 @@
     </div>
 </header>
 
-<div class="main-container">
-    <!-- Sidebar -->
+{% block sidebar_menu %}
+    <div class="main-container">
+
     <aside class="sidebar">
         <div class="sidebar-header">
             <h5 class="mb-0">Меню</h5>
         </div>
         <div class="sidebar-body">
             <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a href="/profile/{{ current_user.id }}" class="nav-link">
-                        <i class="fas fa-user me-2"></i> Моя страница
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/friends" class="nav-link">
-                        <i class="fas fa-users me-2"></i> Мои друзья
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/messages" class="nav-link">
-                        <i class="fas fa-envelope me-2"></i> Сообщения
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/photos" class="nav-link">
-                        <i class="fas fa-images me-2"></i> Фото
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/music" class="nav-link">
-                        <i class="fas fa-music me-2"></i> Музыка
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/videos" class="nav-link">
-                        <i class="fas fa-video me-2"></i> Видео
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/groups" class="nav-link">
-                        <i class="fas fa-users me-2"></i> Группы
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/news" class="nav-link">
-                        <i class="fas fa-newspaper me-2"></i> Новости
-                    </a>
-                </li>
-            </ul>
-        </div>
+                {% if current_user %}
+                    <li class="nav-item">
+                        <a href="/profile/{{ current_user.id }}" class="nav-link">
+                            <i class="fas fa-user me-2"></i> Моя страница
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/friends" class="nav-link">
+                            <i class="fas fa-users me-2"></i> Мои друзья
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/messages" class="nav-link">
+                            <i class="fas fa-envelope me-2"></i> Сообщения
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/photos" class="nav-link">
+                            <i class="fas fa-images me-2"></i> Фото
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/music" class="nav-link">
+                            <i class="fas fa-music me-2"></i> Музыка
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/videos" class="nav-link">
+                            <i class="fas fa-video me-2"></i> Видео
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/groups" class="nav-link">
+                            <i class="fas fa-users me-2"></i> Группы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/news" class="nav-link">
+                            <i class="fas fa-newspaper me-2"></i> Новости
+                        </a>
+                    </li>
+                    </ul>
+                    </div>
+                {% else %}
+                    <li class="nav-item">
+                        <div class="text-center p-3">
+                            <p class="text-muted small mb-2">Войдите или зарегистрируйтесь, чтобы писать комментарии ,
+                                сообщения, добавлять друзей и многое другое.</p>
+                            <a href="/login" class="btn btn-outline-primary btn-sm w-100 mb-2">Войти</a>
+                            <a href="/register" class="btn btn-success btn-sm w-100">Зарегистрироваться</a>
+                        </div>
+                    </li>
+                {% endif %}
     </aside>
-
-    <!-- Main content -->
-    <main class="main-content">
-        {% block content %}
-        {% endblock %}
-    </main>
+{% endblock %}
+<!-- Main content -->
+<main class="main-content">
+    {% block content %}
+    {% endblock %}
+</main>
 </div>
 
 <!-- Footer -->
