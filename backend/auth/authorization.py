@@ -1,17 +1,15 @@
 import logging
 
 from fastapi import Cookie, HTTPException, status, Depends, Request
-from fastapi.security import OAuth2PasswordBearer
-from starlette.responses import Response
+from fastapi.responses import Response
 
 from core.config import settings
-from users.services import UserService
 from core.models import User
+from users.services import UserService
 from users.password_helper import PasswordHelper, PasswordVerificationError
 from users.dependencies import get_user_service
 from auth.tokens_service import TokenService
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -54,9 +52,12 @@ async def authenticate_user(service: UserService, username: str, password: str) 
             logger.warning(f"Login attempt for non-existent user: {username}")
             handle_auth_error(message="Incorrect username or password")
         try:
-            PasswordHelper.verify_password(
-                password, user.hashed_password
-            )  # проверяет соответствие пароля
+            if not PasswordHelper.verify_password(password, user.hashed_password):
+                logger.warning(f"Login attempt for non-existent user: {username}")
+                handle_auth_error(
+                    message="Incorrect username or password",
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                )
 
         except PasswordVerificationError as e:
             logger.warning(f"Invalid password attempt for user: {username}")
