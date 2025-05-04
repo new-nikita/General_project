@@ -178,13 +178,13 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Фуллскрин просмотр аватара -->
-            <div id="fullscreen-view" class="fullscreen-view" style="display: none;">
-                <span class="close-fullscreen">&times;</span>
-                <img src="{{ user.profile.avatar }}" alt="Аватар" class="fullscreen-avatar">
-            </div>
         {% endif %}
+
+        <!-- Фуллскрин просмотр аватара -->
+        <div id="fullscreen-view" class="fullscreen-view" style="display: none;">
+            <span class="close-fullscreen">&times;</span>
+            <img src="{{ user.profile.avatar }}" alt="Аватар" class="fullscreen-avatar">
+        </div>
 
         <!-- Блок для создания поста -->
         {% if is_own_profile %}
