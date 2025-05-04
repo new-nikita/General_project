@@ -3,6 +3,11 @@ import logging
 from passlib.context import CryptContext
 from passlib.exc import UnknownHashError
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    filename="password_attack.log",
+)
 logger = logging.getLogger(__name__)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -23,7 +28,11 @@ class PasswordHelper:
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Проверяет, соответствует ли введенный пароль хэшированному."""
         try:
-            return pwd_context.verify(plain_password, hashed_password)
+            logger.info("Verifying password...")
+            flag = pwd_context.verify(plain_password, hashed_password)
+            if not flag:
+                raise PasswordVerificationError
+            return flag
         except (ValueError, TypeError, UnknownHashError) as e:
             logger.error(f"Password verification failed: {str(e)}")
             raise PasswordVerificationError from e
