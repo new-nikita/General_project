@@ -80,8 +80,8 @@ async def login(
 
     except Exception as e:
         logger.error(f"Authentication failed: {e}")
-        return templates.TemplateResponse(
-            "login.html",
+        return settings.templates.template_dir.TemplateResponse(
+            "users/login.html",
             {
                 "request": request,
                 "error": "Неверное имя пользователя или пароль.",
