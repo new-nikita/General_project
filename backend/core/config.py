@@ -1,8 +1,9 @@
 import logging
 import os
 from pathlib import Path
-from typing import Literal
+from typing import Literal, ClassVar
 
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from pydantic import PostgresDsn
 from pydantic_settings import (
@@ -49,6 +50,11 @@ class LoggingConfig(BaseModel):
         return logging.getLevelNamesMapping()[self.log_level.upper()]
 
 
+class Jinja2Settings(BaseModel):
+    template_dir: ClassVar[Jinja2Templates] = Jinja2Templates(TEMPLATES_DIR)
+    template_dir.env.globals["current_user"] = None
+
+
 class DatabaseConfig(BaseModel):
     url: PostgresDsn = DATABASE_URL
     echo: bool = False
@@ -58,7 +64,7 @@ class DatabaseConfig(BaseModel):
 
 
 class RedisConfig(BaseModel):
-    host: str = 'localhost'
+    host: str = "localhost"
     port: int = 6379
     db: int = 0
 
@@ -73,7 +79,7 @@ class Settings(BaseSettings):
     logging: LoggingConfig = LoggingConfig()
     db: DatabaseConfig = DatabaseConfig()
     jwt: JwtConfig = JwtConfig()
-    template_dir: Path = TEMPLATES_DIR
+    templates: Jinja2Settings = Jinja2Settings()
     redis: RedisConfig = RedisConfig()
 
 
