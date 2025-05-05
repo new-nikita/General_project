@@ -16,7 +16,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import EmailStr
 
-from auth.redis_client import RedisClient
+# from auth.redis_client import RedisClient
 from auth.tokens_service import TokenService
 from auth.token_cookie_service import TokenCookieService
 from core.config import settings

@@ -5,6 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 from pydantic import PostgresDsn
+from pydantic import AnyUrl, RedisDsn
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
@@ -63,6 +64,22 @@ class RedisConfig(BaseModel):
     db: int = 0
 
 
+class CeleryConfig(BaseModel):
+    broker_url: AnyUrl = "pyamqp://guest@localhost//"  # AMQP (RabbitMQ)
+    result_backend: RedisDsn = "redis://localhost:6379/0"
+    task_routes: dict[str, dict[str, str]] = {
+        "app.tasks.*": {"queue": "email_tasks"}
+    }
+
+class SMTPSettings(BaseSettings):
+    host: str = 'krqz prvw ygyt rhqb'
+    port: int = 465
+    user: str = 'nikita.popkov.docker@gmail.com'
+    password: str = 'your_app_password'
+    use_tls: bool = False
+    use_ssl: bool = True
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(
@@ -75,6 +92,8 @@ class Settings(BaseSettings):
     jwt: JwtConfig = JwtConfig()
     template_dir: Path = TEMPLATES_DIR
     redis: RedisConfig = RedisConfig()
+    celery: CeleryConfig = CeleryConfig()
+    smtp: SMTPSettings = SMTPSettings()
 
 
 CONVENTION = {
