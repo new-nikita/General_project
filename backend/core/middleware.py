@@ -40,7 +40,7 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
             return self._unauthorized_response(
                 message="If you fake the token again, I'll figure you out by IP.",
                 status_code=e.status_code,
-                delete_refresh_token=False,
+                delete_refresh_token=True,
             )
         except Exception as e:
             logger.error(

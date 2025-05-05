@@ -103,8 +103,7 @@ async def get_current_user_from_cookie(
     try:
         payload: dict = TokenService.decode_and_validate_token(access_token)
     except HTTPException as e:
-        request.cookies.pop("access-token")
-        return Response(status_code=202, content={"message": e.detail})
+        return Response(status_code=e.status_code, content={"message": e.detail})
 
     username: str = payload.get("sub")
     user: User = await get_user_by_username_from_service(username, service)
