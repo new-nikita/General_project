@@ -16,13 +16,10 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import EmailStr, ValidationError
 
-from auth import (
-    AsyncRedisClient,
-    TokenService
-)
+from backend.auth import AsyncRedisClient, TokenService
 
-from core.config import settings
-from core.models import User
+from backend.core.config import settings
+from backend.core.models import User
 
 from users.dependencies import get_user_service
 from users.schemas.register_schema import RegisterForm
@@ -30,9 +27,12 @@ from users.schemas.register_schema import RegisterForm
 from users.schemas.users_schemas import ProfileCreate, UserCreate
 from users.services import UserService
 
-from auth.Celery.tasks import send_confirmation_email_task, delete_unconfirmed_user_task
-from auth.Celery.email_service import EmailService
-from auth.authorization import get_current_user_from_cookie
+from backend.auth.Celery.tasks import (
+    send_confirmation_email_task,
+    delete_unconfirmed_user_task,
+)
+
+from backend.auth.authorization import get_current_user_from_cookie
 
 from utils.save_images import upload_image
 
@@ -82,6 +82,7 @@ async def get_register_form(
         # avatar=avatar,
     )
 
+
 @router.get("/register", response_class=HTMLResponse)
 async def get_register_page(
     request: Request,
@@ -118,22 +119,28 @@ async def register_user(
     redis: AsyncRedisClient = Depends(),
 ) -> Response:
 
-    temporary_user_token = TokenService.create_refresh_token({'sub': form_data.username})
+    temporary_user_token = TokenService.create_refresh_token(
+        {"sub": form_data.username}
+    )
 
     data = {
-        'username': form_data.username,
-        'email': form_data.email,
-        'password': form_data.password  # сделать сохранение хеша а не пароля
+        "username": form_data.username,
+        "email": form_data.email,
+        "password": form_data.password,  # сделать сохранение хеша а не пароля
     }
     await redis.connect()
     await redis.save_pending_email_token(data, temporary_user_token)
 
     # Отправка письма через Celery
-    result = send_confirmation_email_task.delay(form_data.email, temporary_user_token, str(request.base_url))
-    logger.info('Письмо отправлено')
-    # p = settings.redis.
+    send_confirmation_email_task(
+        form_data.email, temporary_user_token, str(request.base_url)
+    )
+    logger.info("Письмо отправлено")
+
     # Задача на удаление пользователя, если не подтвердил
-    delete_unconfirmed_user_task.apply_async(args=[temporary_user_token], countdown=1800)
+    delete_unconfirmed_user_task.apply_async(
+        args=[temporary_user_token], countdown=1800
+    )
 
     response = RedirectResponse(url="/login", status_code=303)
     response.set_cookie("register_pending", "true", max_age=300, path="/login")
@@ -146,7 +153,7 @@ async def confirm_email(
     service: Annotated[UserService, Depends(get_user_service)],
     redis: Annotated[AsyncRedisClient, Depends()],
     form_data: Annotated[RegisterForm, Depends(get_register_form)],
-    request: Request
+    request: Request,
 ):
     await redis.connect()
     data = await redis.get_pending_token(token)
@@ -237,7 +244,6 @@ async def confirm_email(
             },
             status_code=500,
         )
-
 
 
 # @router.get("confirm", response_class=HTMLResponse)

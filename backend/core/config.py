@@ -59,7 +59,7 @@ class DatabaseConfig(BaseModel):
 
 
 class RedisConfig(BaseModel):
-    host: str = 'localhost'
+    host: str = "localhost"
     port: int = 6379
     db: int = 0
 
@@ -68,15 +68,21 @@ class CeleryConfig(BaseModel):
     broker_url: AnyUrl = "redis://localhost:6379/0"  # AMQP (RabbitMQ)
     # broker_url: AnyUrl = "pyamqp://guest:guest@localhost//"  # AMQP (RabbitMQ)
     result_backend: RedisDsn = "redis://localhost:6379/0"
-    task_routes: dict[str, dict[str, str]] = {
-        "app.tasks.*": {"queue": "email_tasks"}
-    }
+    task_routes: dict[str, dict[str, str]] = {"app.tasks.*": {"queue": "email_tasks"}}
+
 
 class SMTPSettings(BaseSettings):
-    host: str = 'smtp.gmail.com'
-    port: int = 587
-    user: str = 'nikita.popkov.docker@gmail.com'
-    password: str = 'krqz prvw ygyt rhqb'
+    model_config = SettingsConfigDict(
+        env_file=(
+            BASE_DIR / ".env.template",
+            BASE_DIR / ".env",
+        ),
+        env_prefix="SMTP_",
+    )
+    host: str
+    port: int
+    user: str
+    password: str
     use_tls: bool = False
     use_ssl: bool = True
 
@@ -94,7 +100,7 @@ class Settings(BaseSettings):
     template_dir: Path = TEMPLATES_DIR
     redis: RedisConfig = RedisConfig()
     celery: CeleryConfig = CeleryConfig()
-    smtp: SMTPSettings = SMTPSettings()
+    smtp: SMTPSettings = SMTPSettings(user="misterwacky@yandex.ru")
 
 
 CONVENTION = {

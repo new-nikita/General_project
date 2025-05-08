@@ -1,7 +1,7 @@
 import redis.asyncio as redis
 import logging
 import json
-from core.config import settings
+from backend.core.config import settings
 from typing import Optional
 
 logging.basicConfig(
@@ -11,14 +11,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-
 class AsyncRedisClient:
     """Класс для временной работы хранения токенов при авторизации через ссылку"""
 
     def __init__(self):
         self.redis_url = f"redis://{settings.redis.host}:{settings.redis.port}/0"
         self.r = None
-
 
     async def connect(self):
         """Создаёт подключение к Redis"""
@@ -29,8 +27,9 @@ class AsyncRedisClient:
             logger.error(f"Ошибка при подключении к Redis: {e}")
             raise
 
-
-    async def save_pending_email_token(self, data, token: str, expires_sec: int = 1800) -> bool:
+    async def save_pending_email_token(
+        self, data, token: str, expires_sec: int = 1800
+    ) -> bool:
         """
         :param token: Токен для авторизации пользователя (будет отправлен в письмо пользователю на почту в виде ссылки)
         :param email: Email переданный пользователем в Form
@@ -49,7 +48,6 @@ class AsyncRedisClient:
             logger.error(f"Redis error (save): {e}")
             return False
 
-
     async def get_pending_token(self, token: str) -> Optional[dict]:
         """
         Извлекает значение по ключу из Redis
@@ -67,7 +65,6 @@ class AsyncRedisClient:
         except Exception as e:
             logger.error(f"Redis error (get): {e}")
             return
-
 
     async def delete_pending_token(self, token: str) -> bool:
         """
@@ -88,7 +85,6 @@ class AsyncRedisClient:
             logger.error(f"Redis error (delete): {e}")
             return False
 
-
     async def token_exists(self, token: str) -> bool:
         """
         Проверяет, существует ли ключ в Redis
@@ -104,15 +100,3 @@ class AsyncRedisClient:
         except Exception as e:
             logger.error(f"Redis error (exists): {e}")
             return False
-
-
-
-
-
-
-
-
-
-
-
-

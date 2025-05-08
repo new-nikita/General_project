@@ -3,7 +3,7 @@ import logging
 import jwt
 from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException
-from core.config import settings
+from backend.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,9 @@ class TokenService:
         to_encode.update({"exp": expire})
 
         if not settings.jwt.secret_key or not settings.jwt.algorithm:
-            raise ValueError("SECRET_KEY и ALGORITHM должны быть настроены в конфигурации.")
+            raise ValueError(
+                "SECRET_KEY и ALGORITHM должны быть настроены в конфигурации."
+            )
 
         try:
             encoded_jwt = jwt.encode(

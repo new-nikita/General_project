@@ -1,11 +1,14 @@
 from backend.auth.Celery.email_service import EmailService
-from core.config import settings
+from backend.core.config import settings
 from celery import Celery
-from auth.redis_client import AsyncRedisClient
+from backend.auth.redis_client import AsyncRedisClient
 
-celery_app = Celery("worker", broker=settings.celery.broker_url, backend=settings.celery.result_backend)
+celery_app = Celery(
+    "worker", broker=settings.celery.broker_url, backend=settings.celery.result_backend
+)
 
-@celery_app.task
+
+@celery_app.task  # (name="backend.auth.Celery.tasks.send_confirmation_email_task")
 def send_confirmation_email_task(email_to: str, token: str, base_url: str):
     """
 
