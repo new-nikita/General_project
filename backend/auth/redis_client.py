@@ -43,7 +43,7 @@ class AsyncRedisClient:
             """
             setex: устанавливает срок жизни записи 
             """
-            logger.debug(f"Сохранён токен: {data["username"]} -> {token}")
+            logger.info(f"Сохранён токен: {data["username"]} -> {token}")
             return True
         except Exception as e:
             logger.error(f"Redis error (save): {e}")
@@ -59,13 +59,14 @@ class AsyncRedisClient:
         try:
             val = await self.r.get(token)
             if val:
-                logger.debug(f"Токен получен: {token}")
+                logger.info(f"Токен получен: {token}")
                 return json.loads(val)
             logger.info(f"Токен не найден: {token}")
-            return None
+            return
+
         except Exception as e:
             logger.error(f"Redis error (get): {e}")
-            return None
+            return
 
 
     async def delete_pending_token(self, token: str) -> bool:

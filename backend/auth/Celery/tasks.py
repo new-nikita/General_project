@@ -1,4 +1,4 @@
-from auth.Celery.email_service import EmailService
+from backend.auth.Celery.email_service import EmailService
 from core.config import settings
 from celery import Celery
 from auth.redis_client import AsyncRedisClient
@@ -7,12 +7,25 @@ celery_app = Celery("worker", broker=settings.celery.broker_url, backend=setting
 
 @celery_app.task
 def send_confirmation_email_task(email_to: str, token: str, base_url: str):
+    """
+
+    :param email_to:
+    :param token:
+    :param base_url:
+    :return:
+    """
     link = EmailService.build_confirmation_link(base_url, token)
     message = EmailService.compose_email(email_to, link)
-    EmailService.send_email(message)
+    EmailService.send_email(message, email_to)
+
 
 @celery_app.task
 def delete_unconfirmed_user_task(token: str) -> bool:
+    """
+
+    :param token:
+    :return:
+    """
     user_token = AsyncRedisClient.token_exists(token)
     if user_token:
         AsyncRedisClient.delete_pending_token(token)

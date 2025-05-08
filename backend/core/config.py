@@ -65,17 +65,18 @@ class RedisConfig(BaseModel):
 
 
 class CeleryConfig(BaseModel):
-    broker_url: AnyUrl = "pyamqp://guest@localhost//"  # AMQP (RabbitMQ)
+    broker_url: AnyUrl = "redis://localhost:6379/0"  # AMQP (RabbitMQ)
+    # broker_url: AnyUrl = "pyamqp://guest:guest@localhost//"  # AMQP (RabbitMQ)
     result_backend: RedisDsn = "redis://localhost:6379/0"
     task_routes: dict[str, dict[str, str]] = {
         "app.tasks.*": {"queue": "email_tasks"}
     }
 
 class SMTPSettings(BaseSettings):
-    host: str = 'krqz prvw ygyt rhqb'
-    port: int = 465
+    host: str = 'smtp.gmail.com'
+    port: int = 587
     user: str = 'nikita.popkov.docker@gmail.com'
-    password: str = 'your_app_password'
+    password: str = 'krqz prvw ygyt rhqb'
     use_tls: bool = False
     use_ssl: bool = True
 

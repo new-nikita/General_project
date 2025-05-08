@@ -21,6 +21,14 @@ services:
       - /Users/nikita/PycharmProjects/General_project/backend/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
 
+  flower:
+    image: mher/flower:0.9.7
+    platform: linux/amd64
+    command: [ 'flower', '--broker=redis://redis:6379', '--port=5555' ]
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
 
   rabbitmq:
     image: rabbitmq:3-management  #

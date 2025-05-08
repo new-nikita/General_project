@@ -52,34 +52,34 @@ async def get_register_form(
     email: EmailStr = Form(...),
     password: str = Form(...),
     password2: str = Form(...),
-    first_name: Optional[str] = Form(None),
-    last_name: Optional[str] = Form(None),
-    middle_name: Optional[str] = Form(None),
-    birth_date: Optional[str] = Form(None),
-    gender: Optional[str] = Form(None),
-    phone_number: Optional[str] = Form(None),
-    country: Optional[str] = Form(None),
-    city: Optional[str] = Form(None),
-    street: Optional[str] = Form(None),
-    bio: Optional[str] = Form(None),
-    avatar: UploadFile | str | None = File(None),
+    # first_name: Optional[str] = Form(None),
+    # last_name: Optional[str] = Form(None),
+    # middle_name: Optional[str] = Form(None),
+    # birth_date: Optional[str] = Form(None),
+    # gender: Optional[str] = Form(None),
+    # phone_number: Optional[str] = Form(None),
+    # country: Optional[str] = Form(None),
+    # city: Optional[str] = Form(None),
+    # street: Optional[str] = Form(None),
+    # bio: Optional[str] = Form(None),
+    # avatar: UploadFile | str | None = File(None),
 ) -> RegisterForm:
     return RegisterForm(
         username=username,
         email=email,
         password=password,
         password2=password2,
-        first_name=first_name,
-        last_name=last_name,
-        middle_name=middle_name,
-        birth_date=birth_date,
-        gender=gender,
-        phone_number=phone_number,
-        country=country,
-        city=city,
-        street=street,
-        bio=bio,
-        avatar=avatar,
+        # first_name=first_name,
+        # last_name=last_name,
+        # middle_name=middle_name,
+        # birth_date=birth_date,
+        # gender=gender,
+        # phone_number=phone_number,
+        # country=country,
+        # city=city,
+        # street=street,
+        # bio=bio,
+        # avatar=avatar,
     )
 
 @router.get("/register", response_class=HTMLResponse)
@@ -111,31 +111,31 @@ async def get_register_page(
     )
 
 
-from auth.Celery.tasks import send_confirmation_email_task, delete_unconfirmed_user_task
-
 @router.post("/register", response_class=HTMLResponse)
 async def register_user(
     request: Request,
     form_data: Annotated[RegisterForm, Depends(get_register_form)],
     redis: AsyncRedisClient = Depends(),
 ) -> Response:
+
     temporary_user_token = TokenService.create_refresh_token({'sub': form_data.username})
 
-    data = form_data.model_dump()
+    data = {
+        'username': form_data.username,
+        'email': form_data.email,
+        'password': form_data.password  # сделать сохранение хеша а не пароля
+    }
     await redis.connect()
     await redis.save_pending_email_token(data, temporary_user_token)
 
     # Отправка письма через Celery
-    r = send_confirmation_email_task.delay(form_data.email, temporary_user_token, str(request.base_url))
-
+    result = send_confirmation_email_task.delay(form_data.email, temporary_user_token, str(request.base_url))
+    logger.info('Письмо отправлено')
+    # p = settings.redis.
     # Задача на удаление пользователя, если не подтвердил
     delete_unconfirmed_user_task.apply_async(args=[temporary_user_token], countdown=1800)
 
-    if r.ready():
-        # сделать переход на страничку пользователя если он перешел по ссылке
-        response = RedirectResponse(url="/login", status_code=303)
-    else:
-        response = RedirectResponse(url="/login", status_code=303)
+    response = RedirectResponse(url="/login", status_code=303)
     response.set_cookie("register_pending", "true", max_age=300, path="/login")
     return response
 
@@ -145,6 +145,8 @@ async def confirm_email(
     token: str,
     service: Annotated[UserService, Depends(get_user_service)],
     redis: Annotated[AsyncRedisClient, Depends()],
+    form_data: Annotated[RegisterForm, Depends(get_register_form)],
+    request: Request
 ):
     await redis.connect()
     data = await redis.get_pending_token(token)
@@ -153,37 +155,88 @@ async def confirm_email(
         raise HTTPException(status_code=400, detail="Токен недействителен или истёк")
 
     try:
-        profile_data = {k: v for k, v in data.items() if k not in {"username", "password", "email", "avatar"}}
+        # Сначала создаем пользователя без аватара
+        profile_data = form_data.model_dump(
+            exclude={"username", "password", "password2", "email", "avatar"}
+        )
         profile = ProfileCreate(**profile_data)
 
         user_create = UserCreate(
-            username=data["username"],
-            password=data["password"],
-            email=data["email"],
+            username=form_data.username,
+            password=form_data.password,
+            email=form_data.email,
             profile=profile,
         )
 
+        # Создаем пользователя и сразу делаем flush, чтобы получить ID
         user = await service.create_user_and_added_in_db(user_create)
         await service.repository.session.flush()
 
-        if data.get("avatar") and hasattr(data["avatar"], "filename"):
+        # Теперь загружаем аватар, если он был предоставлен
+        if form_data.avatar and form_data.avatar.filename:
             avatar_url = await upload_image(
                 user_id=user.id,
-                image_file=data["avatar"],
+                image_file=form_data.avatar,
                 content_path="users/avatars",
             )
+            # Обновляем аватар пользователя
             user.profile.avatar = avatar_url
-            await service.repository.session.commit()
-
-        await redis.delete_pending_token(token)
+            await service.repository.session.commit()  # Фиксируем изменения
 
         logger.info(f"New user registered: {user.username}")
-        return RedirectResponse(url="/login", status_code=303)
 
+        response = RedirectResponse(url="/login", status_code=303)
+        response.set_cookie(
+            "register_success",
+            "true",
+            max_age=5,
+            path="/login",
+        )
+        return response
+
+    except HTTPException as e:
+        logger.warning(f"Registration failed: {e.detail}")
+        return templates.TemplateResponse(
+            "register.html",
+            {
+                "request": request,
+                "current_user": None,
+                "form_data": form_data.model_dump(),
+                "errors": {"": e.detail},
+            },
+            status_code=e.status_code,
+        )
+    except ValidationError as e:
+        errors = {}
+        for error in e.errors():
+            field = error["loc"][-1]
+            msg = error["msg"]
+            errors[field] = msg
+
+        logger.warning(f"Registration validation failed: {errors}")
+        return templates.TemplateResponse(
+            "register.html",
+            {
+                "request": request,
+                "current_user": None,
+                "form_data": form_data.model_dump(),
+                "errors": errors,
+            },
+            status_code=400,
+        )
     except Exception as e:
         await service.repository.session.rollback()
-        logger.error(f"Registration error: {e}")
-        raise HTTPException(status_code=500, detail="Ошибка регистрации")
+        logger.error(f"Registration error: {str(e)}", exc_info=True)
+        return templates.TemplateResponse(
+            "register.html",
+            {
+                "request": request,
+                "current_user": None,
+                "form_data": form_data.model_dump(),
+                "errors": {"": "Произошла ошибка при регистрации"},
+            },
+            status_code=500,
+        )
 
 
 
