@@ -132,7 +132,7 @@ async def register_user(
             avatar_url = await upload_image(
                 user_id=user.id,
                 image_file=form_data.avatar,
-                content_path="users/avatars",
+                content_path="users_files/avatars",
             )
             # Обновляем аватар пользователя
             user.profile.avatar = avatar_url

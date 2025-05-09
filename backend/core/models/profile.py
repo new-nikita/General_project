@@ -28,8 +28,8 @@ class Profile(UserRelationMixin, Base):
     bio: Mapped[str | None] = mapped_column(Text())
     avatar: Mapped[str] = mapped_column(
         Text(),
-        default="/static/users/avatars/дефолтный_аватар.jpg",
-        server_default="/static/users/avatars/дефолтный_аватар.jpg",
+        default="/static/users_files/avatars/дефолтный_аватар.jpg",
+        server_default="/static/users_files/avatars/дефолтный_аватар.jpg",
     )
 
     @property

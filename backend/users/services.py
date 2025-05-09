@@ -1,10 +1,9 @@
-from typing import Sequence
-
 from fastapi import HTTPException
 
-from users.repository import UserRepository
-from users.schemas.users_schemas import UserCreate
-from core.models import User, Post
+from backend.users.repository import UserRepository
+from backend.users.schemas.profile_schemas import ProfileUpdate
+from backend.users.schemas.users_schemas import UserCreate
+from backend.core.models import User
 
 
 class UserService:
@@ -53,8 +52,11 @@ class UserService:
 
         return await self.repository.get_user_by_username(username)
 
-    # async def get_posts_by_user_id(self, user_id: int) -> Sequence[Post] | None:
-    #     return await self.repository.get_posts_by_user_id(user_id)
-    #
-    # async def create_post(self, dto_post: PostSchema) -> None:
-    #     await self.repository.create_post(dto_post)
+    async def update_profile(self, user: User, dto_profile: ProfileUpdate):
+        """
+
+        :param user:
+        :param dto_profile:
+        :return:
+        """
+        await self.repository.update_profile(user=user, dto_profile=dto_profile)

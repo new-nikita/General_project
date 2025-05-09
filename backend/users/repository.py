@@ -83,13 +83,25 @@ class UserRepository(BaseRepository[User]):
         dto_profile: ProfileUpdate,
     ) -> None:
         """
-        Обновление данных профиля по указанным данным.
-        :param user: Владелец профиля.
-        :param dto_profile: Данные с формы обновления профиля.
-        :return:
+        Обновляет профиль пользователя.
+        Если профиля нет — создаёт его.
+        Если есть — обновляет только указанные поля.
+        :param user: Пользователь, чей профиль нужно обновить.
+        :param dto_profile: Данные для обновления профиля.
         """
-        user.profile = Profile(**dto_profile.model_dump())
+        if not user.profile:
+            # Профиля нет — создаём новый и привязываем к пользователю
+            profile_data = dto_profile.model_dump(exclude_unset=True)
+            user.profile = Profile(user_id=user.id, **profile_data)
+        else:
+            # Профиль существует — обновляем только переданные поля
+            profile_data = dto_profile.model_dump(exclude_unset=True)
+            for key, value in profile_data.items():
+                setattr(user.profile, key, value)
+
+        self.session.add(user)
         await self.session.commit()
+        await self.session.refresh(user)
 
     async def delete(self, id_: int) -> str | None: ...
 
