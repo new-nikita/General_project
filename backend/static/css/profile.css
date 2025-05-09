@@ -1,19 +1,53 @@
+
 .profile-container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 2rem auto;
     padding: 2rem;
-    background-color: #eae8e8;
+    background-color: #f8f9fa;
     border-radius: 12px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
 }
 
-/* Аватар пользователя */
+.profile-card {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.profile-avatar {
+    flex: 0 0 300px;
+    text-align: center;
+}
+
 .user-avatar {
-    width: 300px;
-    height: 300px;
+    width: 200px;
+    height: 200px;
     object-fit: cover;
     border-radius: 50%;
     border: 2px solid #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-details {
+    flex: 1;
+    min-width: 300px;
+}
+
+.profile-details h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-details p {
+    margin-bottom: 0.4rem;
+}
+
+.profile-actions {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 /* Основная информация */

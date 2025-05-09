@@ -7,33 +7,38 @@
 {% endblock %}
 {% block content %}
     <div class="profile-container">
-        <!-- Аватар и основная информация -->
-        <div class="text-center mb-4">
-            <img src="{{ user.profile.avatar }}" alt="Аватар" class="user-avatar">
+        <div class="d-flex align-items-center mb-4 profile-header">
+            <!-- Левая часть: аватар -->
+            <div class="profile-avatar me-4">
+                <img src="{{ user.profile.avatar }}" alt="Аватар" class="user-avatar rounded-circle shadow-sm">
+            </div>
 
-            {% if user.profile.first_name or user.profile.last_name %}
-                <h3 class="text-muted">{{ user.profile.first_name or '' }} {{ user.profile.last_name or '' }}</h3>
-            {% endif %}
-            {% if user.email %}
-                <p class="text-muted mb-0">
-                    <i class="fas fa-envelope me-1"></i> {{ user.email }}
-                </p>
-            {% endif %}
+            <!-- Правая часть: информация -->
+            <div class="profile-details flex-grow-1">
+                <!-- Имя -->
+                {% if user.profile.first_name or user.profile.last_name %}
+                    <h3 class="text-muted mb-2">{{ user.profile.first_name or '' }} {{ user.profile.last_name or '' }}</h3>
+                {% endif %}
 
-            <!-- Кнопка "Подробнее" под аватаром -->
-            <button id="profile-info-btn" class="profile-info-btn">
-                <i class="fas fa-info-circle"></i> Подробнее
-            </button>
-            {% if is_own_profile %}
+                <!-- Email -->
+                {% if user.email %}
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-envelope me-1"></i> {{ user.email }}
+                    </p>
+                {% endif %}
 
-                <a href="/profile/edit/{{ user.id }}" class="edit-profile-modern">
-                    <span class="edit-profile-modern-text">Редактировать</span>
-                    <span class="edit-profile-modern-icon">
-        <i class="fas fa-arrow-right"></i>
-    </span>
-                </a>
-
-            {% endif %}
+                <!-- Кнопки -->
+                <div class="profile-actions d-flex gap-2 mt-2">
+                    <button id="profile-info-btn" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-info-circle me-1"></i> Подробнее
+                    </button>
+                    {% if is_own_profile %}
+                        <a href="/profile/edit/{{ user.id }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-user-edit me-1"></i> Редактировать
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         <!-- Модальное окно с информацией профиля -->
