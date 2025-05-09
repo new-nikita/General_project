@@ -1,5 +1,4 @@
 import logging
-from datetime import date
 from typing import Annotated, Optional
 
 from fastapi import (
@@ -12,7 +11,6 @@ from fastapi import (
     File,
 )
 
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import EmailStr, ValidationError
 

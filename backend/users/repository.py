@@ -8,6 +8,8 @@ from core.base_repository import BaseRepository
 from core.models import User, Profile, Post
 from users.schemas.users_schemas import UserCreate
 from .password_helper import PasswordHelper
+from backend.users.schemas.profile_schemas import ProfileUpdate
+
 
 # from .views import PostSchema
 
@@ -18,7 +20,7 @@ class UserRepository(BaseRepository[User]):
     Содержит методы для взаимодействия с базой данных.
     """
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         """
         Инициализация репозитория с сессией базы данных.
 
@@ -74,6 +76,20 @@ class UserRepository(BaseRepository[User]):
         return result.scalar_one_or_none()
 
     async def update(self, id_: int, data: dict[str, Any]) -> str | None: ...
+
+    async def update_profile(
+        self,
+        user: User,
+        dto_profile: ProfileUpdate,
+    ) -> None:
+        """
+        Обновление данных профиля по указанным данным.
+        :param user: Владелец профиля.
+        :param dto_profile: Данные с формы обновления профиля.
+        :return:
+        """
+        user.profile = Profile(**dto_profile.model_dump())
+        await self.session.commit()
 
     async def delete(self, id_: int) -> str | None: ...
 
