@@ -499,21 +499,35 @@
 }
 
 .edit-profile-modern {
-    display: block;
-    max-width: 200px;
-    margin: 15px auto 0;
-    padding: 12px 16px;
-    border: 1px solid #ddd;
-    border-left: 4px solid #4a76a8;
-    border-radius: 6px;
-    color: #333;
-    font-size: 0.95rem;
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 16px;
+    border: 2px solid #4a76a8; /* Нейтральный контур */
+    color: #4a76a8;
     text-decoration: none;
-    background-color: #fafafa;
-    transition: background-color 0.3s ease;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    background-color: transparent;
 }
 
 .edit-profile-modern:hover {
-    background-color: #f1f1f1;
-    border-left-color: #2c588c;
+    background-color: #e6f0fa;
+    color: #2c588c;
+    transform: translateY(-2px);
+}
+
+.edit-profile-modern:active {
+    transform: translateY(0);
+}
+
+.edit-profile-modern .edit-profile-modern-icon {
+    display: inline-block;
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+}
+
+.edit-profile-modern:hover .edit-profile-modern-icon {
+    transform: translateX(4px);
 }
