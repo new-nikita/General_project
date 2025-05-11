@@ -65,8 +65,8 @@ class RedisConfig(BaseModel):
 
 
 class CeleryConfig(BaseModel):
-    broker_url: AnyUrl = "redis://localhost:6379/0"  # AMQP (RabbitMQ)
-    # broker_url: AnyUrl = "pyamqp://guest:guest@localhost//"  # AMQP (RabbitMQ)
+    # broker_url: AnyUrl = "redis://localhost:6379/0"  #  REDIS
+    broker_url: AnyUrl = "pyamqp://guest:guest@localhost//"  # AMQP (RabbitMQ)
     result_backend: RedisDsn = "redis://localhost:6379/0"
     task_routes: dict[str, dict[str, str]] = {"app.tasks.*": {"queue": "email_tasks"}}
 
@@ -100,7 +100,7 @@ class Settings(BaseSettings):
     template_dir: Path = TEMPLATES_DIR
     redis: RedisConfig = RedisConfig()
     celery: CeleryConfig = CeleryConfig()
-    smtp: SMTPSettings = SMTPSettings(user="misterwacky@yandex.ru")
+    smtp: SMTPSettings = SMTPSettings(user="nikita.popkov.docker@gmail.com")
 
 
 CONVENTION = {

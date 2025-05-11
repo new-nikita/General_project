@@ -1,4 +1,5 @@
 import logging
+import json
 from datetime import date
 from typing import Annotated, Optional
 
@@ -16,7 +17,10 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import EmailStr, ValidationError
 
-from backend.auth import AsyncRedisClient, TokenService
+from auth import (
+    AsyncRedisClient,
+    TokenService
+)
 
 from backend.core.config import settings
 from backend.core.models import User
@@ -27,11 +31,9 @@ from users.schemas.register_schema import RegisterForm
 from users.schemas.users_schemas import ProfileCreate, UserCreate
 from users.services import UserService
 
-from backend.auth.Celery.tasks import (
-    send_confirmation_email_task,
-    delete_unconfirmed_user_task,
-)
-
+from backend.auth.Celery.logger_info import celery_status
+from backend.auth.Celery.tasks import send_confirmation_email_task
+from backend.auth.Celery.email_service import (EmailService)
 from backend.auth.authorization import get_current_user_from_cookie
 
 from utils.save_images import upload_image
@@ -45,6 +47,8 @@ router = APIRouter()
 
 
 templates = Jinja2Templates(directory=settings.template_dir / "users")
+templates2 = Jinja2Templates(directory=settings.template_dir / "info")
+
 
 
 async def get_register_form(
@@ -52,36 +56,35 @@ async def get_register_form(
     email: EmailStr = Form(...),
     password: str = Form(...),
     password2: str = Form(...),
-    # first_name: Optional[str] = Form(None),
-    # last_name: Optional[str] = Form(None),
-    # middle_name: Optional[str] = Form(None),
-    # birth_date: Optional[str] = Form(None),
-    # gender: Optional[str] = Form(None),
-    # phone_number: Optional[str] = Form(None),
-    # country: Optional[str] = Form(None),
-    # city: Optional[str] = Form(None),
-    # street: Optional[str] = Form(None),
-    # bio: Optional[str] = Form(None),
-    # avatar: UploadFile | str | None = File(None),
+    first_name: Optional[str] = Form(None),
+    last_name: Optional[str] = Form(None),
+    middle_name: Optional[str] = Form(None),
+    birth_date: Optional[str] = Form(None),
+    gender: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
+    country: Optional[str] = Form(None),
+    city: Optional[str] = Form(None),
+    street: Optional[str] = Form(None),
+    bio: Optional[str] = Form(None),
+    avatar: UploadFile | str | None = File(None),
 ) -> RegisterForm:
     return RegisterForm(
         username=username,
         email=email,
         password=password,
         password2=password2,
-        # first_name=first_name,
-        # last_name=last_name,
-        # middle_name=middle_name,
-        # birth_date=birth_date,
-        # gender=gender,
-        # phone_number=phone_number,
-        # country=country,
-        # city=city,
-        # street=street,
-        # bio=bio,
-        # avatar=avatar,
+        first_name=first_name,
+        last_name=last_name,
+        middle_name=middle_name,
+        birth_date=birth_date,
+        gender=gender,
+        phone_number=phone_number,
+        country=country,
+        city=city,
+        street=street,
+        bio=bio,
+        avatar=avatar,
     )
-
 
 @router.get("/register", response_class=HTMLResponse)
 async def get_register_page(
@@ -116,62 +119,66 @@ async def get_register_page(
 async def register_user(
     request: Request,
     form_data: Annotated[RegisterForm, Depends(get_register_form)],
-    redis: AsyncRedisClient = Depends(),
+    redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
 ) -> Response:
 
-    temporary_user_token = TokenService.create_refresh_token(
-        {"sub": form_data.username}
-    )
+    temporary_user_token = TokenService.create_refresh_token({'sub': form_data.username})
 
-    data = {
-        "username": form_data.username,
-        "email": form_data.email,
-        "password": form_data.password,  # сделать сохранение хеша а не пароля
-    }
+
+    data = form_data.model_dump()
+  # сделать сохранение хеша а не пароля
+
     await redis.connect()
-    await redis.save_pending_email_token(data, temporary_user_token)
+    await redis.save_pending_email_token(temporary_user_token, data)
 
     # Отправка письма через Celery
-    send_confirmation_email_task(
-        form_data.email, temporary_user_token, str(request.base_url)
-    )
-    logger.info("Письмо отправлено")
+    result = send_confirmation_email_task.delay(form_data.email, temporary_user_token, str(request.base_url))
 
-    # Задача на удаление пользователя, если не подтвердил
-    delete_unconfirmed_user_task.apply_async(
-        args=[temporary_user_token], countdown=1800
-    )
+    logger.info(f'Статус отправки письма для регистрации: {result.status}')
+    logger.info(celery_status)
 
-    response = RedirectResponse(url="/login", status_code=303)
-    response.set_cookie("register_pending", "true", max_age=300, path="/login")
-    return response
+    if result.status:
+        logger.info('Письмо отправлено')
+
+        RedirectResponse(url="/further_actions", status_code=303)
+        return templates2.TemplateResponse('further_actions.html', {'request': request})
+    else:
+        RedirectResponse(url="/error", status_code=303)
+        return templates2.TemplateResponse('error.html', {'request': request})
 
 
 @router.get("/confirm", response_class=HTMLResponse)
 async def confirm_email(
     token: str,
     service: Annotated[UserService, Depends(get_user_service)],
-    redis: Annotated[AsyncRedisClient, Depends()],
-    form_data: Annotated[RegisterForm, Depends(get_register_form)],
-    request: Request,
+    redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
+    request: Request
 ):
     await redis.connect()
-    data = await redis.get_pending_token(token)
+    if await redis.token_exists(token):
+        data = await redis.get_pending_token(token)
 
-    if not data:
-        raise HTTPException(status_code=400, detail="Токен недействителен или истёк")
+    else:
+        logger.info('Срок действия ссылки пользователя истек!')  # добавить данные пользователя
+
+        RedirectResponse(url="/stop_time_link", status_code=303)
+        return templates2.TemplateResponse('stop_time_link.html', {'request': request})
 
     try:
         # Сначала создаем пользователя без аватара
-        profile_data = form_data.model_dump(
-            exclude={"username", "password", "password2", "email", "avatar"}
-        )
+        # profile_data = form_data.model_dump(
+        #     exclude={"username", "password", "password2", "email", "avatar"}
+        # )
+
+        # Тоже самое что и строчки выше
+        excluded_keys = {"username", "password", "password2", "email", "avatar"}
+        profile_data = {k: v for k, v in data.items() if k not in excluded_keys}
         profile = ProfileCreate(**profile_data)
 
         user_create = UserCreate(
-            username=form_data.username,
-            password=form_data.password,
-            email=form_data.email,
+            username=data['username'],
+            password=data['password'],
+            email=data['email'],
             profile=profile,
         )
 
@@ -180,10 +187,10 @@ async def confirm_email(
         await service.repository.session.flush()
 
         # Теперь загружаем аватар, если он был предоставлен
-        if form_data.avatar and form_data.avatar.filename:
+        if data['avatar']:
             avatar_url = await upload_image(
                 user_id=user.id,
-                image_file=form_data.avatar,
+                image_file=data['avatar'],
                 content_path="users/avatars",
             )
             # Обновляем аватар пользователя
@@ -192,7 +199,7 @@ async def confirm_email(
 
         logger.info(f"New user registered: {user.username}")
 
-        response = RedirectResponse(url="/login", status_code=303)
+        response = RedirectResponse(url=f"/profile{user.id}", status_code=303)
         response.set_cookie(
             "register_success",
             "true",
@@ -208,7 +215,8 @@ async def confirm_email(
             {
                 "request": request,
                 "current_user": None,
-                "form_data": form_data.model_dump(),
+                # "form_data": form_data.model_dump()
+                "form_data": data,
                 "errors": {"": e.detail},
             },
             status_code=e.status_code,
@@ -226,7 +234,8 @@ async def confirm_email(
             {
                 "request": request,
                 "current_user": None,
-                "form_data": form_data.model_dump(),
+                # "form_data": form_data.model_dump(),
+                "form_data": data,
                 "errors": errors,
             },
             status_code=400,
@@ -239,11 +248,13 @@ async def confirm_email(
             {
                 "request": request,
                 "current_user": None,
-                "form_data": form_data.model_dump(),
+                # "form_data": form_data.model_dump(),
+                "form_data": data,
                 "errors": {"": "Произошла ошибка при регистрации"},
             },
             status_code=500,
         )
+
 
 
 # @router.get("confirm", response_class=HTMLResponse)

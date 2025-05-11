@@ -22,15 +22,20 @@ class AsyncRedisClient:
         """Создаёт подключение к Redis"""
         try:
             self.r = redis.from_url(self.redis_url, decode_responses=True)
-            logger.info("Установлено подключение к Redis")
+            compound = await self.r.ping()  # проверка на подключение
+            if compound:
+                logger.info("Установлено подключение к Redis")
         except Exception as e:
             logger.error(f"Ошибка при подключении к Redis: {e}")
             raise
 
     async def save_pending_email_token(
-        self, data, token: str, expires_sec: int = 1800
+        self, token: str, data, expires_sec: int = 1800
     ) -> bool:
         """
+        Добавляет в базу данных Redis сроком в (30 минут)
+
+        :param data: Словарь переданный из form_data
         :param token: Токен для авторизации пользователя (будет отправлен в письмо пользователю на почту в виде ссылки)
         :param email: Email переданный пользователем в Form
         :param expires_sec: Срок жизни записи в Redis (по умолчанию 30 минут)
@@ -51,6 +56,7 @@ class AsyncRedisClient:
     async def get_pending_token(self, token: str) -> Optional[dict]:
         """
         Извлекает значение по ключу из Redis
+
         :param token: токен из ссылки отправленный пользователю на почту
         :return: возвращает значения по Токену
         """

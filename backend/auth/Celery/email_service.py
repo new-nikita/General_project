@@ -20,7 +20,9 @@ class EmailService:
     @staticmethod
     def build_confirmation_link(base_url: str, token: str) -> str:
         """
-        :param base_url:
+        Создает валидную ссылку с Токеном доступа для письма на почту
+
+        :param base_url: Базовая ссылка проекта
         :param token: созданный токен пользователя для авторизации
         :return: возвращает готовую ссылку
         """
@@ -35,6 +37,7 @@ class EmailService:
     @staticmethod
     def compose_email(to_email: str, confirm_link: str) -> str:
         """
+        Создает сконфигурированное сообщение для отправки на почту для авторизации
 
         :param to_email: Почта введенная пользователем
         :param confirm_link: Ссылка подтверждения
@@ -58,7 +61,14 @@ class EmailService:
         return message
 
     @staticmethod
-    def send_email(message: str, to_email: str):
+    def send_email(message: str, to_email: str) -> bool | None:
+        """
+        Сервис отправки сообщения на указанную почту
+
+        :param message: Сконфигурированное сообщение пользователю
+        :param to_email: Email полученный от пользователя в form_data
+        :return:
+        """
 
         try:
             logger.info("Захожу в отправку письма")
@@ -72,6 +82,8 @@ class EmailService:
                     to_addrs=to_email,
                     msg=message,
                 )
-            logger.info("Сообщение отправлено на почту")
+            return True
+
         except Exception as e:
             logger.error(f"Ошибка при отправке письма: {e}")
+            return False
