@@ -50,6 +50,12 @@
     gap: 1rem;
 }
 
+#profile-info-btn {
+    background-color: rgb(53, 109, 140); /* Нужный вам цвет */
+    color: white;
+    border-color: #a6a6a6;
+}
+
 /* Основная информация */
 .info-section {
     margin-bottom: 1.5rem;

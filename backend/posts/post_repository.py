@@ -2,7 +2,7 @@ from sqlalchemy import select, delete
 from typing import Optional, Any, Sequence
 
 from core.base_repository import BaseRepository
-from core.models import Post, Tag
+from core.models import Post
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from posts.schemas import PostCreate

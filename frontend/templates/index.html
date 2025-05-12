@@ -1,7 +1,7 @@
 {% extends "users/base.html" %}
 {% block content %}
     {% if current_user %}
-        <h1 class="mb-4">Привет, {{ current_user.profile.first_name }}!</h1>
+        <h1 class="mb-4">Привет, {{ current_user.profile.first_name or 'Друг' }}!</h1>
     {% else %}
         <h1 class="mb-4">Hello, Anonymous!</h1>
     {% endif %}
@@ -20,7 +20,7 @@
                 <div class="post-body">
                     <p class="post-text">{{ post.content }}</p>
                 </div>
-                
+
             </div>
         {% else %}
             <p class="text-muted">Постов пока нет.</p>

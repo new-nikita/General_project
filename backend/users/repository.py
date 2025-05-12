@@ -105,16 +105,12 @@ class UserRepository(BaseRepository[User]):
 
     async def delete(self, id_: int) -> str | None: ...
 
-    async def update_user_avatar(self, user_id: int, avatar_url: str):
+    async def update_user_avatar(self, user: User, avatar_url: str):
         """
         Обновляет аватар пользователя.
 
-        :param user_id: ID пользователя.
+        :param user: Пользователь.
         :param avatar_url: URL аватара.
         """
-        user = await self.session.get(User, user_id)
-        if not user:
-            raise ValueError("User not found")
-
         user.profile.avatar = avatar_url
         await self.session.commit()

@@ -8,7 +8,7 @@ from .mixins import UserRelationMixin
 
 
 class Profile(UserRelationMixin, Base):
-    """Профиль пользователя с расширенными настройками."""
+    """Профиль пользователя с личной информацией."""
 
     _user_id_unique = True
     _user_back_populates = "profile"
@@ -35,4 +35,8 @@ class Profile(UserRelationMixin, Base):
     @property
     def full_name(self) -> str:
         """Возвращает полное имя пользователя."""
-        return f"{self.first_name} {self.last_name}"
+        return (
+            f"{self.first_name} {self.last_name}"
+            if (self.first_name and self.last_name)
+            else self.user.username
+        )

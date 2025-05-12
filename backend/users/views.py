@@ -159,14 +159,14 @@ async def save_profile_data(
 @router.post("/avatar")
 async def upload_avatar(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
     avatar: UploadFile = File(...),
 ) -> JSONResponse:
     """
     Обрабатывает загрузку нового аватара пользователя.
 
     :param current_user: Текущий авторизованный пользователь.
-    :param session: Асинхронная сессия SQLAlchemy для сохранения изменений в БД.
+    :param user_service: Сервис для работы с пользователями.
     :param avatar: Загруженный файл изображения (формат: UploadFile).
 
     :return: JSON-ответ с новым URL аватара или сообщением об ошибке.
@@ -177,11 +177,9 @@ async def upload_avatar(
         image_url = await upload_image(
             user_id=current_user.id,
             image_file=avatar,
-            content_path="users/avatars",
+            content_path="users_files/avatars",
         )
-
-        current_user.profile.avatar = image_url
-        await session.commit()
+        await user_service.repository.update_user_avatar(current_user, image_url)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,

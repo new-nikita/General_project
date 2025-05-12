@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -9,6 +9,7 @@ from .mixins import TimestampsMixin
 
 if TYPE_CHECKING:
     from .profile import Profile
+    from .post import Post
 
 
 class User(TimestampsMixin, Base):
@@ -20,9 +21,14 @@ class User(TimestampsMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    posts: Mapped[List["Post"]] = relationship("Post", back_populates="author")
-
-    profile: Mapped["Profile"] = relationship(back_populates="user", lazy="selectin")
+    posts: Mapped[list["Post"]] = relationship(
+        "Post",
+        back_populates="author",
+    )
+    profile: Mapped["Profile"] = relationship(
+        back_populates="user",
+        lazy="selectin",
+    )
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, username={self.username!r})"

@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from backend.users.repository import UserRepository
 from backend.users.schemas.profile_schemas import ProfileUpdate
 from backend.users.schemas.users_schemas import UserCreate
-from backend.core.models import User
+from backend.core.models.user import User
 
 
 class UserService:
