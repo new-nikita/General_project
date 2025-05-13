@@ -114,3 +114,21 @@ class UserRepository(BaseRepository[User]):
         """
         user.profile.avatar = avatar_url
         await self.session.commit()
+
+    async def delete_user_avatar(
+        self,
+        user: User,
+        default_avatar: str = "/static/users_files/avatars/дефолтный_аватар.jpg",
+    ) -> str | None:
+        """
+        Удаляет аватар пользователя.
+
+        :param user: Пользователь.
+        :param default_avatar: URL дефолтного аватара.
+        """
+        if not user.profile.avatar or not user:
+            return
+
+        user.profile.avatar = default_avatar
+        await self.session.commit()
+        return default_avatar

@@ -194,21 +194,20 @@ async def upload_avatar(
 @router.post("/avatar/remove")
 async def remove_avatar(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> JSONResponse:
     """
     Удаляет текущий аватар пользователя и устанавливает дефолтный.
 
     :param current_user: Текущий авторизованный пользователь.
-    :param session: Асинхронная сессия SQLAlchemy для сохранения изменений в БД.
+    :param user_service: Сервис для работы с пользователями.
 
     :return: JSON-ответ с подтверждением удаления и ссылкой на дефолтный аватар.
 
     :raises HTTPException 500: Если не удалось обновить аватар в БД.
     """
-    default_avatar = "/static/profiles_avatar/дефолтный_аватар.jpg"
-    current_user.profile.avatar = default_avatar
-    await session.commit()
+    default_avatar = "/static/users_files/avatars/дефолтный_аватар.jpg"
+    await user_service.repository.delete_user_avatar(current_user)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
