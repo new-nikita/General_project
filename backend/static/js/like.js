@@ -6,6 +6,11 @@ document.addEventListener("DOMContentLoaded", function () {
 function initLikeHandlers() {
     document.querySelectorAll('.like-container').forEach(container => {
         const button = container.querySelector('.like-button');
+        if (!button.dataset.initialized) {
+            button.addEventListener('click', likeButtonHandler);
+            button.dataset.initialized = 'true'; // Защита от дублирования обработчиков
+        }
+
         const heartIcon = button.querySelector('.fa-heart');
         const counter = button.querySelector('.like-counter');
 

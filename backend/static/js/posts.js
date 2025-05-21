@@ -41,47 +41,62 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (response.ok) {
                 const result = await response.json();
-                form.reset();
 
-                // Удаляем блок "Постов пока нет", если он есть
-                const noPostsBlock = postList.querySelector(".no-posts");
-                if (noPostsBlock) {
-                    noPostsBlock.remove();
-                }
-
-                // Создаем новый элемент поста
                 const newPost = document.createElement("div");
                 newPost.className = "post-item";
                 newPost.id = `post-${result.post.id}`;
                 newPost.innerHTML = `
-                <div class="post-header">
-                    <img src="${result.post.author.profile.avatar}" alt="Автор" class="post-author-avatar">
-                    <span class="post-author">${result.post.author.profile.full_name}</span>
-                </div>
-                ${result.post.content ? `<div class="post-content">${result.post.content}</div>` : ''}
-                ${result.post.image ? `<div class="post-image-container"><img src="${result.post.image}" alt="Пост" class="post-image"></div>` : ''}
-                <div class="post-date">${result.post.created_at}</div>
-                <div class="post-actions">
-                    <div class="post-action">
-                        <i class="far fa-heart"></i>
-                        <span>Нравится</span>
-                    </div>
-                    <div class="post-action">
-                        <i class="far fa-comment"></i>
-                        <span>Комментировать</span>
-                    </div>
-                    <div class="post-action">
-                        <i class="far fa-trash-alt"></i>
-                        <button class="delete-post-btn" data-post-id="${result.post.id}"
-                                style="background: none; border: none; color: red; cursor: pointer;">
-                            Удалить
-                        </button>
-                    </div>
-                </div>
-            `;
+    <div class="post-header">
+        <img src="${result.post.author.profile.avatar}" alt="Автор" class="post-author-avatar">
+        <div>
+            <span class="post-author">${result.post.author.profile.full_name || result.post.author.username}</span>
+        </div>
+    </div>
+
+    ${result.post.image ? `
+        <div class="post-image-container">
+            <img src="${result.post.image}" alt="Пост" class="post-image">
+        </div>
+    ` : ''}
+
+    ${result.post.content ? `
+        <div class="post-content">${result.post.content}</div>
+    ` : ''}
+
+    <div class="post-actions">
+        <div class="like-container" data-post-id="${result.post.id}">
+            <button class="like-button">
+                <i class="fa-heart far"></i>
+                <span class="like-text">Нравится</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="post-action">
+        <i class="far fa-comment"></i>
+        <span>Комментировать</span>
+    </div>
+
+    <div class="post-action">
+        <i class="far fa-trash-alt"></i>
+        <button class="delete-post-btn" data-post-id="${result.post.id}"
+                style="background: none; border: none; color: red; cursor: pointer;">
+            Удалить
+        </button>
+    </div>
+
+    <div class="post-date">${new Date().toLocaleString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}</div>
+`;
 
                 // Добавляем новый пост в начало списка
                 postList.insertAdjacentElement("afterbegin", newPost);
+                initLikeHandlers();
 
                 // Скрываем форму после успешного создания
                 formContainer.style.display = "none";
