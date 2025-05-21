@@ -10,6 +10,7 @@ from .mixins import TimestampsMixin
 if TYPE_CHECKING:
     from .profile import Profile
     from .post import Post
+    from .like import LikePost
 
 
 class User(TimestampsMixin, Base):
@@ -28,6 +29,9 @@ class User(TimestampsMixin, Base):
     profile: Mapped["Profile"] = relationship(
         back_populates="user",
         lazy="selectin",
+    )
+    likes: Mapped[list["LikePost"]] = relationship(
+        "LikePost", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
 
     def __str__(self) -> str:

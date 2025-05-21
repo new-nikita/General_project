@@ -571,3 +571,7 @@
 .edit-profile-modern:hover .edit-profile-modern-icon {
     transform: translateX(4px);
 }
+
+.like-button.liked .fa-heart {
+    color: #e74c3c;
+}

@@ -4,30 +4,27 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="/static/css/profile.css">
+    <link rel="stylesheet" href="/static/css/like.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 {% endblock %}
 {% block content %}
     <div class="profile-container">
         <div class="d-flex align-items-center mb-4 profile-header">
-            <!-- Левая часть: аватар -->
             <div class="profile-avatar me-4">
                 <img src="{{ user.profile.avatar }}" alt="Аватар" class="user-avatar rounded-circle shadow-sm">
             </div>
 
-            <!-- Правая часть: информация -->
             <div class="profile-details flex-grow-1">
-                <!-- Имя -->
                 {% if user.profile.first_name or user.profile.last_name %}
                     <h3 class="text-muted mb-2">{{ user.profile.first_name or '' }} {{ user.profile.last_name or '' }}</h3>
                 {% endif %}
 
-                <!-- Email -->
                 {% if user.email %}
                     <p class="text-muted mb-3">
                         <i class="fas fa-envelope me-1"></i> {{ user.email }}
                     </p>
                 {% endif %}
 
-                <!-- Кнопки -->
                 <div class="profile-actions d-flex gap-2 mt-2">
                     <button id="profile-info-btn" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-info-circle me-1"></i> Подробнее
@@ -41,11 +38,9 @@
             </div>
         </div>
 
-        <!-- Модальное окно с информацией профиля -->
         <div id="profile-modal" class="profile-modal">
             <span class="close-modal">&times;</span>
             <div class="user-info">
-                <!-- Основная информация -->
                 <div class="info-section">
                     <h4><i class="fas fa-info-circle"></i> Основная информация</h4>
                     {% if user.profile.birth_date %}
@@ -71,7 +66,6 @@
                     {% endif %}
                 </div>
 
-                <!-- Контактная информация -->
                 {% if user.profile.phone_number or user.profile.country or user.profile.city %}
                     <div class="info-section">
                         <h4><i class="fas fa-address-book"></i> Контакты</h4>
@@ -106,7 +100,6 @@
                     </div>
                 {% endif %}
 
-                <!-- О себе -->
                 {% if user.profile.bio %}
                     <div class="info-section">
                         <h4><i class="fas fa-quote-left"></i> О себе</h4>
@@ -119,11 +112,9 @@
             </div>
         </div>
 
-        <!-- Фон затемнения для модального окна -->
         <div id="modal-overlay" class="modal-overlay"></div>
 
         {% if is_own_profile %}
-            <!-- Остальной код для аватара и постов -->
             <div id="avatar-modal" class="modal" style="display: none;">
                 <div class="modal-content">
                     <span class="close-modal">&times;</span>
@@ -146,7 +137,6 @@
                 </div>
             </div>
 
-            <!-- Модальное окно для загрузки аватара -->
             <div id="avatar-upload-modal" class="modal" style="display: none;">
                 <div class="modal-content" style="max-width: 500px;">
                     <span class="close-modal">&times;</span>
@@ -194,13 +184,11 @@
             </div>
         {% endif %}
 
-        <!-- Фуллскрин просмотр аватара -->
         <div id="fullscreen-view" class="fullscreen-view" style="display: none;">
             <span class="close-fullscreen">&times;</span>
             <img src="{{ user.profile.avatar }}" alt="Аватар" class="fullscreen-avatar">
         </div>
 
-        <!-- Блок для создания поста -->
         {% if is_own_profile %}
             <button id="toggle-post-form" class="btn-toggle-post-form d-flex align-items-center justify-content-center">
                 <i class="fas fa-plus me-2"></i>Создать новый пост
@@ -224,7 +212,6 @@
             </div>
         {% endif %}
 
-        <!-- Список постов -->
         <div class="post-list" id="post-list">
             {% if posts %}
                 {% for post in posts %}
@@ -248,24 +235,31 @@
                         {% endif %}
 
                         <div class="post-actions">
-                            <div class="post-action">
-                                <i class="far fa-heart"></i>
-                                <span>Нравится</span>
+                            <div class="like-container" data-post-id="{{ post.id }}">
+                                <button class="like-button {% if post.is_liked_by_current %}liked{% endif %}">
+                                    <i class="fa-heart {% if post.is_liked_by_current %}fas{% else %}far{% endif %}"></i>
+                                    <span class="like-text">Нравится</span>
+                                    {% if post.likes_count > 0 %}
+                                        <span class="like-counter">{{ post.likes_count }}</span>
+                                    {% endif %}
+                                </button>
                             </div>
-                            <div class="post-action">
-                                <i class="far fa-comment"></i>
-                                <span>Комментировать</span>
-                            </div>
-                            {% if is_own_profile or current_user.is_superuser %}
-                                <div class="post-action">
-                                    <i class="far fa-trash-alt"></i>
-                                    <button class="delete-post-btn" data-post-id="{{ post.id }}"
-                                            style="background: none; border: none; color: red; cursor: pointer;">
-                                        Удалить
-                                    </button>
-                                </div>
-                            {% endif %}
                         </div>
+
+                        <div class="post-action">
+                            <i class="far fa-comment"></i>
+                            <span>Комментировать</span>
+                        </div>
+                        {% if is_own_profile or current_user.is_superuser %}
+                            <div class="post-action">
+                                <i class="far fa-trash-alt"></i>
+                                <button class="delete-post-btn" data-post-id="{{ post.id }}"
+                                        style="background: none; border: none; color: red; cursor: pointer;">
+                                    Удалить
+                                </button>
+                            </div>
+                        {% endif %}
+
 
                         <div class="post-date">
                             {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}
@@ -282,9 +276,10 @@
                 </div>
             {% endif %}
         </div>
-    </div>
-    <script src=/static/js/profile_info.js type=text/javascript></script>
-    <script src=/static/js/posts.js type=text/javascript></script>
-    <script src=/static/js/avatar_modal.js type="text/javascript"></script>
-    <script src=/static/js/show_toast.js type=text/javascript></script>
+
+        <script src=/static/js/profile_info.js type=text/javascript></script>
+        <script src=/static/js/posts.js type=text/javascript></script>
+        <script src=/static/js/avatar_modal.js type="text/javascript"></script>
+        <script src=/static/js/show_toast.js type=text/javascript></script>
+        <script src=/static/js/like.js type=text/javascript></script>
 {% endblock %}

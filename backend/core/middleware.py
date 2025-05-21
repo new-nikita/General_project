@@ -6,8 +6,8 @@ from fastapi.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from auth.tokens_service import TokenService
-from auth.token_cookie_service import TokenCookieService
+from backend.auth.tokens_service import TokenService
+from backend.auth.token_cookie_service import TokenCookieService
 
 logger = logging.getLogger(__name__)
 

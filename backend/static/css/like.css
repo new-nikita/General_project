@@ -1,0 +1,97 @@
+.like-container {
+    display: inline-block;
+    position: relative;
+}
+
+.like-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+.like-button:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.like-button .fa-heart {
+    font-size: 1.1em;
+    transition: all 0.2s ease;
+    color: #8e8e8e;
+}
+
+.like-button.liked .fa-heart {
+    color: #ed4956;
+}
+
+.like-button:hover .fa-heart:not(.liked) {
+    transform: scale(1.1);
+}
+
+.like-counter {
+    font-size: 0.9em;
+    margin-left: 3px;
+    position: relative;
+}
+
+/* Анимации */
+@keyframes heartBeat {
+    0% {
+        transform: scale(1);
+    }
+    25% {
+        transform: scale(1.2);
+    }
+    50% {
+        transform: scale(0.9);
+    }
+    75% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes counterPop {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.3);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.like-animate {
+    animation: heartBeat 0.6s ease;
+}
+
+.counter-animate {
+    animation: counterPop 0.4s ease;
+}
+
+.animate-up {
+    animation: countDisappear 0.3s ease forwards;
+}
+
+@keyframes countDisappear {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+}

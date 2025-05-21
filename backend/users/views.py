@@ -1,5 +1,4 @@
 import logging
-
 from typing import Annotated
 
 from fastapi import (
@@ -12,7 +11,6 @@ from fastapi import (
     File,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.posts.dependencies import get_post_service
 from backend.posts.services import PostService
@@ -25,7 +23,6 @@ from backend.auth.authorization import (
 )
 from backend.core.config import settings
 from backend.core.models import User
-from backend.core.common_dependencies import get_db_session
 from backend.utils.save_images import upload_image
 
 
@@ -68,7 +65,15 @@ async def get_user_profile(
         # Определяем, является ли профиль собственным
         is_own_profile = current_user.id == profile_user.id
 
-    posts = await post_service.repository.get_all_posts_by_author_id(profile_id)
+        current_user = await user_service.repository.get_by_id_with_likes(
+            current_user.id
+        )
+
+    # Получаем посты с полной информацией о лайках
+    posts = await post_service.repository.get_all_posts_by_author_id(
+        profile_id, current_user.id if current_user else None
+    )
+
     return settings.templates.template_dir.TemplateResponse(
         "users/profile.html",
         {

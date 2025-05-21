@@ -5,7 +5,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles
 
-from core.models import db_helper
+from backend.core.models import db_helper
 
 logging.basicConfig(
     level=logging.INFO,

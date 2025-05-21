@@ -12,8 +12,8 @@ from pydantic import (
 )
 from pydantic.functional_validators import AfterValidator
 
-from utils.validated import validate_username
-from users.schemas.profile_schemas import ProfileCreate
+from backend.utils.validated import validate_username
+from backend.users.schemas.profile_schemas import ProfileCreate
 
 
 class UserBase(BaseModel):

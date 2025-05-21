@@ -1,11 +1,12 @@
-from sqlalchemy import select, delete
 from typing import Optional, Any, Sequence
 
-from core.base_repository import BaseRepository
-from core.models import Post
+from sqlalchemy import select, delete
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from posts.schemas import PostCreate
+from backend.core.base_repository import BaseRepository
+from backend.core.models import Post
+from backend.posts.schemas import PostCreate
 
 
 class PostRepository(BaseRepository[Post]):
@@ -78,16 +79,42 @@ class PostRepository(BaseRepository[Post]):
         await self.session.commit()
         return "Post deleted successfully"
 
-    async def get_all_posts_by_author_id(self, author_id: int) -> Sequence[Post]:
+    async def get_all_posts_by_author_id(
+        self, author_id: int, current_user_id: Optional[int] = None
+    ) -> Sequence[Post]:
         """
-        Возвращает все посты пользователя по его ID.
+        Возвращает все посты пользователя с информацией о лайках.
 
-        :param author_id: ID пользователя.
-        :return: Последовательность постов или пустой список, если пост не найден.
+        :param author_id: ID автора постов
+        :param current_user_id: ID текущего пользователя для проверки лайков
+        :return: Список постов с дополнительными атрибутами:
+                 - likes_count: количество лайков
+                 - is_liked: поставил ли текущий пользователь лайк
         """
-        result = await self.session.execute(
+        # Базовый запрос
+        stmt = (
             select(self.model)
+            .options(selectinload(self.model.author), selectinload(self.model.likes))
             .where(self.model.author_id == author_id)
-            .order_by(self.model.created_at.desc())  # сортировка по дате создания
+            .order_by(self.model.created_at.desc())
         )
-        return result.scalars().all()
+
+        result = await self.session.execute(stmt)
+        posts = result.scalars().all()
+
+        # Добавляем вычисляемые поля для каждого поста
+        for post in posts:
+            # Количество лайков
+            post.likes_count = len(post.likes)
+
+            # Проверяем, поставил ли текущий пользователь лайк
+            post.is_liked_by_current = (
+                any(like.user_id == current_user_id for like in post.likes)
+                if current_user_id
+                else False
+            )
+
+            # Список ID пользователей, поставивших лайк (для шаблона)
+            post.liked_user_ids = [like.user_id for like in post.likes]
+
+        return posts

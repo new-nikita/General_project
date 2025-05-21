@@ -1,8 +1,14 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
+
 from .base import Base
-from .user import User
 from .mixins import TimestampsMixin
+
+if TYPE_CHECKING:
+    from .user import User
+    from .like import LikePost
 
 
 class Post(TimestampsMixin, Base):
@@ -18,3 +24,7 @@ class Post(TimestampsMixin, Base):
         "User", back_populates="posts", lazy="selectin"
     )
     image: Mapped[str | None] = mapped_column(Text, server_default=None)
+
+    likes: Mapped[list["LikePost"]] = relationship(
+        back_populates="post", lazy="selectin"
+    )

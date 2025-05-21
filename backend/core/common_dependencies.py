@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.models.db_helper import db_helper
+from backend.core.models.db_helper import db_helper
 
 
 async def get_db_session() -> AsyncSession:

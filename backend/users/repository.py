@@ -1,17 +1,15 @@
-from typing import Sequence, Any
+from typing import Any
 
 from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from core.base_repository import BaseRepository
-from core.models import User, Profile, Post
-from users.schemas.users_schemas import UserCreate
-from .password_helper import PasswordHelper
+from backend.core.base_repository import BaseRepository
+from backend.core.models import User, Profile
+from backend.users.schemas.users_schemas import UserCreate
+from backend.users.password_helper import PasswordHelper
 from backend.users.schemas.profile_schemas import ProfileUpdate
-
-
-# from .views import PostSchema
 
 
 class UserRepository(BaseRepository[User]):
@@ -27,6 +25,19 @@ class UserRepository(BaseRepository[User]):
         :param session: Асинхронная сессия SQLAlchemy.
         """
         super().__init__(session=session, model=User)
+
+    async def get_by_id_with_likes(self, id_: int) -> User:
+        """
+        Получает пользователя по ID вместе с его лайками.
+        """
+        stmt = (
+            select(self.model)
+            .options(selectinload(self.model.likes))  # Загружаем все лайки пользователя
+            .where(self.model.id == id_)
+        )
+
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     async def create(self, dto_user: UserCreate) -> User:
         """
@@ -59,7 +70,9 @@ class UserRepository(BaseRepository[User]):
         :return: Объект пользователя или None, если пользователь не найден.
         """
         result = await self.session.execute(
-            select(self.model).where(self.model.username == username)
+            select(self.model)
+            .options(selectinload(User.likes))
+            .where(self.model.username == username)
         )
         return result.scalar_one_or_none()
 
