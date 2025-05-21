@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .profile import Profile
     from .post import Post
     from .like import LikePost
+    from .comment import Comment
 
 
 class User(TimestampsMixin, Base):
@@ -33,6 +34,7 @@ class User(TimestampsMixin, Base):
     likes: Mapped[list["LikePost"]] = relationship(
         "LikePost", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
+    # comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="user")
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, username={self.username!r})"

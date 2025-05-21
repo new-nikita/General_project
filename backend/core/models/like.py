@@ -16,7 +16,9 @@ class LikePost(Base):
     __table_args__ = (UniqueConstraint("user_id", "post_id", name="unique_user_post"),)
 
     user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
     )
     post_id: Mapped[int] = mapped_column(
         Integer,

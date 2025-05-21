@@ -9,6 +9,7 @@ from .mixins import TimestampsMixin
 if TYPE_CHECKING:
     from .user import User
     from .like import LikePost
+    from .comment import Comment
 
 
 class Post(TimestampsMixin, Base):
@@ -28,3 +29,5 @@ class Post(TimestampsMixin, Base):
     likes: Mapped[list["LikePost"]] = relationship(
         back_populates="post", lazy="selectin"
     )
+
+    # comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="post")
