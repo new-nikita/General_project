@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import EmailStr, ValidationError
 
-from auth import (
+from backend.auth import (
     AsyncRedisClient,
     TokenService
 )
@@ -25,18 +25,18 @@ from auth import (
 from backend.core.config import settings
 from backend.core.models import User
 
-from users.dependencies import get_user_service
-from users.schemas.register_schema import RegisterForm
+from backend.users.dependencies import get_user_service
+from backend.users.schemas.register_schema import RegisterForm
 
-from users.schemas.users_schemas import ProfileCreate, UserCreate
-from users.services import UserService
+from backend.users.schemas.users_schemas import ProfileCreate, UserCreate
+from backend.users.services import UserService
 
 from backend.auth.Celery.logger_info import celery_status
 from backend.auth.Celery.tasks import send_confirmation_email_task
 from backend.auth.Celery.email_service import (EmailService)
 from backend.auth.authorization import get_current_user_from_cookie
 
-from utils.save_images import upload_image
+from backend.utils.save_images import upload_image
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -59,9 +59,9 @@ async def get_register_form(
     first_name: Optional[str] = Form(None),
     last_name: Optional[str] = Form(None),
     middle_name: Optional[str] = Form(None),
-    birth_date: Optional[str] = Form(None),
+    # birth_date: Optional[str] = Form(None),
     gender: Optional[str] = Form(None),
-    phone_number: Optional[str] = Form(None),
+    # phone_number: Optional[str] = Form(None),
     country: Optional[str] = Form(None),
     city: Optional[str] = Form(None),
     street: Optional[str] = Form(None),
@@ -76,9 +76,9 @@ async def get_register_form(
         first_name=first_name,
         last_name=last_name,
         middle_name=middle_name,
-        birth_date=birth_date,
+        # birth_date=birth_date,
         gender=gender,
-        phone_number=phone_number,
+        # phone_number=phone_number,
         country=country,
         city=city,
         street=street,

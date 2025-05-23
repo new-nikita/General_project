@@ -4,12 +4,12 @@ from typing import Annotated
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 
-from auth.authorization import get_current_user_from_cookie
-from core.models import User
-from posts.services import PostService
-from posts.dependencies import get_post_service
-from posts.schemas import PostCreate
-from utils.save_images import upload_image
+from backend.auth.authorization import get_current_user_from_cookie
+from backend.core.models import User
+from backend.posts.services import PostService
+from backend.posts.dependencies import get_post_service
+from backend.posts.schemas import PostCreate
+from backend.utils.save_images import upload_image
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

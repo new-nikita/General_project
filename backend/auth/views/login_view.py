@@ -17,15 +17,15 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import EmailStr
 
 # from auth.redis_client import RedisClient
-from auth.tokens_service import TokenService
-from auth.token_cookie_service import TokenCookieService
-from core.config import settings
-from core.models import User
+from backend.auth.tokens_service import TokenService
+from backend.auth.token_cookie_service import TokenCookieService
+from backend.core.config import settings
+from backend.core.models import User
 
-from users.dependencies import get_user_service
-from users.services import UserService
+from backend.users.dependencies import get_user_service
+from backend.users.services import UserService
 
-from auth.authorization import (
+from backend.auth.authorization import (
     authenticate_user,
     get_current_user_from_cookie,
 )

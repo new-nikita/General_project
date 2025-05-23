@@ -3,12 +3,12 @@ import logging
 from fastapi import Cookie, HTTPException, status, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 
-from core.config import settings
-from users.services import UserService
-from core.models import User
-from users.password_helper import PasswordHelper, PasswordVerificationError
-from users.dependencies import get_user_service
-from auth.tokens_service import TokenService
+from backend.core.config import settings
+from backend.users.services import UserService
+from backend.core.models import User
+from backend.users.password_helper import PasswordHelper, PasswordVerificationError
+from backend.users.dependencies import get_user_service
+from backend.auth.tokens_service import TokenService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

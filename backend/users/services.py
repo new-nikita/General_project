@@ -2,9 +2,9 @@ from typing import Sequence
 
 from fastapi import HTTPException
 
-from users.repository import UserRepository
-from users.schemas.users_schemas import UserCreate
-from core.models import User, Post
+from backend.users.repository import UserRepository
+from backend.users.schemas.users_schemas import UserCreate
+from backend.core.models import User, Post
 
 
 class UserService:

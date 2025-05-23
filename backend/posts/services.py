@@ -1,8 +1,8 @@
 from fastapi import HTTPException
 
-from posts.post_repository import PostRepository
-from posts.schemas import PostCreate
-from core.models import Post
+from backend.posts.post_repository import PostRepository
+from backend.posts.schemas import PostCreate
+from backend.core.models import Post
 
 
 class PostService:

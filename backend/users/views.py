@@ -5,17 +5,17 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from posts.dependencies import get_post_service
-from posts.services import PostService
-from users.dependencies import get_user_service
-from users.services import UserService
-from auth.authorization import (
+from backend.posts.dependencies import get_post_service
+from backend.posts.services import PostService
+from backend.users.dependencies import get_user_service
+from backend.users.services import UserService
+from backend.auth.authorization import (
     get_current_user_from_cookie,
 )
-from core.config import settings
-from core.models import User
-from core.common_dependencies import get_db_session
-from utils.save_images import upload_image
+from backend.core.config import settings
+from backend.core.models import User
+from backend.core.common_dependencies import get_db_session
+from backend.utils.save_images import upload_image
 
 
 router = APIRouter(
