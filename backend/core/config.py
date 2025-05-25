@@ -73,18 +73,15 @@ class CeleryConfig(BaseModel):
 
 class SMTPSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=(
-            BASE_DIR / ".env.template",
-            BASE_DIR / ".env",
-        ),
+        env_file=( BASE_DIR / ".env"),
         env_prefix="SMTP_",
     )
     host: str
     port: int
     user: str
     password: str
-    use_tls: bool = False
-    use_ssl: bool = True
+    use_tls: bool = True
+    use_ssl: bool = False
 
 
 class Settings(BaseSettings):
@@ -100,7 +97,7 @@ class Settings(BaseSettings):
     template_dir: Path = TEMPLATES_DIR
     redis: RedisConfig = RedisConfig()
     celery: CeleryConfig = CeleryConfig()
-    smtp: SMTPSettings = SMTPSettings(user="nikita.popkov.docker@gmail.com")
+    smtp: SMTPSettings = SMTPSettings()
 
 
 CONVENTION = {

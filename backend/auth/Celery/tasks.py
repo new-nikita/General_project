@@ -1,11 +1,11 @@
 from backend.auth.Celery.email_service import EmailService
 from backend.core.config import settings
-from celery import Celery
+from celery import Celery, shared_task
 
 
 celery_app = Celery("worker", broker=settings.celery.broker_url, backend=settings.celery.result_backend)
 
-@celery_app.task
+@shared_task
 def send_confirmation_email_task(email_to: str, token: str, base_url: str):
     """
     Задача Celery. Отправляет сообщение пользователю на почту для подтверждения регистрации.
@@ -21,7 +21,7 @@ def send_confirmation_email_task(email_to: str, token: str, base_url: str):
 
 
 
-# @celery_app.task
+# @shared_task
 # def delete_unconfirmed_user_task(token: str) -> bool:
 #     """
 #     Задача Celery. Удаляет созданную запись в редис, если пользователь не перешел по ссылке в письме

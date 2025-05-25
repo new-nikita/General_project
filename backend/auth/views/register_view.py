@@ -135,7 +135,7 @@ async def register_user(
     result = send_confirmation_email_task.delay(form_data.email, temporary_user_token, str(request.base_url))
 
     logger.info(f'Статус отправки письма для регистрации: {result.status}')
-    logger.info(celery_status)
+    # logger.info(celery_status)
 
     if result.status:
         logger.info('Письмо отправлено')

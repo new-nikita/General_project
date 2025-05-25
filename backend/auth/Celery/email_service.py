@@ -1,14 +1,13 @@
 import logging
 import smtplib
-
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from email.message import EmailMessage
 from urllib.parse import urljoin
 
 from backend.core.config import settings
 
 logging.basicConfig(
-    format=settings.logging.log_format, level=settings.logging.log_level_value
+    format=settings.logging.log_format,
+    level=settings.logging.log_level_value
 )
 
 logger = logging.getLogger(__name__)
@@ -20,70 +19,50 @@ class EmailService:
     @staticmethod
     def build_confirmation_link(base_url: str, token: str) -> str:
         """
-        Создает валидную ссылку с Токеном доступа для письма на почту
-
-        :param base_url: Базовая ссылка проекта
-        :param token: созданный токен пользователя для авторизации
-        :return: возвращает готовую ссылку
+        Создает валидную ссылку подтверждения по токену
         """
         url = urljoin(base_url, f"/confirm?token={token}")
-
-        # url = f"{base_url.rstrip('/')}/confirm?token={token}"
-        logger.info(f"Cсылка с ТОКЕНом создана \n {url}")
-
+        logger.info(f"Ссылка с токеном создана: {url}")
         return url
-        # f"{base_url.rstrip('/')}/confirm?token={token}" # rstrip('/') убирает лишний /, если base_url уже заканчивается на слэш.
 
     @staticmethod
-    def compose_email(to_email: str, confirm_link: str) -> str:
+    def compose_email(to_email: str, confirm_link: str) -> EmailMessage:
         """
-        Создает сконфигурированное сообщение для отправки на почту для авторизации
-
-        :param to_email: Почта введенная пользователем
-        :param confirm_link: Ссылка подтверждения
-        :return: возвращает готовое сообщение для отправки
+        Создает сообщение EmailMessage с подтверждением
         """
-        message = MIMEMultipart()
+        message = EmailMessage()
         message["Subject"] = "Подтвердите почту"
         message["From"] = settings.smtp.user
-        logger.info("С почты %s", settings.smtp.user)
         message["To"] = to_email
-        logger.info("на почту %s", to_email)
-
-        message.attach(
-            MIMEText(
-                f"Перейдите по ссылке для подтверждения почты: {confirm_link}", "plain"
-            )
-        )
-
-        logger.info("Сообщение сконфигурировано!")
-        message = message.as_string()
+        message.set_content(f"Перейдите по ссылке для подтверждения почты:\n\n{confirm_link}")
+        logger.info("Email-сообщение собрано.")
         return message
 
     @staticmethod
-    def send_email(message: str, to_email: str) -> bool | None:
+    def send_email(message: EmailMessage, to_email: str) -> bool:
         """
-        Сервис отправки сообщения на указанную почту
-
-        :param message: Сконфигурированное сообщение пользователю
-        :param to_email: Email полученный от пользователя в form_data
-        :return:
+        Отправка email сообщения
         """
-
+        smtp_obj = None
         try:
-            logger.info("Захожу в отправку письма")
-            with smtplib.SMTP(settings.smtp.host, settings.smtp.port) as server:
-                server.ehlo()
-                server.starttls()
-                server.login(settings.smtp.user, settings.smtp.password)
-
-                server.sendmail(
-                    from_addr=settings.smtp.user,
-                    to_addrs=to_email,
-                    msg=message,
-                )
+            logger.info("Попытка подключения к SMTP серверу...")
+            smtp_obj = smtplib.SMTP(settings.smtp.host, settings.smtp.port)
+            smtp_obj.ehlo()
+            if settings.smtp.use_tls:
+                logger.debug("Инициализация TLS...")
+                smtp_obj.starttls()
+                smtp_obj.ehlo()
+            smtp_obj.login(settings.smtp.user, settings.smtp.password)
+            smtp_obj.send_message(message)
+            logger.info(f"Письмо успешно отправлено на {to_email}")
             return True
-
         except Exception as e:
             logger.error(f"Ошибка при отправке письма: {e}")
             return False
+        finally:
+            if smtp_obj:
+                smtp_obj.quit()
+
+
+
+
