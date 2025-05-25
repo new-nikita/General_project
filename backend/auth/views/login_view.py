@@ -119,6 +119,22 @@ async def login(
         )
 
 
+@router.post("/forgot_password", response_class=HTMLResponse)
+async def password_recovery(
+    response: Response,
+    service: Annotated[UserService, Depends(get_user_service)],
+    request: Request,
+    email: str = Form(...),
+
+    # сделать запрос в базу данных по эмаил переданного пользователем для восстановления пароля
+    # и если он есть, создать ссылку с токеном для смены пароля пользователя ( или что то в этом вроде )
+    # после перехода по ссылке открывается этот эндпоинт
+    # далее форма для нового пароля
+    # изменения данных (пароля) в основной бд
+):
+    pass
+
+
 @router.get("/logout")
 async def logout():
     """
