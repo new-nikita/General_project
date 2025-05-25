@@ -132,6 +132,7 @@ async def register_user(
 
     # Отправка письма через Celery
     send_confirmation_email_task.delay(form_data.email, temporary_user_token, str(request.base_url))
+    # await delete_unconfirmed_user_task.apply_async(countdown=1800)
 
     RedirectResponse(url="/further_actions", status_code=303)
     return templates2.TemplateResponse('further_actions.html', {'request': request})
@@ -191,13 +192,16 @@ async def confirm_email(
 
         logger.info(f"New user registered: {user.username}")
 
-        response = RedirectResponse(url=f"/profile{user.id}", status_code=303)
+        response = RedirectResponse(url=f"/profile/{user.id}", status_code=303)
         response.set_cookie(
             "register_success",
             "true",
             max_age=5,
             path="/login",
         )
+
+        await redis.delete_pending_token(token)
+
         return response
 
     except HTTPException as e:

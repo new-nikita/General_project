@@ -1,6 +1,7 @@
 from backend.auth.Celery.email_service import EmailService
 from backend.core.config import settings
 from celery import Celery, shared_task
+from backend.auth import AsyncRedisClient
 
 
 celery_app = Celery("worker", broker=settings.celery.broker_url, backend=settings.celery.result_backend)
@@ -22,7 +23,7 @@ def send_confirmation_email_task(email_to: str, token: str, base_url: str):
 
 
 # @shared_task
-# def delete_unconfirmed_user_task(token: str) -> bool:
+# async def delete_unconfirmed_user_task(token: str) -> bool:
 #     """
 #     Задача Celery. Удаляет созданную запись в редис, если пользователь не перешел по ссылке в письме
 #     в течение 30 минут (по умолчанию)
