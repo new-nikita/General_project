@@ -1,6 +1,4 @@
 import logging
-import json
-from datetime import date
 from typing import Annotated, Optional
 
 from fastapi import (
@@ -31,12 +29,11 @@ from backend.users.schemas.register_schema import RegisterForm
 from backend.users.schemas.users_schemas import ProfileCreate, UserCreate
 from backend.users.services import UserService
 
-from backend.auth.Celery.logger_info import celery_status
 from backend.auth.Celery.tasks import send_confirmation_email_task
-from backend.auth.Celery.email_service import (EmailService)
 from backend.auth.authorization import get_current_user_from_cookie
 
 from backend.utils.save_images import upload_image
+
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -45,10 +42,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-
 templates = Jinja2Templates(directory=settings.template_dir / "users")
 templates2 = Jinja2Templates(directory=settings.template_dir / "info")
-
 
 
 async def get_register_form(
@@ -138,7 +133,6 @@ async def register_user(
     return templates2.TemplateResponse('further_actions.html', {'request': request})
 
 
-
 @router.get("/confirm", response_class=HTMLResponse)
 async def confirm_email(
     token: str,
@@ -158,11 +152,6 @@ async def confirm_email(
         return templates2.TemplateResponse('stop_time_link.html', {'request': request})
 
     try:
-        # Сначала создаем пользователя без аватара
-        # profile_data = form_data.model_dump(
-        #     exclude={"username", "password", "password2", "email", "avatar"}
-        # )
-
         # Тоже самое что и строчки выше
         excluded_keys = {"username", "password", "password2", "email", "avatar"}
         profile_data = {k: v for k, v in data.items() if k not in excluded_keys}
@@ -211,7 +200,6 @@ async def confirm_email(
             {
                 "request": request,
                 "current_user": None,
-                # "form_data": form_data.model_dump()
                 "form_data": data,
                 "errors": {"": e.detail},
             },
@@ -230,7 +218,6 @@ async def confirm_email(
             {
                 "request": request,
                 "current_user": None,
-                # "form_data": form_data.model_dump(),
                 "form_data": data,
                 "errors": errors,
             },
@@ -244,105 +231,8 @@ async def confirm_email(
             {
                 "request": request,
                 "current_user": None,
-                # "form_data": form_data.model_dump(),
                 "form_data": data,
                 "errors": {"": "Произошла ошибка при регистрации"},
             },
             status_code=500,
         )
-
-
-
-# @router.get("confirm", response_class=HTMLResponse)
-# async def confirm_email(
-#     token: str,
-#     service: Annotated[UserService, Depends(get_user_service)],
-#     redis: Annotated[AsyncRedisClient, Depends()],
-# ):
-#     await redis.connect()
-#     data = await redis.get_pending_token(token)
-#
-#     if not data:
-#         raise HTTPException(status_code=400, detail="Токен недействителен или истёк")
-#
-#     try:
-#         # Сначала создаем пользователя без аватара
-#         profile_data = {k: v for k, v in data.items() if k not in {"username", "password", "email", "avatar"}}
-#         profile = ProfileCreate(**profile_data)
-#
-#         user_create = UserCreate(
-#             username=data.username,
-#             password=data.password,
-#             email=data.email,
-#             profile=profile,
-#         )
-#
-#         # Создаем пользователя и сразу делаем flush, чтобы получить ID
-#         user = await service.create_user_and_added_in_db(user_create)
-#         await service.repository.session.flush()
-#
-#         # Теперь загружаем аватар, если он был предоставлен
-#         if data.avatar and data.avatar.filename:
-#             avatar_url = await upload_image(
-#                 user_id=user.id,
-#                 image_file=data.avatar,
-#                 content_path="users/avatars",
-#             )
-#             # Обновляем аватар пользователя
-#             user.profile.avatar = avatar_url
-#             await service.repository.session.commit()  # Фиксируем изменения
-#
-#         logger.info(f"New user registered: {user.username}")
-#
-#         response = RedirectResponse(url="/login", status_code=303)
-#         response.set_cookie(
-#             "register_success",
-#             "true",
-#             max_age=5,
-#             path="/login",
-#         )
-#         return response
-#
-#     except HTTPException as e:
-#         logger.warning(f"Registration failed: {e.detail}")
-#         return templates.TemplateResponse(
-#             "register.html",
-#             {
-#                 "request": request,
-#                 "current_user": None,
-#                 "form_data": form_data.model_dump(),
-#                 "errors": {"": e.detail},
-#             },
-#             status_code=e.status_code,
-#         )
-#     except ValidationError as e:
-#         errors = {}
-#         for error in e.errors():
-#             field = error["loc"][-1]
-#             msg = error["msg"]
-#             errors[field] = msg
-#
-#         logger.warning(f"Registration validation failed: {errors}")
-#         return templates.TemplateResponse(
-#             "register.html",
-#             {
-#                 "request": request,
-#                 "current_user": None,
-#                 "form_data": form_data.model_dump(),
-#                 "errors": errors,
-#             },
-#             status_code=400,
-#         )
-#     except Exception as e:
-#         await service.repository.session.rollback()
-#         logger.error(f"Registration error: {str(e)}", exc_info=True)
-#         return templates.TemplateResponse(
-#             "register.html",
-#             {
-#                 "request": request,
-#                 "current_user": None,
-#                 "form_data": form_data.model_dump(),
-#                 "errors": {"": "Произошла ошибка при регистрации"},
-#             },
-#             status_code=500,
-#         )
