@@ -125,26 +125,17 @@ async def register_user(
     temporary_user_token = TokenService.create_refresh_token({'sub': form_data.username})
 
 
-    data = form_data.model_dump()
-  # сделать сохранение хеша а не пароля
+    data = form_data.model_dump() # сделать сохранение хеша а не пароля
 
     await redis.connect()
     await redis.save_pending_email_token(temporary_user_token, data)
 
     # Отправка письма через Celery
-    result = send_confirmation_email_task.delay(form_data.email, temporary_user_token, str(request.base_url))
+    send_confirmation_email_task.delay(form_data.email, temporary_user_token, str(request.base_url))
 
-    logger.info(f'Статус отправки письма для регистрации: {result.status}')
-    # logger.info(celery_status)
+    RedirectResponse(url="/further_actions", status_code=303)
+    return templates2.TemplateResponse('further_actions.html', {'request': request})
 
-    if result.status:
-        logger.info('Письмо отправлено')
-
-        RedirectResponse(url="/further_actions", status_code=303)
-        return templates2.TemplateResponse('further_actions.html', {'request': request})
-    else:
-        RedirectResponse(url="/error", status_code=303)
-        return templates2.TemplateResponse('error.html', {'request': request})
 
 
 @router.get("/confirm", response_class=HTMLResponse)
@@ -157,6 +148,7 @@ async def confirm_email(
     await redis.connect()
     if await redis.token_exists(token):
         data = await redis.get_pending_token(token)
+        logger.info('Данные по токену найдены!')
 
     else:
         logger.info('Срок действия ссылки пользователя истек!')  # добавить данные пользователя
@@ -187,7 +179,7 @@ async def confirm_email(
         await service.repository.session.flush()
 
         # Теперь загружаем аватар, если он был предоставлен
-        if data['avatar']:
+        if data.get('avatar'):
             avatar_url = await upload_image(
                 user_id=user.id,
                 image_file=data['avatar'],
