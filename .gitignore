@@ -164,3 +164,4 @@ cython_debug/
 images/
 users_files/
 redis_data/
+dump.rdb
