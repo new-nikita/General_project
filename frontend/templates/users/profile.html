@@ -3,9 +3,12 @@
 {% block title %}{{ user.username }} - Профиль{% endblock %}
 
 {% block extra_css %}
+    <link rel="stylesheet" href="/static/css/post.css">
     <link rel="stylesheet" href="/static/css/profile.css">
     <link rel="stylesheet" href="/static/css/like.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+
 {% endblock %}
 {% block content %}
     <div class="profile-container">
@@ -258,7 +261,64 @@
                                     Удалить
                                 </button>
                             </div>
+                            <!-- Кнопка редактирования -->
+                            <button class="edit-post-btn btn btn-sm btn-outline-primary"
+                                    data-post-id="{{ post.id }}" style="margin-left: 10px;">
+                                <i class="fas fa-edit"></i> Редактировать
+                            </button>
                         {% endif %}
+
+                        <!-- Скрытая форма редактирования -->
+                        <div class="post-edit-form" id="edit-form-{{ post.id }}"
+                             style="display: none; margin-top: 15px;">
+                            <form class="edit-post-form" data-post-id="{{ post.id }}" enctype="multipart/form-data">
+                                <!-- Поле для редактирования текста -->
+                                <textarea name="content" class="form-control mb-2">{{ post.content }}</textarea>
+
+                                <!-- Текущее изображение с возможностью удаления -->
+                                <div class="current-image mb-2"
+                                     style="position: relative; display: flex; align-items: center;">
+                                    {% if post.image %}
+                                        <img src="{{ post.image }}" alt="Текущее изображение" width="100" height="100"
+                                             style="object-fit: cover;">
+                                        <button type="button"
+                                                class="remove-current-image-btn btn btn-sm btn-danger"
+                                                data-post-id="{{ post.id }}"
+                                                data-bs-toggle="tooltip"
+                                                title="Удалить изображение"
+                                                style="
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            animation: pop-in 0.3s ease forwards;
+        "
+                                                onmouseover="this.style.transform='scale(1.1)'; this.style.backgroundColor='#c82333';"
+                                                onmouseout="this.style.transform='scale(1)'; this.style.backgroundColor='white';">
+                                            <i class="fas fa-trash-alt" style="color: #dc3545;"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Новое изображение -->
+                                <input type="file" name="image" class="form-control mb-2" accept="image/*">
+
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success btn-sm">Сохранить</button>
+                                    <button type="button" class="btn btn-secondary btn-sm cancel-edit-btn"
+                                            data-post-id="{{ post.id }}">Отмена
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
 
 
                         <div class="post-date">
@@ -275,11 +335,23 @@
                     {% endif %}
                 </div>
             {% endif %}
+
         </div>
 
         <script src=/static/js/profile_info.js type=text/javascript></script>
         <script src=/static/js/posts.js type=text/javascript></script>
+        <script src=/static/js/post-update.js type="text/javascript"></script>
         <script src=/static/js/avatar_modal.js type="text/javascript"></script>
         <script src=/static/js/show_toast.js type=text/javascript></script>
         <script src=/static/js/like.js type=text/javascript></script>
-{% endblock %}
+        <script type="text/javascript">
+            document.addEventListener("DOMContentLoaded", function () {
+                setupPostUpdateHandlers();
+                initLikeHandlers();
+
+            });
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                new bootstrap.Tooltip(el);
+            });
+        </script>
+{% endblock content %}
