@@ -1,12 +1,14 @@
-from typing import Optional, Any, Sequence
+from typing import Optional, Sequence
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.base_repository import BaseRepository
 from backend.core.models import Post
-from backend.posts.schemas import PostCreate
+from backend.posts.schemas import PostCreate, PostUpdate
+from backend.core.models import LikePost
 
 
 class PostRepository(BaseRepository[Post]):
@@ -27,24 +29,27 @@ class PostRepository(BaseRepository[Post]):
         :param dto_post: DTO с данными для создания поста
         :return: объект поста
         """
-        new_post = Post(
-            content=dto_post.content,
-            author_id=dto_post.author_id,
-            image=dto_post.image,
-        )
-        # if dto_post.tags:
-        #     tag_objects = list()
-        #     for tag_name in dto_post.tags:
-        #         # TODO сделать отдельный репозиторий для Tag
-        #         tag = Tag(name=tag_name)
-        #         tag_objects.append(tag)
-        #
-        #     new_post.tags = tag_objects
+        try:
+            new_post = Post(
+                content=dto_post.content,
+                author_id=dto_post.author_id,
+                image=dto_post.image,
+            )
 
-        self.session.add(new_post)
-        await self.session.commit()
-        await self.session.refresh(new_post)
-        return new_post
+            self.session.add(new_post)
+            await self.session.commit()
+            await self.session.refresh(new_post)
+
+        except SQLAlchemyError as e:
+            await self.session.rollback()
+            raise ValueError(f"Ошибка при создании поста: {str(e)}")
+
+        except Exception as e:
+            await self.session.rollback()
+            raise ValueError(f"Неизвестная ошибка при обновлении поста: {str(e)}")
+
+        else:
+            return new_post
 
     async def get_post_by_id(self, post_id: int) -> Optional[Post]:
         """
@@ -58,63 +63,160 @@ class PostRepository(BaseRepository[Post]):
         )
         return result.scalar_one_or_none()
 
-    async def update(self, id_: int, data: dict[str, Any]) -> str | None: ...
+    async def update(self, post_id: int, update_data: PostUpdate) -> Optional[Post]:
+        """
+        Обновляет пост по ID с данными из DTO.
 
-    async def delete(self, id_: int) -> str | None:
+        :param post_id: ID поста для обновления
+        :param update_data: Данные для обновления
+        :return: Обновлённый пост или None, если пост не найден
+        :raise ValueError: Если произошла ошибка при обновлении
+        """
+        try:
+            post = await self.get_by_id(post_id)
+            if not post:
+                return
+
+            data_dict = update_data.model_dump(exclude_unset=True)
+            for field, value in data_dict.items():
+                setattr(post, field, value)
+
+            await self.session.commit()
+            await self.session.refresh(post)
+            return post
+
+        except SQLAlchemyError as e:
+            await self.session.rollback()
+            raise ValueError(f"Ошибка базы данных при обновлении поста: {str(e)}")
+        except Exception as e:
+            await self.session.rollback()
+            raise ValueError(f"Неизвестная ошибка при обновлении поста: {str(e)}")
+
+    async def delete(self, id_: int) -> bool:
         """
         Удаляет пост по его ID.
 
         :param id_: ID поста.
-        :return: Сообщение об успешном удалении или None, если пост не найден.
+        :return: True, если удалено, иначе False
         """
-        result = await self.session.execute(
-            select(self.model).where(self.model.id == id_)
-        )
-        post = result.scalars().first()
-
+        post = await self.get_by_id(id_)
         if not post:
-            return
+            if not post:
+                return False
 
         await self.session.execute(delete(self.model).where(self.model.id == id_))
         await self.session.commit()
-        return "Post deleted successfully"
+        return True
 
     async def get_all_posts_by_author_id(
-        self, author_id: int, current_user_id: Optional[int] = None
+        self,
+        author_id: int,
+        current_user_id: Optional[int] = None,
     ) -> Sequence[Post]:
         """
         Возвращает все посты пользователя с информацией о лайках.
 
-        :param author_id: ID автора постов
-        :param current_user_id: ID текущего пользователя для проверки лайков
-        :return: Список постов с дополнительными атрибутами:
-                 - likes_count: количество лайков
-                 - is_liked: поставил ли текущий пользователь лайк
+        :param author_id: ID автора
+        :param current_user_id: ID текущего пользователя (опционально)
+        :return: список постов с дополнительной информацией о лайках
         """
-        # Базовый запрос
         stmt = (
             select(self.model)
-            .options(selectinload(self.model.author), selectinload(self.model.likes))
+            .outerjoin(self.model.likes)
+            .options(selectinload(self.model.likes))
             .where(self.model.author_id == author_id)
+            .group_by(self.model.id)
             .order_by(self.model.created_at.desc())
         )
 
         result = await self.session.execute(stmt)
         posts = result.scalars().all()
 
-        # Добавляем вычисляемые поля для каждого поста
         for post in posts:
-            # Количество лайков
-            post.likes_count = len(post.likes)
-
-            # Проверяем, поставил ли текущий пользователь лайк
-            post.is_liked_by_current = (
-                any(like.user_id == current_user_id for like in post.likes)
-                if current_user_id
-                else False
-            )
-
-            # Список ID пользователей, поставивших лайк (для шаблона)
-            post.liked_user_ids = [like.user_id for like in post.likes]
-
+            self._enrich_post_with_likes(post, current_user_id)
         return posts
+
+    async def remove_image(self, post_id: int) -> Optional[dict]:
+        """
+        Убирает изображение у поста.
+
+        :param post_id: ID поста
+        :return: данные с результатом операции
+        """
+        post = await self.get_by_id(post_id)
+        if not post:
+            return {"success": False, "message": "Нет поста с таким ID"}
+
+        post.image = None
+        try:
+            await self.session.commit()
+            return {"success": True, "message": "Изображение удалено"}
+        except SQLAlchemyError as e:
+            await self.session.rollback()
+            return {
+                "success": False,
+                "message": f"Ошибка при удалении изображения: {e}",
+            }
+
+    async def get_paginated_posts_by_likes(
+        self,
+        page: int = 1,
+        limit: int = 10,
+        current_user_id: int | None = None,
+    ) -> tuple[Sequence[Post], int]:
+        """
+        Получает страницу постов, отсортированных по количеству лайков.
+
+        :param page: Номер страницы (начинается с 1)
+        :param limit: Количество постов на странице
+        :param current_user_id: ID авторизованного пользователя или None
+        :return: Кортеж из:
+            - Список постов для текущей страницы
+            - Общее количество страниц
+        """
+
+        offset_val = (page - 1) * limit
+
+        stmt = (
+            select(self.model)
+            .outerjoin(self.model.likes)
+            .options(selectinload(self.model.likes))
+            .group_by(self.model.id)
+            .order_by(func.count(LikePost.id).desc(), self.model.created_at.desc())
+            .offset(offset_val)
+            .limit(limit)
+        )
+
+        result = await self.session.execute(stmt)
+        posts = result.scalars().all()
+
+        for post in posts:
+            self._enrich_post_with_likes(post, current_user_id)
+
+        total_count = await self.session.scalar(
+            select(func.count(self.model.id)).select_from(self.model)
+        )
+
+        total_pages = (total_count + limit - 1) // limit  # округление вверх
+
+        return posts, total_pages
+
+    @classmethod
+    def _enrich_post_with_likes(
+        cls,
+        post: Post,
+        current_user_id: Optional[int] = None,
+    ) -> Post:
+        """Добавляет информацию о лайках к посту:
+        - количество лайков
+        - проверка лайкнул ли текущий пользователь
+        - ids всех пользователей, которым понравился этот пост.
+        """
+        post.likes_count = len(post.likes)
+        post.is_liked_by_current = (
+            any(like.user_id == current_user_id for like in post.likes)
+            if current_user_id
+            else False
+        )
+        post.liked_user_ids = {like.user_id for like in post.likes}
+        return post
