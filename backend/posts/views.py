@@ -8,8 +8,9 @@ from backend.auth.authorization import get_current_user_from_cookie
 from backend.core.models import User
 from backend.posts.services import PostService
 from backend.posts.dependencies import get_post_service
-from backend.posts.schemas import PostCreate
+from backend.posts.schemas import PostCreate, PostUpdate, PostRead
 from backend.utils.save_images import upload_image
+from core.models import Post
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -105,3 +106,90 @@ async def delete_post(
     # Удаляем пост
     await post_service.repository.delete(id_=post_id)
     return {"message": "Пост успешно удален"}
+
+
+@router.patch("/posts/update/{post_id}", status_code=200)
+async def update_post(
+    post_id: int,
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    post_service: Annotated[PostService, Depends(get_post_service)],
+    content: str = Form(...),
+    image: UploadFile | None = File(None),
+) -> JSONResponse:
+    """
+    Обработчик обновления поста.
+
+    Принимает текстовое содержимое и/или новое изображение.
+    Обновляет пост в базе данных и возвращает обновлённые данные.
+
+    :param post_id: ID поста для обновления.
+    :param current_user: Авторизованный пользователь (получается из куки).
+    :param post_service: Сервис для работы с постами.
+    :param content: Новое текстовое содержимое поста (обязательное).
+    :param image: Новое изображение (опционально).
+
+    :return: JSON-ответ с данными обновлённого поста.
+    :raises HTTPException: Если пост не найден или у пользователя нет прав на редактирование.
+    """
+
+    post = await post_service.repository.get_by_id(id_=post_id)
+    if not post:
+        logger.error(f"Пост с ID {post_id} не найден")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Пост не найден"
+        )
+
+    # Проверяем права пользователя
+    if post.author_id != current_user.id and not current_user.is_superuser:
+        logger.error(
+            f"Пользователь с ID {current_user.id} не имеет прав на изменение поста с ID {post_id}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="У вас нет прав на редактирование этого поста",
+        )
+    image_url = post.image
+    if image and image.filename:
+        try:
+            image_url = await upload_image(
+                user_id=current_user.id, image_file=image, content_path="posts/images"
+            )
+        except Exception as e:
+            logger.error(f"Не удалось загрузить изображение: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Ошибка при обработке изображения",
+            )
+
+    post_dto = PostUpdate(content=content, image=image_url, author_id=current_user.id)
+
+    try:
+        updated_post = await post_service.repository.update(
+            post_id=post_id, update_data=post_dto
+        )
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении поста: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Не удалось обновить пост",
+        )
+    return JSONResponse(
+        content={"post": PostRead.model_validate(updated_post).model_dump()}
+    )
+
+
+@router.post("/posts/remove-image/{post_id}")
+async def remove_post_image(
+    post_id: int,
+    current_user: User = Depends(get_current_user_from_cookie),
+    post_service: PostService = Depends(get_post_service),
+):
+    post = await post_service.repository.get_by_id(post_id)
+
+    if not post or post.author_id != current_user.id and not current_user.is_superuser:
+        raise HTTPException(
+            status_code=404, detail="Пост не найден или недостаточно прав"
+        )
+
+    await post_service.repository.remove_image(post_id)
+    return {"success": True, "message": "Изображение удалено"}
