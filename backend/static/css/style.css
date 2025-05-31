@@ -10,13 +10,6 @@ header {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Контейнер профиля */
-.profile-container {
-    background: white;
-    border-radius: 15px;
-    padding: 2rem;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-}
 
 /* Аватар */
 .user-avatar {
@@ -89,28 +82,6 @@ footer {
 .main-content {
     margin-right: 270px; /* Учитываем ширину бокового меню + отступ */
     padding-top: 20px;
-}
-
-.profile-container {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    padding: 30px;
-}
-
-.user-avatar {
-    width: 150px;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 5px solid #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: transform 0.3s ease;
-}
-
-.user-avatar:hover {
-    transform: scale(1.05);
 }
 
 .user-info {

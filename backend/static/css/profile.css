@@ -3,16 +3,9 @@
     max-width: 900px;
     margin: 2rem auto;
     padding: 2rem;
-    background-color: #f8f9fa;
+    background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-}
-
-.profile-card {
-    display: flex;
-    gap: 2rem;
-    align-items: center;
-    flex-wrap: wrap;
 }
 
 .profile-avatar {
@@ -81,167 +74,6 @@
     color: #333;
 }
 
-/* Форма создания поста */
-.add-post-block {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background-color: #f9fafb;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    display: none; /* Изначально скрыта */
-}
-
-.btn-toggle-post-form {
-    background-color: #f9fafb;
-    border: 1px solid #e9ecef;
-    color: #4a76a8;
-    font-weight: 600;
-    padding: 1rem;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    width: 100%;
-    text-align: center;
-}
-
-.btn-toggle-post-form:hover {
-    background-color: #e9ecef;
-    transform: translateY(-2px);
-}
-
-.form-control, .form-select {
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    border: 1px solid #ddd;
-    transition: all 0.3s ease;
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: #4a76a8;
-    box-shadow: 0 0 0 0.25rem rgba(74, 118, 168, 0.2);
-}
-
-.btn-publish {
-    background-color: #4a76a8;
-    border: none;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    font-weight: 600;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.btn-publish:hover {
-    background-color: #3a5f8a;
-    transform: translateY(-2px);
-}
-
-/* Посты */
-.post-item {
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    border: 1px solid #eaeaea;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.post-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
-}
-
-.post-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.post-author-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 12px;
-    border: 2px solid #f0f0f0;
-}
-
-.post-author {
-    font-weight: 600;
-    color: #333;
-    font-size: 0.95rem;
-}
-
-.post-content {
-    margin: 16px 0;
-    white-space: pre-line;
-    line-height: 1.5;
-    font-size: 0.95rem;
-    color: #333;
-}
-
-.post-image-container {
-    margin: 16px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #f0f0f0;
-    background: #fafafa;
-    position: relative;
-}
-
-.post-image {
-    width: 100%;
-    max-height: 500px;
-    object-fit: contain;
-    display: block;
-}
-
-.post-date {
-    font-size: 0.8rem;
-    color: #888;
-    text-align: right;
-    margin-top: 12px;
-}
-
-.post-date:before {
-    content: "•";
-    margin: 0 6px;
-    color: #ddd;
-}
-
-.post-actions {
-    display: flex;
-    border-top: 1px solid #f0f0f0;
-    padding-top: 12px;
-    margin-top: 16px;
-}
-
-.post-action {
-    display: flex;
-    align-items: center;
-    margin-right: 20px;
-    color: #666;
-    cursor: pointer;
-    transition: color 0.2s ease;
-    font-size: 0.9rem;
-}
-
-.post-action:hover {
-    color: #4a76a8;
-}
-
-.post-action i {
-    margin-right: 6px;
-    font-size: 1rem;
-}
-
-.no-posts {
-    text-align: center;
-    padding: 40px;
-    color: #999;
-    font-size: 0.95rem;
-}
-
 
 .toast {
     position: fixed;
@@ -273,7 +105,6 @@
     border: 1px solid #f5c6cb;
 }
 
-/*не используется*/
 .fade-out {
     animation: fadeOut 0.1s ease-in-out forwards;
 }
@@ -290,7 +121,6 @@
     }
 }
 
-/* но не точно. */
 
 .modal {
     display: none;
@@ -473,27 +303,6 @@
     font-weight: bold;
 }
 
-/* Стили для кнопки "Подробнее" */
-.profile-info-btn {
-    display: block;
-    margin: 10px auto 0;
-    padding: 5px 15px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 20px;
-    color: #495057;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.profile-info-btn:hover {
-    background-color: #e9ecef;
-    border-color: #ced4da;
-}
-
-.profile-info-btn i {
-    margin-right: 5px;
-}
 
 /* Стили для формы загрузки аватара */
 .avatar-upload-container {
@@ -517,9 +326,6 @@
     background-color: #0069d9;
 }
 
-#file-name {
-    min-height: 20px;
-}
 
 .preview-avatar {
     width: 150px;
@@ -538,40 +344,61 @@
     cursor: pointer;
 }
 
-.edit-profile-modern {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 8px 16px;
-    border: 2px solid #4a76a8; /* Нейтральный контур */
-    color: #4a76a8;
-    text-decoration: none;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    background-color: transparent;
-}
-
-.edit-profile-modern:hover {
-    background-color: #e6f0fa;
-    color: #2c588c;
-    transform: translateY(-2px);
-}
-
-.edit-profile-modern:active {
-    transform: translateY(0);
-}
-
-.edit-profile-modern .edit-profile-modern-icon {
-    display: inline-block;
-    margin-left: 8px;
-    transition: transform 0.3s ease;
-}
-
-.edit-profile-modern:hover .edit-profile-modern-icon {
-    transform: translateX(4px);
-}
-
 .like-button.liked .fa-heart {
     color: #e74c3c;
+}
+
+/* Анимация появления кнопки */
+@keyframes pop-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.7);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Кнопка удаления изображения */
+.remove-current-image-btn {
+    animation: pop-in 0.3s ease forwards;
+}
+
+/* Эффект пульсации при наведении */
+.remove-current-image-btn:hover i {
+    animation: pulse 1s infinite;
+}
+
+/* Подсказка Bootstrap tooltip */
+.remove-current-image-btn[data-bs-toggle="tooltip"] {
+    cursor: pointer;
+}
+
+/* Анимация удаления изображения */
+.post-image-container.fade-out {
+    animation: fade-out 0.3s ease forwards;
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
 }

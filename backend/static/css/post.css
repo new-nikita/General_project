@@ -1,0 +1,160 @@
+.post-item {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eaeaea;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.post-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.post-author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    border: 2px solid #f0f0f0;
+}
+
+.post-author {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.post-content {
+    margin: 16px 0;
+    white-space: pre-line;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.post-image-container {
+    margin: 16px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+    background: #fafafa;
+    position: relative;
+}
+
+.post-image {
+    width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+    display: block;
+}
+
+.post-date {
+    font-size: 0.8rem;
+    color: #888;
+    text-align: right;
+    margin-top: 12px;
+}
+
+.post-date:before {
+    content: "•";
+    margin: 0 6px;
+    color: #ddd;
+}
+
+.post-actions {
+    display: flex;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 12px;
+    margin-top: 16px;
+}
+
+.post-action {
+    display: flex;
+    align-items: center;
+    margin-right: 20px;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.post-action:hover {
+    color: #4a76a8;
+}
+
+.post-action i {
+    margin-right: 6px;
+    font-size: 1rem;
+}
+
+.no-posts {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+    font-size: 0.95rem;
+}
+
+
+/* Форма создания поста */
+.add-post-block {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: #f9fafb;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    display: none; /* Изначально скрыта */
+}
+
+.btn-toggle-post-form {
+    background-color: #f9fafb;
+    border: 1px solid #e9ecef;
+    color: #4a76a8;
+    font-weight: 600;
+    padding: 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: center;
+}
+
+.btn-toggle-post-form:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4a76a8;
+    box-shadow: 0 0 0 0.25rem rgba(74, 118, 168, 0.2);
+}
+
+.btn-publish {
+    background-color: #4a76a8;
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-publish:hover {
+    background-color: #3a5f8a;
+    transform: translateY(-2px);
+}
