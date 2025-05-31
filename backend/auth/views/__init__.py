@@ -35,21 +35,28 @@ async def index(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     post_service: Annotated[PostService, Depends(get_post_service)],
+    page: int = 1,
 ):
     """
-    Отображает главную страницу с приветствием.
+    Отображает главную страницу с постами, отсортированными по лайкам.
 
-    :param request: Запрос FastAPI.
-    :param current_user: Текущий авторизованный пользователь.
-    :param post_service: Сервис для работы с постами.
-    :return: HTML-страница с приветствием.
+    :param request: Запрос FastAPI
+    :param current_user: Текущий пользователь
+    :param post_service: Сервис постов
+    :param page: Номер страницы (query param ?page=1)
+    :return: HTML-страница с постами
     """
-    posts = await post_service.repository.get_all()
+    posts, total_pages = await post_service.repository.get_paginated_posts_by_likes(
+        page=page, current_user_id=current_user.id or None
+    )
+
     return settings.templates.template_dir.TemplateResponse(
         "index.html",
         {
             "request": request,
             "current_user": current_user,
             "posts": posts,
+            "page": page,
+            "total_pages": total_pages,
         },
     )
