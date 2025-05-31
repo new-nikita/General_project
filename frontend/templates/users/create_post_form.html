@@ -1,0 +1,22 @@
+{% if current_user %}
+    <button id="toggle-post-form" class="btn-toggle-post-form d-flex align-items-center justify-content-center">
+        <i class="fas fa-plus me-2"></i>Создать новый пост
+    </button>
+
+    <div id="post-form-container" class="add-post-block mt-3">
+        <form id="post-form" action="/posts/create" method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="post-content" class="form-label">Создать пост</label>
+                <textarea class="form-control" id="post-content" name="content" rows="3"
+                          placeholder="Что у вас нового?"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="post-image" class="form-label">Изображение (необязательно)</label>
+                <input class="form-control" type="file" id="post-image" name="image" accept="image/*">
+            </div>
+            <button type="submit" class="btn btn-publish">
+                <i class="fas fa-paper-plane me-2"></i>Опубликовать
+            </button>
+        </form>
+    </div>
+{% endif %}
