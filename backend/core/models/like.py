@@ -27,4 +27,4 @@ class LikePost(Base):
     )
 
     user: Mapped["User"] = relationship("User", back_populates="likes")
-    post: Mapped["Post"] = relationship("Post")
+    post: Mapped["Post"] = relationship("Post", back_populates="likes")
