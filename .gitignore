@@ -163,3 +163,5 @@ cython_debug/
 .idea
 images/
 users_files/
+redis_data/
+dump.rdb
