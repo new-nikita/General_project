@@ -28,6 +28,7 @@ from backend.users.services import UserService
 from backend.auth.authorization import (
     authenticate_user,
     get_current_user_from_cookie,
+    get_redirect_with_authentication_user
 )
 
 
@@ -91,24 +92,8 @@ async def login(
         # Аутентификация пользователя
         user = await authenticate_user(service, username, password)
 
-        # Создание JWT-токенов
-        access_token = TokenService.create_access_token({"sub": user.username})
-        refresh_token = TokenService.create_refresh_token({"sub": user.username})
-        
-#         # Добавления токенов в куки
-#         TokenCookieService.set_access_token_to_cookie(access_token, response)
-#         TokenCookieService.set_refresh_token_to_cookie(refresh_token, response)
 
-        # Логирование успешной аутентификации
-        logger.info(f"User {user.username} successfully authenticated")
-
-        # Перенаправление на страницу профиля
-        redirect = RedirectResponse(
-            url=f"/profile/{user.id}",
-            status_code=303,
-        )
-        redirect.set_cookie("access-token", access_token, path="/")
-        redirect.set_cookie("refresh-token", refresh_token, path="/")
+        redirect = await get_redirect_with_authentication_user(user)
         return redirect
 
     except Exception as e:
@@ -124,15 +109,21 @@ async def password_recovery(
     response: Response,
     service: Annotated[UserService, Depends(get_user_service)],
     request: Request,
-    email: str = Form(...),
+    email: EmailStr = Form(...),
+):
+
+    user = await service.get_user_by_email(email)
+
+    if user:
+        pass
 
     # сделать запрос в базу данных по эмаил переданного пользователем для восстановления пароля
     # и если он есть, создать ссылку с токеном для смены пароля пользователя ( или что то в этом вроде )
     # после перехода по ссылке открывается этот эндпоинт
     # далее форма для нового пароля
     # изменения данных (пароля) в основной бд
-):
-    pass
+
+
 
 
 @router.get("/logout")

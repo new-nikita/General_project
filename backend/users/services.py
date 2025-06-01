@@ -1,6 +1,7 @@
 from typing import Sequence
 
 from fastapi import HTTPException
+from pydantic import EmailStr
 
 from backend.users.repository import UserRepository
 from backend.users.schemas.users_schemas import UserCreate
@@ -52,6 +53,31 @@ class UserService:
         """
 
         return await self.repository.get_user_by_username(username)
+
+
+    async def get_user_by_email(self, email: EmailStr) -> User | None:
+        """
+        Возвращает пользователя по его email пользователя (email).
+
+        :param email: Email пользователя.
+        :return: Объект пользователя или None, если пользователь не найден.
+        """
+
+        return await self.repository.get_user_by_email(email)
+
+
+    async def change_password_by_user(self, user: User, password: str) -> User | None:
+        """
+        Обновляет пароль по его email пользователя (email).
+
+        :param username: Имя пользователя.
+        :param password: Новый пароль пользователя.
+        :return: Объект пользователя или None, если пользователь не найден.
+        """
+
+        return await self.repository.change_password_by_user(user, password)
+
+
 
     # async def get_posts_by_user_id(self, user_id: int) -> Sequence[Post] | None:
     #     return await self.repository.get_posts_by_user_id(user_id)

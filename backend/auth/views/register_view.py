@@ -61,7 +61,7 @@ async def get_register_form(
     city: Optional[str] = Form(None),
     street: Optional[str] = Form(None),
     bio: Optional[str] = Form(None),
-    avatar: UploadFile | str | None = File(None),
+    # avatar: UploadFile | str | None = File(None),
 ) -> RegisterForm:
     return RegisterForm(
         username=username,
@@ -78,7 +78,7 @@ async def get_register_form(
         city=city,
         street=street,
         bio=bio,
-        avatar=avatar,
+        # avatar=avatar,
     )
 
 @router.get("/register", response_class=HTMLResponse)
@@ -126,7 +126,7 @@ async def register_user(
     await redis.save_pending_email_token(temporary_user_token, data)
 
     # Отправка письма через Celery
-    send_confirmation_email_task.delay(form_data.email, temporary_user_token, str(request.base_url))
+    send_confirmation_email_task.delay('confirm', form_data.email, temporary_user_token, str(request.base_url))
     # await delete_unconfirmed_user_task.apply_async(countdown=1800)
 
     RedirectResponse(url="/further_actions", status_code=303)

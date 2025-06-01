@@ -8,15 +8,15 @@ from fastapi import (
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
-from core.config import settings
-from core.models import User
+from backend.core.config import settings
+from backend.core.models import User
 
-from auth.authorization import (
+from backend.auth.authorization import (
     get_current_user_from_cookie,
 )
-from auth.views.login_view import router as login_router
-from auth.views.register_view import router as register_router
-
+from backend.auth.views.login_view import router as login_router
+from backend.auth.views.register_view import router as register_router
+from backend.auth.views.reset_password import router as forgot_router
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Auth"])
 router.include_router(login_router)
 router.include_router(register_router)
+router.include_router(forgot_router)
 
 
 templates = Jinja2Templates(directory=settings.template_dir)

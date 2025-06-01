@@ -7,16 +7,17 @@ from backend.auth import AsyncRedisClient
 celery_app = Celery("worker", broker=settings.celery.broker_url, backend=settings.celery.result_backend)
 
 @shared_task
-def send_confirmation_email_task(email_to: str, token: str, base_url: str):
+def send_confirmation_email_task(name_endpoint: str, email_to: str, token: str, base_url: str):
     """
     Задача Celery. Отправляет сообщение пользователю на почту для подтверждения регистрации.
 
+    :param name_endpoint: Имя эндоинта для генерации валидной ссылки
     :param email_to: Email полученный от пользователя в form_data
     :param token: Token созданный для письма регистрации
     :param base_url: Базовая ссылка проекта
     :return:
     """
-    link = EmailService.build_confirmation_link(base_url, token)
+    link = EmailService.build_confirmation_link(name_endpoint, base_url, token)
     message = EmailService.compose_email(email_to, link)
     EmailService.send_email(message, email_to)
 

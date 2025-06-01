@@ -4,6 +4,7 @@ from fastapi.responses import Response
 
 from backend.core.config import settings
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -34,3 +35,8 @@ class TokenCookieService:
             samesite="lax",
             max_age=settings.jwt.refresh_token_expire_days * 24 * 60 * 60,
         )
+
+
+
+
+

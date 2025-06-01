@@ -73,6 +73,19 @@ class UserRepository(BaseRepository[User]):
         )
         return result.scalar_one_or_none()
 
+    async def change_password_by_user(self, user: User, new_password: str) -> User | None:
+        """
+        Обновляет пароль пользователя
+
+        :param username: Имя пользователя.
+        :param new_password: новый пароль от пользователя
+        :return: Объект пользователя или None, если пользователь не найден.
+        """
+        hashed_password = PasswordHelper.generate_password(new_password)
+        user.hashed_password = hashed_password
+        await self.session.commit()
+
+
     async def update(self, id_: int, data: dict[str, Any]) -> str | None: ...
 
     async def delete(self, id_: int) -> str | None: ...

@@ -17,11 +17,11 @@ class EmailService:
     """Сервис отправки писем"""
 
     @staticmethod
-    def build_confirmation_link(base_url: str, token: str) -> str:
+    def build_confirmation_link(name_endpoint: str, base_url: str, token: str) -> str:
         """
-        Создает валидную ссылку подтверждения по токену
+        Создает валидную ссылку с токеном
         """
-        url = urljoin(base_url, f"/confirm?token={token}")
+        url = urljoin(base_url, f"/{name_endpoint}?token={token}")
         logger.info(f"Ссылка с токеном создана: {url}")
         return url
 
