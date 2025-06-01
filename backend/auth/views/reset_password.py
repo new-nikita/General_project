@@ -2,6 +2,7 @@ import logging
 from datetime import date
 from typing import Annotated
 
+import uuid
 from fastapi import (
     APIRouter,
     Depends,
@@ -67,11 +68,11 @@ async def request_reset(
     """
 
     try:
-        user = await service.get_user_by_email(email)
-        reset_token = TokenService.create_refresh_token({'sub': user.email})  # TODO подумать на счет нужен ли сторонний токен для этого
+        await service.get_user_by_email(email)
+        reset_token = str(uuid.uuid4())  # одноразовый токен
 
         await redis.connect()
-        await redis.save_pending_email_token(reset_token, email)
+        await redis.save_pending_email_token(reset_token, email, expires_sec=600)
 
         send_confirmation_email_task.delay('reset_password', email, reset_token, str(request.base_url))
 
@@ -87,7 +88,7 @@ async def request_reset(
 
 
 # Ссылка сброса
-@router.get("/reset_password/{token}", response_class=HTMLResponse)
+@router.get("/reset_password", response_class=HTMLResponse)
 async def reset_password_form(
         request: Request,
         token: str,
@@ -96,19 +97,18 @@ async def reset_password_form(
 
     try:
         await redis.connect()
-        if not await redis.token_exists(token):
-            raise HTTPException(status_code=400, detail="Неверный или истекший токен")
+        email = await redis.get_pending_token(token)
 
-        return templates.TemplateResponse("reset_password.html", {"request": request, "token": token})
+        return templates.TemplateResponse("reset_password.html", {"request": request, "email": email})
 
-    except Exception as e:
-        logger.error(f"Reset password failed: {e}")
+    except HTTPException(status_code=400, detail="Неверный или истекший токен"):
+        logger.error(f"Reset password failed")
 
 
 # Обработка сброса
 @router.post("/reset_password")
 async def reset_password(
-        token: str,
+        email: EmailStr,
         service: Annotated[UserService, Depends(get_user_service)],
         new_password: str = Form(...),
         new_password2: str = Form(...),
@@ -116,7 +116,7 @@ async def reset_password(
     """
     Установление нового пароля
 
-    :param token: Токен и письма почты
+    :param email: Email из временной бд Redis
     :param new_password: Новый пароль
     :param new_password2: Подтверждение нового пароля
     :param service: Сервис работы с пользователями
@@ -126,8 +126,7 @@ async def reset_password(
     try:
         if new_password == new_password2:   # TODO подумать как можно это лучше сделать
 
-            payload = TokenService.decode_and_validate_token(token)
-            user = await service.get_user_by_email(payload["sub"])
+            user = await service.get_user_by_email(email)
             await service.change_password_by_user(user, new_password)
 
             redirect = await get_redirect_with_authentication_user(user)

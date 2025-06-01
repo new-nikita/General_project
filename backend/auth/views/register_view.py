@@ -30,7 +30,7 @@ from backend.users.schemas.users_schemas import ProfileCreate, UserCreate
 from backend.users.services import UserService
 
 from backend.auth.Celery.tasks import send_confirmation_email_task
-from backend.auth.authorization import get_current_user_from_cookie
+from backend.auth.authorization import get_current_user_from_cookie, get_redirect_with_authentication_user
 
 from backend.utils.save_images import upload_image
 
@@ -119,15 +119,13 @@ async def register_user(
 
     temporary_user_token = TokenService.create_refresh_token({'sub': form_data.username})
 
-
-    data = form_data.model_dump() # сделать сохранение хеша а не пароля
+    data = form_data.model_dump()  # сделать сохранение хеша, а не пароля
 
     await redis.connect()
     await redis.save_pending_email_token(temporary_user_token, data)
 
     # Отправка письма через Celery
     send_confirmation_email_task.delay('confirm', form_data.email, temporary_user_token, str(request.base_url))
-    # await delete_unconfirmed_user_task.apply_async(countdown=1800)
 
     RedirectResponse(url="/further_actions", status_code=303)
     return templates2.TemplateResponse('further_actions.html', {'request': request})
@@ -181,17 +179,13 @@ async def confirm_email(
 
         logger.info(f"New user registered: {user.username}")
 
-        response = RedirectResponse(url=f"/profile/{user.id}", status_code=303)
-        response.set_cookie(
-            "register_success",
-            "true",
-            max_age=5,
-            path="/login",
-        )
+        user_profile = service.get_user_by_username(data.username)
+
+        users = await get_current_user_from_cookie(user_profile)
 
         await redis.delete_pending_token(token)
 
-        return response
+        return users
 
     except HTTPException as e:
         logger.warning(f"Registration failed: {e.detail}")

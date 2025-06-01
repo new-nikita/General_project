@@ -30,7 +30,7 @@ class AsyncRedisClient:
             raise
 
     async def save_pending_email_token(
-        self, token: str, data, expires_sec: int = 1800
+        self, token: str, email, expires_sec: int = 1800
     ) -> bool:
         """
         Добавляет в базу данных Redis сроком в (30 минут)
@@ -43,7 +43,7 @@ class AsyncRedisClient:
         """
         try:
 
-            await self.r.setex(token, expires_sec, json.dumps(data))
+            await self.r.setex(token, expires_sec, json.dumps(email))
             """
             setex: устанавливает срок жизни записи 
             """
@@ -100,7 +100,7 @@ class AsyncRedisClient:
         """
         try:
             exists = await self.r.exists(token) == 1
-            logger.debug(f"Проверка токена: {token} -> {exists}")
+            logger.info(f"Проверка токена: {token} -> {exists}")
             if exists:
                 return True
         except Exception as e:
