@@ -63,20 +63,16 @@ class PostRepository(BaseRepository[Post]):
         )
         return result.scalar_one_or_none()
 
-    async def update(self, post_id: int, update_data: PostUpdate) -> Optional[Post]:
+    async def update(self, post: Post, update_data: PostUpdate) -> Optional[Post]:
         """
         Обновляет пост по ID с данными из DTO.
 
-        :param post_id: ID поста для обновления
+        :param post: Поста для обновления
         :param update_data: Данные для обновления
         :return: Обновлённый пост или None, если пост не найден
         :raise ValueError: Если произошла ошибка при обновлении
         """
         try:
-            post = await self.get_by_id(post_id)
-            if not post:
-                return
-
             data_dict = update_data.model_dump(exclude_unset=True)
             for field, value in data_dict.items():
                 setattr(post, field, value)
@@ -92,19 +88,14 @@ class PostRepository(BaseRepository[Post]):
             await self.session.rollback()
             raise ValueError(f"Неизвестная ошибка при обновлении поста: {str(e)}")
 
-    async def delete(self, id_: int) -> bool:
+    async def delete(self, post: Post) -> bool:
         """
         Удаляет пост по его ID.
 
-        :param id_: ID поста.
+        :param post: Удаляемый пост.
         :return: True, если удалено, иначе False
         """
-        post = await self.get_by_id(id_)
-        if not post:
-            if not post:
-                return False
-
-        await self.session.execute(delete(self.model).where(self.model.id == id_))
+        await self.session.execute(delete(self.model).where(self.model.id == post.id))
         await self.session.commit()
         return True
 
@@ -136,17 +127,13 @@ class PostRepository(BaseRepository[Post]):
             self._enrich_post_with_likes(post, current_user_id)
         return posts
 
-    async def remove_image(self, post_id: int) -> Optional[dict]:
+    async def remove_image(self, post: Post) -> Optional[dict]:
         """
         Убирает изображение у поста.
 
-        :param post_id: ID поста
+        :param post: Пост
         :return: данные с результатом операции
         """
-        post = await self.get_by_id(post_id)
-        if not post:
-            return {"success": False, "message": "Нет поста с таким ID"}
-
         post.image = None
         try:
             await self.session.commit()
