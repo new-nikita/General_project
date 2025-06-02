@@ -3,19 +3,30 @@ function setupPostUpdateHandlers() {
     document.querySelectorAll(".edit-post-btn").forEach(button => {
         button.addEventListener("click", function () {
             const postId = this.dataset.postId;
+
+            // 1. Скрываем все формы редактирования
+            document.querySelectorAll(".post-edit-form").forEach(form => {
+                form.style.display = "none";
+            });
+
+            // 2. Показываем все кнопки "Редактировать"
+            document.querySelectorAll(".edit-post-btn").forEach(btn => {
+                btn.style.display = "inline-block";
+            });
+
+            // 3. Скрываем кнопку "Редактировать" для текущего поста
+            this.style.display = "none";
+
             const postItem = document.getElementById(`post-${postId}`);
             const editForm = document.getElementById(`edit-form-${postId}`);
             const postContentEl = postItem.querySelector(".post-content");
 
-            // Скрываем текущий контент
+            // Скрываем текущий контент поста
             if (postContentEl) {
                 postContentEl.style.display = "none";
             }
 
-            // Скрываем другие формы
-            document.querySelectorAll(".post-edit-form").forEach(f => f.style.display = "none");
-
-            // Показываем нужную
+            // Показываем нужную форму редактирования
             if (editForm) {
                 editForm.style.display = "block";
 
@@ -34,13 +45,21 @@ function setupPostUpdateHandlers() {
         const postItem = document.getElementById(`post-${postId}`);
         const editForm = document.getElementById(`edit-form-${postId}`);
         const postContentEl = postItem.querySelector(".post-content");
+        const editBtn = postItem.querySelector(".edit-post-btn");
 
-        // Скрываем форму
-        editForm.style.display = "none";
+        // Скрываем форму редактирования
+        if (editForm) {
+            editForm.style.display = "none";
+        }
 
-        // Восстанавливаем контент
+        // Восстанавливаем контент поста
         if (postContentEl) {
             postContentEl.style.display = "block";
+        }
+
+        // Показываем кнопку "Редактировать"
+        if (editBtn) {
+            editBtn.style.display = "inline-block";
         }
     });
 
@@ -118,11 +137,18 @@ function setupPostUpdateHandlers() {
                 imageContainer.remove();
             }
 
-            // === 3. Скрываем форму ===
+            // === 3. Скрываем форму и показываем кнопку "Редактировать" и контент ===
             const editForm = document.getElementById(`edit-form-${postId}`);
+            const editBtn = postItem.querySelector(".edit-post-btn");
+
             if (editForm) {
                 editForm.style.display = "none";
-                postContentEl.style.display = "block"
+            }
+            if (postContentEl) {
+                postContentEl.style.display = "block";
+            }
+            if (editBtn) {
+                editBtn.style.display = "inline-block";
             }
 
             showToast("Пост успешно обновлён", true);

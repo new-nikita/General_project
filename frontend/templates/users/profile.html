@@ -4,6 +4,7 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="/static/css/post.css">
+    <link rel="stylesheet" href="/static/css/post_update.css">
     <link rel="stylesheet" href="/static/css/profile.css">
     <link rel="stylesheet" href="/static/css/like.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -271,6 +272,7 @@
                         <!-- Скрытая форма редактирования -->
                         <div class="post-edit-form" id="edit-form-{{ post.id }}"
                              style="display: none; margin-top: 15px;">
+
                             <form class="edit-post-form" data-post-id="{{ post.id }}" enctype="multipart/form-data">
                                 <!-- Поле для редактирования текста -->
                                 <textarea name="content" class="form-control mb-2">{{ post.content }}</textarea>
@@ -284,25 +286,7 @@
                                         <button type="button"
                                                 class="remove-current-image-btn btn btn-sm btn-danger"
                                                 data-post-id="{{ post.id }}"
-                                                data-bs-toggle="tooltip"
-                                                title="Удалить изображение"
-                                                style="
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            animation: pop-in 0.3s ease forwards;
-        "
-                                                onmouseover="this.style.transform='scale(1.1)'; this.style.backgroundColor='#c82333';"
-                                                onmouseout="this.style.transform='scale(1)'; this.style.backgroundColor='white';">
+                                                title="Удалить изображение">
                                             <i class="fas fa-trash-alt" style="color: #dc3545;"></i>
                                         </button>
                                     {% endif %}

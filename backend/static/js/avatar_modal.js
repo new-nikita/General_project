@@ -42,16 +42,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // ===== Модальное окно управления аватаром =====
     if (isOwner) {
-        const closeModal = document.querySelector(".close-modal");
+        const modal = document.getElementById("avatar-modal");
+        const closeModalBtn = modal.querySelector(".close-modal");
         const viewFullscreenBtn = document.getElementById("view-fullscreen");
         const changeAvatarBtn = document.getElementById("change-avatar");
         const removeAvatarBtn = document.getElementById("remove-avatar");
         const avatarUploadModal = document.getElementById("avatar-upload-modal");
         const cancelUploadBtn = document.getElementById("cancel-upload");
 
-        closeModal?.addEventListener("click", function () {
+        closeModalBtn.addEventListener("click", function () {
             modal.style.display = "none";
-            restoreScroll();
         });
 
         window.addEventListener("click", function (e) {
