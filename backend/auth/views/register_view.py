@@ -179,9 +179,7 @@ async def confirm_email(
 
         logger.info(f"New user registered: {user.username}")
 
-        user_profile = service.get_user_by_username(data.username)
-
-        users = await get_current_user_from_cookie(user_profile)
+        users = await get_redirect_with_authentication_user(user)
 
         await redis.delete_pending_token(token)
 

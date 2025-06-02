@@ -4,6 +4,7 @@ from email.message import EmailMessage
 from urllib.parse import urljoin
 
 from backend.core.config import settings
+from fastapi.templating import Jinja2Templates
 
 logging.basicConfig(
     format=settings.logging.log_format,
@@ -11,6 +12,8 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+templates2 = Jinja2Templates(directory=settings.template_dir / "info")
 
 
 class EmailService:
@@ -34,9 +37,16 @@ class EmailService:
         message["Subject"] = "Подтвердите почту"
         message["From"] = settings.smtp.user
         message["To"] = to_email
-        message.set_content(f"Перейдите по ссылке для подтверждения почты:\n\n{confirm_link}")
+
+        text = f"Пожалуйста, подтвердите свою почту, перейдя по ссылке:\n{confirm_link}"
+        html = templates2.get_template("message_email.html").render(confirm_link=confirm_link)
+
+        message.set_content(text)
+        message.add_alternative(html, subtype='html')
+
         logger.info("Email-сообщение собрано.")
         return message
+
 
     @staticmethod
     def send_email(message: EmailMessage, to_email: str) -> bool:
