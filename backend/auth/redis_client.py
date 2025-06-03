@@ -2,7 +2,7 @@ import redis.asyncio as redis
 import logging
 import json
 from backend.core.config import settings
-from typing import Optional
+from typing import Optional, Any, Coroutine
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -47,13 +47,37 @@ class AsyncRedisClient:
             """
             setex: устанавливает срок жизни записи 
             """
-            logger.info(f"Сохранён токен: {data["username"]} -> {token}")
+            logger.info(f"Сохранён токен: {email["username"]} -> {token}")
             return True
         except Exception as e:
-            logger.error(f"Redis error (save): {e}")
+            logger.error(f"Redis error (save_email): {e}")
             return False
 
-    async def get_pending_token(self, token: str) -> Optional[dict]:
+    async def save_pending_disposable_token(
+        self, token: str, email, expires_sec: int = 600
+    ) -> bool:
+        """
+        Добавляет в базу данных Redis сроком в (30 минут)
+
+        :param data: Словарь переданный из form_data
+        :param token: Токен для авторизации пользователя (будет отправлен в письмо пользователю на почту в виде ссылки)
+        :param email: Email переданный пользователем в Form
+        :param expires_sec: Срок жизни записи в Redis (по умолчанию 30 минут)
+        :return:
+        """
+        try:
+
+            await self.r.setex(token, expires_sec, email)
+            """
+            setex: устанавливает срок жизни записи 
+            """
+            logger.info(f"Сохранён одноразовый токен: {email} -> {token}")
+            return True
+        except Exception as e:
+            logger.error(f"Redis error (save_email): {e}")
+            return False
+
+    async def get_pending_token(self, token: str) -> str | Any:
         """
         Извлекает значение по ключу из Redis
 
@@ -62,15 +86,17 @@ class AsyncRedisClient:
         """
         try:
             val = await self.r.get(token)
-            if val:
+            if isinstance(val, dict):
                 logger.info(f"Токен получен: {token}")
                 return json.loads(val)
-            logger.info(f"Токен не найден: {token}")
-            return
+            elif isinstance(val, str):
+                return val
+            else:
+                logger.info(f"Токен не найден: {token}")
 
         except Exception as e:
             logger.error(f"Redis error (get): {e}")
-            return
+
 
     async def delete_pending_token(self, token: str) -> bool:
         """

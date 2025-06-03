@@ -72,7 +72,7 @@ async def request_reset(
         reset_token = str(uuid.uuid4())  # одноразовый токен
 
         await redis.connect()
-        await redis.save_pending_email_token(reset_token, email, expires_sec=600)
+        await redis.save_pending_disposable_token(reset_token, email)
 
         send_confirmation_email_task.delay('reset_password', email, reset_token, str(request.base_url))
 
@@ -92,23 +92,28 @@ async def request_reset(
 async def reset_password_form(
         request: Request,
         token: str,
+        service: Annotated[UserService, Depends(get_user_service)],
         redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
 ):
 
     try:
         await redis.connect()
         email = await redis.get_pending_token(token)
+        user = await service.get_user_by_email(email)
 
-        return templates.TemplateResponse("reset_password.html", {"request": request, "email": email})
+        return templates.TemplateResponse("reset_password.html", {"request": request, "current_user": user})
 
-    except HTTPException(status_code=400, detail="Неверный или истекший токен"):
+
+    except HTTPException:
         logger.error(f"Reset password failed")
+        raise HTTPException(status_code=400, detail="Неверный или истекший токен")
 
 
 # Обработка сброса
 @router.post("/reset_password")
 async def reset_password(
-        email: EmailStr,
+        request: Request,
+        user,
         service: Annotated[UserService, Depends(get_user_service)],
         new_password: str = Form(...),
         new_password2: str = Form(...),
@@ -116,7 +121,7 @@ async def reset_password(
     """
     Установление нового пароля
 
-    :param email: Email из временной бд Redis
+    :param user: Объект пользователя.
     :param new_password: Новый пароль
     :param new_password2: Подтверждение нового пароля
     :param service: Сервис работы с пользователями
@@ -125,9 +130,8 @@ async def reset_password(
 
     try:
         if new_password == new_password2:   # TODO подумать как можно это лучше сделать
-
-            user = await service.get_user_by_email(email)
             await service.change_password_by_user(user, new_password)
+            logger.info(f'Пользователь {user.username} сменил пароль!')
 
             redirect = await get_redirect_with_authentication_user(user)
             return redirect

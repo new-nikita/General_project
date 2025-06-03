@@ -77,8 +77,8 @@ class UserRepository(BaseRepository[User]):
         """
         Обновляет пароль пользователя
 
-        :param username: Имя пользователя.
-        :param new_password: новый пароль от пользователя
+        :param user: Объект пользователя.
+        :param new_password: Новый пароль от пользователя
         :return: Объект пользователя или None, если пользователь не найден.
         """
         hashed_password = PasswordHelper.generate_password(new_password)
