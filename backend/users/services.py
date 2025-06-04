@@ -74,7 +74,6 @@ class UserService:
         :param password: Новый пароль пользователя.
         :return: Объект пользователя или None, если пользователь не найден.
         """
-
         return await self.repository.change_password_by_user(user, password)
 
 

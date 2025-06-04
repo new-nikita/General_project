@@ -92,17 +92,14 @@ async def request_reset(
 async def reset_password_form(
         request: Request,
         token: str,
-        service: Annotated[UserService, Depends(get_user_service)],
+        # service: Annotated[UserService, Depends(get_user_service)],
         redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
 ):
-
     try:
         await redis.connect()
-        email = await redis.get_pending_token(token)
-        user = await service.get_user_by_email(email)
+        await redis.get_pending_token(token)
 
-        return templates.TemplateResponse("reset_password.html", {"request": request, "current_user": user})
-
+        return templates.TemplateResponse("reset_password.html", {"request": request, "token": token, "current_user": None})
 
     except HTTPException:
         logger.error(f"Reset password failed")
@@ -113,31 +110,31 @@ async def reset_password_form(
 @router.post("/reset_password")
 async def reset_password(
         request: Request,
-        user,
         service: Annotated[UserService, Depends(get_user_service)],
+        redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
+        token: str = Form(...),
         new_password: str = Form(...),
-        new_password2: str = Form(...),
+        confirm_password: str = Form(...),
 ):
-    """
-    Установление нового пароля
-
-    :param user: Объект пользователя.
-    :param new_password: Новый пароль
-    :param new_password2: Подтверждение нового пароля
-    :param service: Сервис работы с пользователями
-    :return: Страницу пользователя
-    """
-
     try:
-        if new_password == new_password2:   # TODO подумать как можно это лучше сделать
-            await service.change_password_by_user(user, new_password)
-            logger.info(f'Пользователь {user.username} сменил пароль!')
+        await redis.connect()
+        email = await redis.get_pending_token(token)
+        user = await service.get_user_by_email(email)
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-            redirect = await get_redirect_with_authentication_user(user)
-            return redirect
+        if new_password != confirm_password:
+            raise HTTPException(status_code=400, detail="Пароли не совпадают")
+
+        await service.change_password_by_user(user, new_password)
+
+        redirect = await get_redirect_with_authentication_user(user)
+        return redirect
 
     except Exception as e:
         logger.error(f"Reset password failed: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при смене пароля")
+
 
 
 

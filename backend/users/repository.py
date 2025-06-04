@@ -86,6 +86,7 @@ class UserRepository(BaseRepository[User]):
         await self.session.commit()
 
 
+
     async def update(self, id_: int, data: dict[str, Any]) -> str | None: ...
 
     async def delete(self, id_: int) -> str | None: ...
