@@ -275,7 +275,8 @@
 
                             <form class="edit-post-form" data-post-id="{{ post.id }}" enctype="multipart/form-data">
                                 <!-- Поле для редактирования текста -->
-                                <textarea name="content" class="form-control mb-2">{{ post.content }}</textarea>
+                                <textarea name="content" class="form-control mb-2">{{ post.content  or '' }}
+                                </textarea>
 
                                 <!-- Текущее изображение с возможностью удаления -->
                                 <div class="current-image mb-2"

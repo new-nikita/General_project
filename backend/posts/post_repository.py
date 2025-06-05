@@ -127,15 +127,19 @@ class PostRepository(BaseRepository[Post]):
             self._enrich_post_with_likes(post, current_user_id)
         return posts
 
-    async def remove_image(self, post: Post) -> Optional[dict]:
+    async def remove_image(self, post: Post) -> dict:
         """
         Убирает изображение у поста.
-
         :param post: Пост
         :return: данные с результатом операции
         """
-        post.image = None
+        if not post.content or not post.content.strip():
+            return {
+                "success": False,
+                "message": "Нельзя оставлять пост без текста и изображения",
+            }
         try:
+            post.image = None
             await self.session.commit()
             return {"success": True, "message": "Изображение удалено"}
         except SQLAlchemyError as e:

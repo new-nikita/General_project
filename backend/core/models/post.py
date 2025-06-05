@@ -17,7 +17,7 @@ class Post(TimestampsMixin, Base):
     Модель для поста.
     """
 
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 

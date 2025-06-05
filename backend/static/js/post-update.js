@@ -165,20 +165,22 @@ function setupPostUpdateHandlers() {
 
         const postId = removeBtn.dataset.postId;
         const currentImageWrapper = removeBtn.closest(".current-image");
-
-        // Убираем изображение на форме
-        if (currentImageWrapper) {
-            currentImageWrapper.innerHTML = "";
-        }
-
-        // Удаляем .post-image-container с анимацией
         const postItem = document.getElementById(`post-${postId}`);
         const imageContainer = postItem.querySelector(".post-image-container");
-        if (imageContainer) {
-            imageContainer.classList.add("fade-out"); // запуск анимации
-            setTimeout(() => {
-                imageContainer.remove();
-            }, 3000); // ждём завершения анимации
+
+        // 🔒 Сохраняем оригинальные данные
+        const originalImageHTML = currentImageWrapper.innerHTML;
+        const postContentInput = document.querySelector(`#edit-form-${postId} textarea[name="content"]`);
+        const originalContent = postContentInput ? postContentInput.value : "";
+
+        // 💡 Очищаем поле content, если там было "None"
+        if (postContentInput && postContentInput.value === "None") {
+            postContentInput.value = "";
+        }
+
+        // 🖼️ Убираем изображение с анимацией
+        if (currentImageWrapper) {
+            currentImageWrapper.innerHTML = "<div class='loading'>Загрузка...</div>";
         }
 
         try {
@@ -188,15 +190,41 @@ function setupPostUpdateHandlers() {
 
             if (!response.ok) throw new Error("Ошибка при удалении изображения");
 
-            showToast("Изображение успешно удалено", true);
+            const data = await response.json();
+
+            if (data.success) {
+                showToast(data.message || "Изображение удалено", true);
+
+                // Успешное удаление — удаляем блок изображения
+                if (imageContainer) {
+                    imageContainer.classList.add("fade-out");
+                    setTimeout(() => imageContainer.remove(), 300);
+                }
+            } else {
+                showToast(data.message, false);
+
+                // ❌ Откатываем изменения: восстанавливаем изображение и значение поля
+                if (currentImageWrapper) {
+                    currentImageWrapper.innerHTML = originalImageHTML;
+                }
+
+                if (postContentInput && postContentInput.value === "") {
+                    postContentInput.value = originalContent;
+                }
+            }
         } catch (error) {
             console.error("Ошибка:", error);
             showToast("Не удалось удалить изображение", false);
 
-            // При ошибке восстанавливаем изображение
-            if (currentImageWrapper && window.originalImageHTML) {
-                currentImageWrapper.innerHTML = window.originalImageHTML;
+            // ❌ При ошибке восстанавливаем изображение и значение поля
+            if (currentImageWrapper) {
+                currentImageWrapper.innerHTML = originalImageHTML;
+            }
+
+            if (postContentInput && postContentInput.value === "") {
+                postContentInput.value = originalContent;
             }
         }
     });
+
 }

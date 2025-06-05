@@ -104,7 +104,7 @@ async def delete_post(
         )
 
     # Удаляем пост
-    await post_service.repository.delete(id_=post_id)
+    await post_service.repository.delete(post=post)
     return {"message": "Пост успешно удален"}
 
 
@@ -165,7 +165,7 @@ async def update_post(
 
     try:
         updated_post = await post_service.repository.update(
-            post_id=post_id, update_data=post_dto
+            post=post, update_data=post_dto
         )
     except Exception as e:
         logger.error(f"Ошибка при обновлении поста: {e}")
@@ -173,6 +173,7 @@ async def update_post(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Не удалось обновить пост",
         )
+
     return JSONResponse(
         content={"post": PostRead.model_validate(updated_post).model_dump()}
     )
@@ -191,5 +192,9 @@ async def remove_post_image(
             status_code=404, detail="Пост не найден или недостаточно прав"
         )
 
-    await post_service.repository.remove_image(post_id)
-    return {"success": True, "message": "Изображение удалено"}
+    result = await post_service.repository.remove_image(post)
+
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result["message"])
+
+    return result
