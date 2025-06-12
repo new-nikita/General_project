@@ -1,5 +1,6 @@
 import logging
 from typing import Annotated, Optional
+import base64
 
 from fastapi import (
     APIRouter,
@@ -25,12 +26,14 @@ from backend.core.models import User
 
 from backend.users.dependencies import get_user_service
 from backend.users.schemas.register_schema import RegisterForm
-
 from backend.users.schemas.users_schemas import ProfileCreate, UserCreate
 from backend.users.services import UserService
 
 from backend.auth.Celery.tasks import send_confirmation_email_task
-from backend.auth.authorization import get_current_user_from_cookie, get_redirect_with_authentication_user
+from backend.auth.authorization import (
+    get_current_user_from_cookie,
+    get_redirect_with_authentication_user
+)
 
 from backend.utils.save_images import upload_image
 
@@ -46,39 +49,44 @@ templates = Jinja2Templates(directory=settings.template_dir / "users")
 templates2 = Jinja2Templates(directory=settings.template_dir / "info")
 
 
-async def get_register_form(
+async def get_the_initial_register_form(
     username: str = Form(...),
     email: EmailStr = Form(...),
     password: str = Form(...),
     password2: str = Form(...),
-    first_name: Optional[str] = Form(None),
-    last_name: Optional[str] = Form(None),
-    middle_name: Optional[str] = Form(None),
-    # birth_date: Optional[str] = Form(None),
-    gender: Optional[str] = Form(None),
-    # phone_number: Optional[str] = Form(None),
-    country: Optional[str] = Form(None),
-    city: Optional[str] = Form(None),
-    street: Optional[str] = Form(None),
-    bio: Optional[str] = Form(None),
-    # avatar: UploadFile | str | None = File(None),
 ) -> RegisterForm:
     return RegisterForm(
         username=username,
         email=email,
         password=password,
         password2=password2,
+    )
+
+async def get_register_form(
+    first_name: Optional[str] = Form(None),
+    last_name: Optional[str] = Form(None),
+    middle_name: Optional[str] = Form(None),
+    birth_date: Optional[str] = Form(None),
+    gender: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
+    country: Optional[str] = Form(None),
+    city: Optional[str] = Form(None),
+    street: Optional[str] = Form(None),
+    bio: Optional[str] = Form(None),
+    avatar: UploadFile | str | None = File(None),
+) -> RegisterForm:
+    return RegisterForm(
         first_name=first_name,
         last_name=last_name,
         middle_name=middle_name,
-        # birth_date=birth_date,
+        birth_date=birth_date,
         gender=gender,
-        # phone_number=phone_number,
+        phone_number=phone_number,
         country=country,
         city=city,
         street=street,
         bio=bio,
-        # avatar=avatar,
+        avatar=avatar,
     )
 
 @router.get("/register", response_class=HTMLResponse)
@@ -100,7 +108,7 @@ async def get_register_page(
         return RedirectResponse(url="/", status_code=303)
 
     return templates.TemplateResponse(
-        "register.html",
+        "initial_register.html",
         {
             "request": request,
             "current_user": current_user,
@@ -113,47 +121,67 @@ async def get_register_page(
 @router.post("/register", response_class=HTMLResponse)
 async def register_user(
     request: Request,
-    form_data: Annotated[RegisterForm, Depends(get_register_form)],
+    form_data: Annotated[RegisterForm, Depends(get_the_initial_register_form)],
     redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
 ) -> Response:
 
     temporary_user_token = TokenService.create_refresh_token({'sub': form_data.username})
 
-    data = form_data.model_dump()  # сделать сохранение хеша, а не пароля
+    try:
+        email = form_data.email
 
-    await redis.connect()
-    await redis.save_pending_email_token(temporary_user_token, data)
+        await redis.connect()
+        await redis.save_pending_email_token(temporary_user_token, email)
 
-    # Отправка письма через Celery
-    send_confirmation_email_task.delay('confirm', form_data.email, temporary_user_token, str(request.base_url))
+        # Отправка письма через Celery
+        send_confirmation_email_task.delay('confirm', email, temporary_user_token, str(request.base_url))
 
-    RedirectResponse(url="/further_actions", status_code=303)
-    return templates2.TemplateResponse('further_actions.html', {'request': request})
+        RedirectResponse(url="/further_actions", status_code=303)
+        return templates2.TemplateResponse('further_actions.html', {'request': request})
+
+    except Exception as e:
+        logger.error(f"Ошибка при регистрации: {e}", exc_info=True)
+
+        return templates.TemplateResponse(
+            "initial_register.html",
+            {
+                "request": request,
+                "current_user": None,
+                "form_data": form_data.email,
+                "errors": {"": "Произошла ошибка при регистрации"},
+            },
+            status_code=500,
+        )
 
 
 @router.get("/confirm", response_class=HTMLResponse)
 async def confirm_email(
     token: str,
+    form_data: Annotated[RegisterForm, Depends(get_register_form)],
     service: Annotated[UserService, Depends(get_user_service)],
     redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
     request: Request
 ):
+
+
     await redis.connect()
     if await redis.token_exists(token):
         data = await redis.get_pending_token(token)
         logger.info('Данные по токену найдены!')
 
     else:
-        logger.info('Срок действия ссылки пользователя истек!')  # добавить данные пользователя
+        logger.info('Срок действия ссылки истек!')  # добавить данные пользователя
 
         RedirectResponse(url="/stop_time_link", status_code=303)
         return templates2.TemplateResponse('stop_time_link.html', {'request': request})
 
+
     try:
-        # Тоже самое что и строчки выше
         excluded_keys = {"username", "password", "password2", "email", "avatar"}
         profile_data = {k: v for k, v in data.items() if k not in excluded_keys}
         profile = ProfileCreate(**profile_data)
+
+        """TODO переделать под новое"""
 
         user_create = UserCreate(
             username=data['username'],
@@ -166,22 +194,22 @@ async def confirm_email(
         user = await service.create_user_and_added_in_db(user_create)
         await service.repository.session.flush()
 
-        # Теперь загружаем аватар, если он был предоставлен
-        if data.get('avatar'):
+        if form_data.avatar:
             avatar_url = await upload_image(
                 user_id=user.id,
-                image_file=data['avatar'],
+                image_file=form_data.avatar,
                 content_path="users/avatars",
             )
-            # Обновляем аватар пользователя
             user.profile.avatar = avatar_url
-            await service.repository.session.commit()  # Фиксируем изменения
+            await service.repository.session.commit()
+        # Фиксируем изменения
 
         logger.info(f"New user registered: {user.username}")
 
         users = await get_redirect_with_authentication_user(user)
 
         await redis.delete_pending_token(token)
+        logger.info(f"Данные пользователя {data['username']} удалены из временного хранилища Redis")
 
         return users
 

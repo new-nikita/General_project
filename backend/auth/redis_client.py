@@ -77,25 +77,20 @@ class AsyncRedisClient:
             logger.error(f"Redis error (save_email): {e}")
             return False
 
-    async def get_pending_token(self, token: str) -> str | Any:
+    async def get_pending_token(self, token: str) -> dict | str | None:
         """
         Извлекает значение по ключу из Redis
-
         :param token: токен из ссылки отправленный пользователю на почту
-        :return: возвращает значения по Токену
+        :return: возвращает dict (если JSON), иначе str или None
         """
         try:
             val = await self.r.get(token)
-            if isinstance(val, dict):
-                logger.info(f"Токен получен: {token}")
-                return json.loads(val)
-            elif isinstance(val, str):
-                return val
-            else:
-                logger.info(f"Токен не найден: {token}")
-
+            if val is not None:
+                return json.loads(val)  # ← всегда парсим JSON
+            logger.info(f"Токен не найден: {token}")
         except Exception as e:
             logger.error(f"Redis error (get): {e}")
+        return None
 
 
     async def delete_pending_token(self, token: str) -> bool:
