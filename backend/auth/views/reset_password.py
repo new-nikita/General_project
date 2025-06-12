@@ -74,7 +74,7 @@ async def request_reset(
         await redis.connect()
         await redis.save_pending_disposable_token(reset_token, email)
 
-        send_confirmation_email_task.delay('reset_password', email, reset_token, str(request.base_url))
+        send_confirmation_email_task.delay('reset_password', 'message_reset_password', email, reset_token, str(request.base_url))
 
         RedirectResponse(url="/further_actions", status_code=303)
         return templates2.TemplateResponse('further_actions.html', {'request': request})

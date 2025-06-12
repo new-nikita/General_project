@@ -10,7 +10,7 @@
     <div class="registration-container">
         <div class="registration-card">
             <div class="registration-header">
-                <h2 class="mb-0">Создайте новый аккаунт</h2>
+                <h2 class="mb-0">Регистрация: подтвердите вашу почту</h2>
             </div>
             {% if errors %}
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -20,7 +20,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endif %}
-            <form method="post" action="/register" enctype="multipart/form-data">
+            <form method="post" action="/initial_register" enctype="multipart/form-data">
 
                 <div class="form-section">
                     <div class="col-md-6 mb-3">

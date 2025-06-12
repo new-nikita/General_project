@@ -1,6 +1,5 @@
 import logging
 from typing import Annotated, Optional
-import base64
 
 from fastapi import (
     APIRouter,
@@ -49,20 +48,11 @@ templates = Jinja2Templates(directory=settings.template_dir / "users")
 templates2 = Jinja2Templates(directory=settings.template_dir / "info")
 
 
-async def get_the_initial_register_form(
+async def get_register_form(
     username: str = Form(...),
     email: EmailStr = Form(...),
     password: str = Form(...),
     password2: str = Form(...),
-) -> RegisterForm:
-    return RegisterForm(
-        username=username,
-        email=email,
-        password=password,
-        password2=password2,
-    )
-
-async def get_register_form(
     first_name: Optional[str] = Form(None),
     last_name: Optional[str] = Form(None),
     middle_name: Optional[str] = Form(None),
@@ -76,6 +66,10 @@ async def get_register_form(
     avatar: UploadFile | str | None = File(None),
 ) -> RegisterForm:
     return RegisterForm(
+        username=username,
+        email=email,
+        password=password,
+        password2=password2,
         first_name=first_name,
         last_name=last_name,
         middle_name=middle_name,
@@ -89,7 +83,7 @@ async def get_register_form(
         avatar=avatar,
     )
 
-@router.get("/register", response_class=HTMLResponse)
+@router.get("/initial_register", response_class=HTMLResponse)
 async def get_register_page(
     request: Request,
     current_user: Annotated[
@@ -118,23 +112,21 @@ async def get_register_page(
     )
 
 
-@router.post("/register", response_class=HTMLResponse)
+@router.post("/initial_register", response_class=HTMLResponse)
 async def register_user(
     request: Request,
-    form_data: Annotated[RegisterForm, Depends(get_the_initial_register_form)],
     redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
+    email: EmailStr = Form(...),
 ) -> Response:
 
-    temporary_user_token = TokenService.create_refresh_token({'sub': form_data.username})
+    temporary_user_token = TokenService.create_refresh_token({'sub': email})
 
     try:
-        email = form_data.email
-
         await redis.connect()
         await redis.save_pending_email_token(temporary_user_token, email)
 
         # Отправка письма через Celery
-        send_confirmation_email_task.delay('confirm', email, temporary_user_token, str(request.base_url))
+        send_confirmation_email_task.delay('register', 'initial_message', email, temporary_user_token, str(request.base_url))
 
         RedirectResponse(url="/further_actions", status_code=303)
         return templates2.TemplateResponse('further_actions.html', {'request': request})
@@ -143,50 +135,67 @@ async def register_user(
         logger.error(f"Ошибка при регистрации: {e}", exc_info=True)
 
         return templates.TemplateResponse(
-            "initial_register.html",
+            "initial_message.html",
             {
                 "request": request,
                 "current_user": None,
-                "form_data": form_data.email,
+                "form_data": email,
                 "errors": {"": "Произошла ошибка при регистрации"},
             },
             status_code=500,
         )
 
+@router.get("/register", response_class=HTMLResponse)
+async def get_register_page(
+    request: Request,
+    token: Optional[str] = None,
+    current_user: Annotated[
+        Optional[User], Depends(get_current_user_from_cookie)
+    ] = None,
+) -> Response:
+    if current_user:
+        return RedirectResponse(url="/", status_code=303)
 
-@router.get("/confirm", response_class=HTMLResponse)
-async def confirm_email(
-    token: str,
-    form_data: Annotated[RegisterForm, Depends(get_register_form)],
+    form_data = {}
+
+    if token:
+        try:
+            payload = TokenService.decode_and_validate_token(token)
+            email = payload.get("sub")
+            if email:
+                form_data["email"] = email
+        except Exception as e:
+            logger.warning(f"Ошибка при декодировании токена: {e}")
+
+    return templates.TemplateResponse(
+        "register.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "form_data": form_data,
+            "errors": {},
+        },
+    )
+
+
+@router.post("/register", response_class=HTMLResponse)
+async def register_user(
+    request: Request,
     service: Annotated[UserService, Depends(get_user_service)],
-    redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
-    request: Request
-):
-
-
-    await redis.connect()
-    if await redis.token_exists(token):
-        data = await redis.get_pending_token(token)
-        logger.info('Данные по токену найдены!')
-
-    else:
-        logger.info('Срок действия ссылки истек!')  # добавить данные пользователя
-
-        RedirectResponse(url="/stop_time_link", status_code=303)
-        return templates2.TemplateResponse('stop_time_link.html', {'request': request})
-
-
+    form_data: Annotated[RegisterForm, Depends(get_register_form)],
+) -> Response:
+    """Обрабатывает регистрацию нового пользователя."""
     try:
-        excluded_keys = {"username", "password", "password2", "email", "avatar"}
-        profile_data = {k: v for k, v in data.items() if k not in excluded_keys}
+        # Сначала создаем пользователя без аватара
+        profile_data = form_data.model_dump(
+            exclude={"username", "password", "password2", "email", "avatar"}
+        )
         profile = ProfileCreate(**profile_data)
 
-        """TODO переделать под новое"""
-
         user_create = UserCreate(
-            username=data['username'],
-            password=data['password'],
-            email=data['email'],
+            username=form_data.username,
+            password=form_data.password,
+            email=form_data.email,
             profile=profile,
         )
 
@@ -194,24 +203,22 @@ async def confirm_email(
         user = await service.create_user_and_added_in_db(user_create)
         await service.repository.session.flush()
 
-        if form_data.avatar:
+        # Теперь загружаем аватар, если он был предоставлен
+        if form_data.avatar and form_data.avatar.filename:
             avatar_url = await upload_image(
                 user_id=user.id,
                 image_file=form_data.avatar,
-                content_path="users/avatars",
+                content_path="users_files/avatars",
             )
+            # Обновляем аватар пользователя
             user.profile.avatar = avatar_url
-            await service.repository.session.commit()
-        # Фиксируем изменения
+            await service.repository.session.commit()  # Фиксируем изменения
 
         logger.info(f"New user registered: {user.username}")
 
-        users = await get_redirect_with_authentication_user(user)
+        redirect = await get_redirect_with_authentication_user(user)
+        return redirect
 
-        await redis.delete_pending_token(token)
-        logger.info(f"Данные пользователя {data['username']} удалены из временного хранилища Redis")
-
-        return users
 
     except HTTPException as e:
         logger.warning(f"Registration failed: {e.detail}")
@@ -219,8 +226,7 @@ async def confirm_email(
             "register.html",
             {
                 "request": request,
-                "current_user": None,
-                "form_data": data,
+                "form_data": form_data.model_dump(),
                 "errors": {"": e.detail},
             },
             status_code=e.status_code,
@@ -233,12 +239,12 @@ async def confirm_email(
             errors[field] = msg
 
         logger.warning(f"Registration validation failed: {errors}")
-        return templates.TemplateResponse(
-            "register.html",
+        return settings.templates.template_dir.TemplateResponse(
+            "users/register.html",
             {
                 "request": request,
                 "current_user": None,
-                "form_data": data,
+                "form_data": form_data.model_dump(),
                 "errors": errors,
             },
             status_code=400,
@@ -251,7 +257,7 @@ async def confirm_email(
             {
                 "request": request,
                 "current_user": None,
-                "form_data": data,
+                "form_data": form_data.model_dump(),
                 "errors": {"": "Произошла ошибка при регистрации"},
             },
             status_code=500,

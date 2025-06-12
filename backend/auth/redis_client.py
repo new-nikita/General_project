@@ -43,11 +43,11 @@ class AsyncRedisClient:
         """
         try:
 
-            await self.r.setex(token, expires_sec, json.dumps(email))
+            await self.r.setex(token, expires_sec, email)
             """
             setex: устанавливает срок жизни записи 
             """
-            logger.info(f"Сохранён токен: {email["username"]} -> {token}")
+            logger.info(f"Сохранён токен: {email} -> {token}")
             return True
         except Exception as e:
             logger.error(f"Redis error (save_email): {e}")
@@ -86,7 +86,7 @@ class AsyncRedisClient:
         try:
             val = await self.r.get(token)
             if val is not None:
-                return json.loads(val)  # ← всегда парсим JSON
+                return val  # ← всегда парсим JSON
             logger.info(f"Токен не найден: {token}")
         except Exception as e:
             logger.error(f"Redis error (get): {e}")

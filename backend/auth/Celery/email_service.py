@@ -29,7 +29,7 @@ class EmailService:
         return url
 
     @staticmethod
-    def compose_email(to_email: str, confirm_link: str) -> EmailMessage:
+    def compose_email(name_message: str, to_email: str, confirm_link: str) -> EmailMessage:
         """
         Создает сообщение EmailMessage с подтверждением
         """
@@ -39,7 +39,8 @@ class EmailService:
         message["To"] = to_email
 
         text = f"Пожалуйста, подтвердите свою почту, перейдя по ссылке:\n{confirm_link}"
-        html = templates2.get_template("message_email.html").render(confirm_link=confirm_link)
+
+        html = templates2.get_template(f"{name_message}.html").render(confirm_link=confirm_link)
 
         message.set_content(text)
         message.add_alternative(html, subtype='html')
