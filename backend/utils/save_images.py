@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import UploadFile, HTTPException, status
 
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 МБ
-BASE_STATIC_DIR = "static"
+BASE_STATIC_DIR = "client_files"
 
 
 async def upload_image(

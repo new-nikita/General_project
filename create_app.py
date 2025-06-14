@@ -6,7 +6,10 @@ from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles
 
 from backend.core.models import db_helper
+from backend.core.config import BASE_DIR
+from backend.utils.save_images import BASE_STATIC_DIR
 
+STATIC_DIR = BASE_DIR / "static"
 logging.basicConfig(
     level=logging.INFO,
     format="%(levelname)s: \t  %(message)s \t  || %(asctime)s",
@@ -39,5 +42,10 @@ def create_app() -> FastAPI:
     :return: FastAPI: Настроенный экземпляр приложения
     """
     application = FastAPI(lifespan=lifespan)
-    application.mount("/static", StaticFiles(directory="static"), name="static")
+    application.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    application.mount(
+        "/client_files",
+        StaticFiles(directory=str(BASE_STATIC_DIR)),
+        name="client_files",
+    )
     return application

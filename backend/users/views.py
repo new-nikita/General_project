@@ -182,7 +182,7 @@ async def upload_avatar(
         image_url = await upload_image(
             user_id=current_user.id,
             image_file=avatar,
-            content_path="users_files/avatars",
+            content_path="avatars",
         )
         await user_service.repository.update_user_avatar(current_user, image_url)
 
@@ -211,7 +211,7 @@ async def remove_avatar(
 
     :raises HTTPException 500: Если не удалось обновить аватар в БД.
     """
-    default_avatar = "/static/users_files/avatars/дефолтный_аватар.jpg"
+    default_avatar = "/client_files/avatars/дефолтный_аватар.jpg"
     await user_service.repository.delete_user_avatar(current_user)
 
     return JSONResponse(
