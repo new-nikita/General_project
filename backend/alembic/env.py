@@ -1,4 +1,8 @@
 import asyncio
+
+import sys
+from pathlib import Path
+
 from logging.config import fileConfig
 
 from alembic import context
@@ -19,8 +23,12 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from core.models import Base
-from core.config import settings
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(BASE_DIR))
+from backend.core.models import Base
+from backend.core.config import settings
 
 target_metadata = Base.metadata
 
@@ -28,6 +36,7 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
 config.set_main_option("sqlalchemy.url", str(settings.db.url))
 
 
