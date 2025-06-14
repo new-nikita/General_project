@@ -2,7 +2,7 @@ import logging
 
 from fastapi.responses import Response
 
-from core.config import settings
+from backend.core.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
