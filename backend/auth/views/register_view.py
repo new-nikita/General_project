@@ -14,20 +14,20 @@ from fastapi import (
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import EmailStr, ValidationError
 
-from core.config import settings
-from core.models import User
+from backend.core.config import settings
+from backend.core.models import User
 
-from users.dependencies import get_user_service
-from users.schemas.register_schema import RegisterForm
+from backend.users.dependencies import get_user_service
+from backend.users.schemas.register_schema import RegisterForm
 
-from users.schemas.users_schemas import ProfileCreate, UserCreate
-from users.services import UserService
+from backend.users.schemas.users_schemas import ProfileCreate, UserCreate
+from backend.users.services import UserService
 
 
-from auth.authorization import (
+from backend.auth.authorization import (
     get_current_user_from_cookie,
 )
-from utils.save_images import upload_image
+from backend.utils.save_images import upload_image
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value

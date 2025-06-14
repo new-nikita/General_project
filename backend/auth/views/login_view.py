@@ -10,11 +10,11 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from core.config import settings
-from users.dependencies import get_user_service
-from users.services import UserService
-from auth.authorization import authenticate_user
-from auth.tokens_service import TokenService
+from backend.core.config import settings
+from backend.users.dependencies import get_user_service
+from backend.users.services import UserService
+from backend.auth.authorization import authenticate_user
+from backend.auth.tokens_service import TokenService
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value

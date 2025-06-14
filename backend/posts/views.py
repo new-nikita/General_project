@@ -10,7 +10,6 @@ from backend.posts.services import PostService
 from backend.posts.dependencies import get_post_service
 from backend.posts.schemas import PostCreate, PostUpdate, PostRead
 from backend.utils.save_images import upload_image
-from core.models import Post
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

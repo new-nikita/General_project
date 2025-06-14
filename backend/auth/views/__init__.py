@@ -8,16 +8,16 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse
 
-from core.config import settings
-from core.models import User
+from backend.core.config import settings
+from backend.core.models import User
 
-from auth.authorization import (
+from backend.auth.authorization import (
     get_current_user_from_cookie,
 )
-from auth.views.login_view import router as login_router
-from auth.views.register_view import router as register_router
-from posts.services import PostService
-from posts.dependencies import get_post_service
+from backend.auth.views.login_view import router as login_router
+from backend.auth.views.register_view import router as register_router
+from backend.posts.services import PostService
+from backend.posts.dependencies import get_post_service
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -46,8 +46,9 @@ async def index(
     :param page: Номер страницы (query param ?page=1)
     :return: HTML-страница с постами
     """
+
     posts, total_pages = await post_service.repository.get_paginated_posts_by_likes(
-        page=page, current_user_id=current_user.id or None
+        page=page, current_user_id=current_user.id if current_user is not None else None
     )
 
     return settings.templates.template_dir.TemplateResponse(

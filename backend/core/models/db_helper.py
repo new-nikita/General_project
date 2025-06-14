@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
-from core.config import settings
+from backend.core.config import settings
 
 
 class DatabaseHelper:
@@ -18,6 +18,7 @@ class DatabaseHelper:
         echo_pool: bool = False,
         pool_size: int = 5,
         max_overflow: int = 10,
+        poolclass=None,
     ) -> None:
         self.engine: AsyncEngine = create_async_engine(
             url=url,
@@ -25,7 +26,9 @@ class DatabaseHelper:
             echo_pool=echo_pool,
             pool_size=pool_size,
             max_overflow=max_overflow,
+            pool_pre_ping=True,
         )
+
         self.session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(
             bind=self.engine,
             autoflush=False,
@@ -39,6 +42,7 @@ class DatabaseHelper:
     async def session_getter(self) -> AsyncGenerator[AsyncSession, None]:
         async with self.session_factory() as session:
             yield session
+            # await session.close()
 
 
 db_helper = DatabaseHelper(

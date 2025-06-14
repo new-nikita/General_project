@@ -4,8 +4,8 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import declared_attr
 from sqlalchemy.orm import mapped_column
 
-from core.config import CONVENTION
-from utils.case_converter import camel_case_to_snake_case
+from backend.core.config import CONVENTION
+from backend.utils.case_converter import camel_case_to_snake_case
 
 
 class Base(DeclarativeBase):
