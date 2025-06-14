@@ -132,7 +132,7 @@ async def register_user(
             avatar_url = await upload_image(
                 user_id=user.id,
                 image_file=form_data.avatar,
-                content_path="users_files/avatars",
+                content_path="avatars",
             )
             # Обновляем аватар пользователя
             user.profile.avatar = avatar_url
@@ -151,8 +151,8 @@ async def register_user(
 
     except HTTPException as e:
         logger.warning(f"Registration failed: {e.detail}")
-        return templates.TemplateResponse(
-            "register.html",
+        return settings.templates.template_dir.TemplateResponse(
+            "users/register.html",
             {
                 "request": request,
                 "form_data": form_data.model_dump(),
@@ -181,8 +181,8 @@ async def register_user(
     except Exception as e:
         await service.repository.session.rollback()
         logger.error(f"Registration error: {str(e)}", exc_info=True)
-        return templates.TemplateResponse(
-            "register.html",
+        return settings.templates.template_dir.TemplateResponse(
+            "users/register.html",
             {
                 "request": request,
                 "current_user": None,
