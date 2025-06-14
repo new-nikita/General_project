@@ -60,6 +60,7 @@ class DatabaseConfig(BaseModel):
     echo_pool: bool = False
     pool_size: int = 50
     max_overflow: int = 10
+    MODE: str = "TEST"
 
 
 class RedisConfig(BaseModel):
@@ -69,10 +70,12 @@ class RedisConfig(BaseModel):
 
 
 class Settings(BaseSettings):
+
     model_config = SettingsConfigDict(
         env_file=(
             BASE_DIR / ".env.template",
             BASE_DIR / ".env",
+            BASE_DIR / ".test.env",
         ),
         case_sensitive=False,
         env_nested_delimiter="__",
