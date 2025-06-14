@@ -1,15 +1,31 @@
 services:
   pg:
-    image: postgres
+    image: postgres:latest
     environment:
       POSTGRES_DB: database
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
       PGDATA: /var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "5433:5432"  # Обычная база данных
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  pg_test:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: test_database
+      POSTGRES_USER: test_admin
+      POSTGRES_PASSWORD: test_password
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5434:5432"  # Тестовая база данных
+    volumes:
+      - pgdata_test:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+  pgdata_test:
 
 #  redis:
 #    image: redis:latest
@@ -20,8 +36,3 @@ services:
 #      - /path/to/local/data:/root/redis
 #      - /path/to/local/redis.conf:/usr/local/etc/redis/redis.conf
 #    command: redis-server /usr/local/etc/redis/redis.conf
-
-volumes:
-  pgdata:
-
-
