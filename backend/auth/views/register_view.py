@@ -16,18 +16,22 @@ from pydantic import EmailStr, ValidationError
 
 from backend.core.config import settings
 from backend.core.models import User
-
 from backend.users.dependencies import get_user_service
 from backend.users.schemas.register_schema import RegisterForm
-
 from backend.users.schemas.users_schemas import ProfileCreate, UserCreate
 from backend.users.services import UserService
+from backend.auth import (
+    AsyncRedisClient,
+    TokenService
+)
 
-
+from backend.auth.Celery.tasks import send_confirmation_email_task
 from backend.auth.authorization import (
     get_current_user_from_cookie,
+    get_redirect_with_authentication_user
 )
 from backend.utils.save_images import upload_image
+
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -72,8 +76,7 @@ async def get_register_form(
         avatar=avatar,
     )
 
-
-@router.get("/register", response_class=HTMLResponse)
+@router.get("/initial_register", response_class=HTMLResponse)
 async def get_register_page(
     request: Request,
     current_user: Annotated[
@@ -92,11 +95,80 @@ async def get_register_page(
         return RedirectResponse(url="/", status_code=303)
 
     return settings.templates.template_dir.TemplateResponse(
-        "users/register.html",
+        "users/initial_register.html",
         {
             "request": request,
             "current_user": current_user,
             "form_data": {},
+            "errors": {},
+        },
+    )
+
+
+@router.post("/initial_register", response_class=HTMLResponse)
+async def register_user(
+    request: Request,
+    redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
+    email: EmailStr = Form(...),
+) -> Response:
+
+    temporary_user_token = TokenService.create_refresh_token({'sub': email})
+
+    try:
+        await redis.connect()
+        await redis.save_pending_email_token(temporary_user_token, email)
+
+        # Отправка письма через Celery
+        send_confirmation_email_task.delay('register', 'initial_message', email, temporary_user_token, str(request.base_url))
+
+        RedirectResponse(url="/further_actions", status_code=303)
+        return settings.templates.template_dir.TemplateResponse(
+            "users/further_actions.html",
+            {"request": request},
+                                                               )
+
+    except Exception as e:
+        logger.error(f"Ошибка при регистрации: {e}", exc_info=True)
+
+        return settings.templates.template_dir.TemplateResponse(
+            "users/initial_message.html",
+            {
+                "request": request,
+                "current_user": None,
+                "form_data": email,
+                "errors": {"": "Произошла ошибка при регистрации"},
+            },
+            status_code=500,
+        )
+
+@router.get("/register", response_class=HTMLResponse)
+async def get_register_page(
+    request: Request,
+    token: Optional[str] = None,
+    current_user: Annotated[
+        Optional[User], Depends(get_current_user_from_cookie)
+    ] = None,
+) -> Response:
+    if current_user:
+        return RedirectResponse(url="/", status_code=303)
+
+    form_data = {}
+
+    if token:
+        try:
+            payload = TokenService.decode_and_validate_token(token)
+            email = payload.get("sub")
+            if email:
+                form_data["email"] = email
+        except Exception as e:
+            logger.warning(f"Ошибка при декодировании токена: {e}")
+
+    return settings.templates.template_dir.TemplateResponse(
+         "users/register.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "form_data": form_data,
             "errors": {},
         },
     )
@@ -140,14 +212,9 @@ async def register_user(
 
         logger.info(f"New user registered: {user.username}")
 
-        response = RedirectResponse(url="/login", status_code=303)
-        response.set_cookie(
-            "register_success",
-            "true",
-            max_age=5,
-            path="/login",
-        )
-        return response
+        redirect = await get_redirect_with_authentication_user(user)
+        return redirect
+
 
     except HTTPException as e:
         logger.warning(f"Registration failed: {e.detail}")

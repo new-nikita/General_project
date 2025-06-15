@@ -88,6 +88,20 @@ class UserRepository(BaseRepository[User]):
         )
         return result.scalar_one_or_none()
 
+    async def change_password_by_user(self, user: User, new_password: str) -> User | None:
+        """
+        Обновляет пароль пользователя
+
+        :param user: Объект пользователя.
+        :param new_password: Новый пароль от пользователя
+        :return: Объект пользователя или None, если пользователь не найден.
+        """
+        hashed_password = PasswordHelper.generate_password(new_password)
+        user.hashed_password = hashed_password
+        await self.session.commit()
+
+
+
     async def update(self, id_: int, data: dict[str, Any]) -> str | None: ...
 
     async def update_profile(
@@ -131,7 +145,7 @@ class UserRepository(BaseRepository[User]):
     async def delete_user_avatar(
         self,
         user: User,
-        default_avatar: str = "/static/users_files/avatars/дефолтный_аватар.jpg",
+        default_avatar: str = "/client_files/avatars/дефолтный_аватар.jpg",
     ) -> str | None:
         """
         Удаляет аватар пользователя.

@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Literal, ClassVar
 
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
-from pydantic import PostgresDsn
+from pydantic import BaseModel, PostgresDsn, AnyUrl, RedisDsn
+
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
@@ -69,8 +69,27 @@ class RedisConfig(BaseModel):
     db: int = 0
 
 
-class Settings(BaseSettings):
+class CeleryConfig(BaseModel):
+    # broker_url: AnyUrl = "redis://localhost:6379/0"  #  REDIS
+    broker_url: AnyUrl = "pyamqp://guest:guest@localhost//"  # AMQP (RabbitMQ)
+    result_backend: RedisDsn = "redis://localhost:6379/0"
+    task_routes: dict[str, dict[str, str]] = {"app.tasks.*": {"queue": "email_tasks"}}
 
+
+class SMTPSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=( BASE_DIR / ".env"),
+        env_prefix="SMTP_",
+    )
+    host: str
+    port: int
+    user: str
+    password: str
+    use_tls: bool = True
+    use_ssl: bool = False
+
+
+class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(
             BASE_DIR / ".env.template",
@@ -85,6 +104,8 @@ class Settings(BaseSettings):
     jwt: JwtConfig = JwtConfig()
     templates: Jinja2Settings = Jinja2Settings()
     redis: RedisConfig = RedisConfig()
+    celery: CeleryConfig = CeleryConfig()
+    smtp: SMTPSettings = SMTPSettings()
     db: DatabaseConfig
 
 

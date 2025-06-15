@@ -9,12 +9,21 @@ from fastapi import (
     Form,
 )
 from fastapi.responses import HTMLResponse, RedirectResponse
+from pydantic import EmailStr
 
+
+from backend.core.models import User
 from backend.core.config import settings
 from backend.users.dependencies import get_user_service
 from backend.users.services import UserService
-from backend.auth.authorization import authenticate_user
+
 from backend.auth.tokens_service import TokenService
+from backend.auth.authorization import (
+    authenticate_user,
+    get_current_user_from_cookie,
+    get_redirect_with_authentication_user
+)
+
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -63,19 +72,12 @@ async def login(
     :raises HTTPException: 401 при неверных данных или 500 при внутренней ошибке.
     """
     try:
+        # Аутентификация пользователя
         user = await authenticate_user(service, username, password)
 
-        access_token = TokenService.create_access_token({"sub": user.username})
-        refresh_token = TokenService.create_refresh_token({"sub": user.username})
 
+        redirect = await get_redirect_with_authentication_user(user)
         logger.info(f"User {user.username} successfully authenticated")
-
-        redirect = RedirectResponse(
-            url=f"/profile/{user.id}",
-            status_code=303,
-        )
-        redirect.set_cookie("access-token", access_token, domain="my-vk")
-        redirect.set_cookie("refresh-token", refresh_token)
         return redirect
 
     except Exception as e:

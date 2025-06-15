@@ -3,9 +3,10 @@ from typing import Optional, Annotated
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, Form
 
+
+from backend.users.schemas.profile_schemas import ProfileUpdate
 from backend.core.common_dependencies import get_db_session
 from backend.users.repository import UserRepository
-from backend.users.schemas.profile_schemas import ProfileUpdate
 from backend.users.services import UserService
 
 

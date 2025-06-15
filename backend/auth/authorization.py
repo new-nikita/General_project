@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import Cookie, HTTPException, status, Depends, Request
-from fastapi.responses import Response
+from fastapi.responses import Response, RedirectResponse
 
 from backend.core.config import settings
 from backend.core.models import User
@@ -78,8 +78,6 @@ async def authenticate_user(service: UserService, username: str, password: str) 
         )
 
 
-"""перенести в token_cookie_service.py"""
-
 
 async def get_current_user_from_cookie(
     request: Request,
@@ -125,3 +123,20 @@ async def get_user_by_username_from_service(
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     return user
+
+
+async def get_redirect_with_authentication_user(
+    user: User,
+) -> RedirectResponse:
+    access_token = TokenService.create_access_token({"sub": user.username})
+    refresh_token = TokenService.create_refresh_token({"sub": user.username})
+
+    logger.info(f"User {user.username} successfully authenticated")
+
+    redirect = RedirectResponse(
+        url=f"/profile/{user.id}",
+        status_code=303,
+    )
+    redirect.set_cookie("access-token", access_token)
+    redirect.set_cookie("refresh-token", refresh_token)
+    return redirect
