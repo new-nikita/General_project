@@ -21,7 +21,7 @@ from backend.users.utils import checkout_profile_owner
 from backend.auth.authorization import (
     get_current_user_from_cookie,
 )
-from backend.core.config import settings
+from backend.core.config import settings, DEFAULT_PATH_TO_AVATAR
 from backend.core.models import User
 from backend.utils.save_images import upload_image
 
@@ -211,10 +211,10 @@ async def remove_avatar(
 
     :raises HTTPException 500: Если не удалось обновить аватар в БД.
     """
-    default_avatar = "/client_files/avatars/дефолтный_аватар.jpg"
+
     await user_service.repository.delete_user_avatar(current_user)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"new_avatar": default_avatar, "message": "Аватар удален"},
+        content={"new_avatar": DEFAULT_PATH_TO_AVATAR, "message": "Аватар удален"},
     )

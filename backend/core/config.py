@@ -25,6 +25,7 @@ LOG_DEFAULT_FORMAT = (
 )
 
 SECRET_KEY = os.getenv("SECRET_KEY", "test_secret_key")
+DEFAULT_PATH_TO_AVATAR = "/client_files/avatars/дефолтный_аватар.jpg"
 
 
 class JwtConfig(BaseModel):

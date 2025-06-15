@@ -163,5 +163,5 @@ cython_debug/
 .idea
 images/
 client_files/
-redis_data/
+redis-data/
 dump.rdb
