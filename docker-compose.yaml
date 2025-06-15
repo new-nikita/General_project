@@ -17,8 +17,8 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - /Users/nikita/PycharmProjects/General_project/backend/redis-data:/data
-      - /Users/nikita/PycharmProjects/General_project/backend/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./backend/redis-data:/data
+      - ./backend/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
 
   flower:
