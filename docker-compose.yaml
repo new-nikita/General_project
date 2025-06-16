@@ -28,19 +28,19 @@ services:
     restart: always
     ports:
       - "6379:6379"
-    volumes:
-      - ./redis-data:/data
-      - ./backend/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
+  #    volumes:
+  #      - ./redis-data:/data
+  #      - ./backend/redis.conf:/usr/local/etc/redis/redis.conf
+  #    command: redis-server /usr/local/etc/redis/redis.conf
 
   flower:
     image: mher/flower:0.9.7
     platform: linux/amd64
-    command: [ 'flower', '--broker=redis://redis:6379', '--port=5555' ]
+    command: [ 'flower', '--broker=amqp://guest:guest@rabbitmq:5672//', '--port=5555' ]
     ports:
       - "5555:5555"
     depends_on:
-      - redis
+      - rabbitmq
 
   rabbitmq:
     image: rabbitmq:3-management  #
@@ -54,4 +54,4 @@ services:
 volumes:
   pgdata:
   pgdata_test:
-  redis_data:
+#  redis_data:

@@ -7,7 +7,7 @@ from fastapi import status
 @pytest.mark.parametrize(
     "url",
     [
-        "/profile/1",
+        "/profile/100",
         "/",
         "/login",
         "/register",

@@ -20,15 +20,12 @@ from backend.users.dependencies import get_user_service
 from backend.users.schemas.register_schema import RegisterForm
 from backend.users.schemas.users_schemas import ProfileCreate, UserCreate
 from backend.users.services import UserService
-from backend.auth import (
-    AsyncRedisClient,
-    TokenService
-)
+from backend.auth import AsyncRedisClient, TokenService
 
 from backend.auth.Celery.tasks import send_confirmation_email_task
 from backend.auth.authorization import (
     get_current_user_from_cookie,
-    get_redirect_with_authentication_user
+    get_redirect_with_authentication_user,
 )
 from backend.utils.save_images import upload_image
 
@@ -76,6 +73,7 @@ async def get_register_form(
         avatar=avatar,
     )
 
+
 @router.get("/initial_register", response_class=HTMLResponse)
 async def get_register_page(
     request: Request,
@@ -112,26 +110,31 @@ async def register_user(
     email: EmailStr = Form(...),
 ) -> Response:
 
-    temporary_user_token = TokenService.create_refresh_token({'sub': email})
+    temporary_user_token = TokenService.create_refresh_token({"sub": email})
 
     try:
         await redis.connect()
         await redis.save_pending_email_token(temporary_user_token, email)
 
         # Отправка письма через Celery
-        send_confirmation_email_task.delay('register', 'initial_message', email, temporary_user_token, str(request.base_url))
+        send_confirmation_email_task.delay(
+            "register",
+            "initial_message",
+            email,
+            temporary_user_token,
+            str(request.base_url),
+        )
 
-        RedirectResponse(url="/further_actions", status_code=303)
         return settings.templates.template_dir.TemplateResponse(
-            "users/further_actions.html",
+            "info/further_actions.html",
             {"request": request},
-                                                               )
+        )
 
     except Exception as e:
         logger.error(f"Ошибка при регистрации: {e}", exc_info=True)
 
         return settings.templates.template_dir.TemplateResponse(
-            "users/initial_message.html",
+            "info/initial_message.html",
             {
                 "request": request,
                 "current_user": None,
@@ -140,6 +143,7 @@ async def register_user(
             },
             status_code=500,
         )
+
 
 @router.get("/register", response_class=HTMLResponse)
 async def get_register_page(
@@ -164,7 +168,7 @@ async def get_register_page(
             logger.warning(f"Ошибка при декодировании токена: {e}")
 
     return settings.templates.template_dir.TemplateResponse(
-         "users/register.html",
+        "users/register.html",
         {
             "request": request,
             "current_user": current_user,
@@ -214,7 +218,6 @@ async def register_user(
 
         redirect = await get_redirect_with_authentication_user(user)
         return redirect
-
 
     except HTTPException as e:
         logger.warning(f"Registration failed: {e.detail}")
