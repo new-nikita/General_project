@@ -165,3 +165,4 @@ images/
 client_files/
 redis-data/
 dump.rdb
+.vscode/
