@@ -79,7 +79,7 @@ class CeleryConfig(BaseModel):
 
 class SMTPSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=( BASE_DIR / ".env"),
+        env_file=(BASE_DIR / ".env"),
         env_prefix="SMTP_",
     )
     host: str
