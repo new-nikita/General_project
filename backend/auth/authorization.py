@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from fastapi import Cookie, HTTPException, status, Depends, Request
 from fastapi.responses import Response, RedirectResponse
@@ -46,43 +47,29 @@ async def authenticate_user(service: UserService, username: str, password: str) 
     :raises HTTPException: 403 если аккаунт заблокирован.
     :raises HTTPException: 500 при внутренних ошибках сервера.
     """
-    try:
-        user = await service.get_user_by_username(username)
-        if not user:
-            logger.warning(f"Login attempt for non-existent user: {username}")
-            handle_auth_error(message="Incorrect username or password")
-        try:
-            if not PasswordHelper.verify_password(password, user.hashed_password):
-                logger.warning(f"Login attempt for non-existent user: {username}")
-                handle_auth_error(
-                    message="Incorrect username or password",
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                )
+    user = await service.get_user_by_username(username)
+    if not user:
+        handle_auth_error(message="Неверный username или пароль.")
 
-        except PasswordVerificationError as e:
-            logger.warning(f"Invalid password attempt for user: {username}")
-            handle_auth_error(message=str(e), status_code=status.HTTP_401_UNAUTHORIZED)
-        if not user.is_active:
-            logger.warning(f"Login attempt for inactive user: {username}")
-            handle_auth_error("Account is disabled", status.HTTP_403_FORBIDDEN)
-
-        logger.info(f"Successful login for user: {username}")
-        return user
-
-    except Exception as e:
-        logger.critical(
-            f"Authentication error for user {username}: {str(e)}", exc_info=True
-        )
+    if not PasswordHelper.verify_password(password, user.hashed_password):
         handle_auth_error(
-            "Internal authentication error", status.HTTP_500_INTERNAL_SERVER_ERROR
+            message=str(PasswordVerificationError().message),
+            status_code=PasswordVerificationError().status_code,
         )
 
+    if not user.is_active:
+        handle_auth_error(
+            message="Учетная запись заблокирована, либо слишком давно не была активна.",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+    logger.info(f"Successful login for user: {username}")
+    return user
 
 
 async def get_current_user_from_cookie(
     request: Request,
+    service: Annotated[UserService, Depends(get_user_service)],
     access_token: str | None = Cookie(default=None, alias="access-token"),
-    service: UserService = Depends(get_user_service),
 ) -> User | Response | None:
     """
     Получает текущего пользователя по JWT-токену из cookies.

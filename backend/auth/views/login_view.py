@@ -7,21 +7,17 @@ from fastapi import (
     Request,
     Response,
     Form,
+    HTTPException,
 )
 from fastapi.responses import HTMLResponse, RedirectResponse
-from pydantic import EmailStr
 
-
-from backend.core.models import User
 from backend.core.config import settings
 from backend.users.dependencies import get_user_service
 from backend.users.services import UserService
 
-from backend.auth.tokens_service import TokenService
 from backend.auth.authorization import (
     authenticate_user,
-    get_current_user_from_cookie,
-    get_redirect_with_authentication_user
+    get_redirect_with_authentication_user,
 )
 
 
@@ -75,18 +71,27 @@ async def login(
         # Аутентификация пользователя
         user = await authenticate_user(service, username, password)
 
-
         redirect = await get_redirect_with_authentication_user(user)
         logger.info(f"User {user.username} successfully authenticated")
         return redirect
 
+    except HTTPException as e:
+        logger.error(f"Authentication failed: {e}")
+        return settings.templates.template_dir.TemplateResponse(
+            "users/login.html",
+            {
+                "request": request,
+                "error": e.detail,
+            },
+            status_code=e.status_code,
+        )
     except Exception as e:
         logger.error(f"Authentication failed: {e}")
         return settings.templates.template_dir.TemplateResponse(
             "users/login.html",
             {
                 "request": request,
-                "error": "Неверное имя пользователя или пароль.",
+                "error": str(e),
             },
         )
 
