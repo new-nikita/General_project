@@ -190,23 +190,25 @@
                             </a>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a href="/login" class="btn btn-light btn-sm ms-2 rounded-pill shadow-sm">
-                                <i class="fas fa-sign-in-alt me-1"></i> Войти
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/register" class="btn btn-primary btn-sm ms-2 rounded-pill shadow-sm">
-                                <i class="fas fa-user-plus me-1"></i> Регистрация
-                            </a>
-                        </li>
+                        {% set current_path = request.path %}
+                        {% if current_path not in ['/login', '/register', '/initial_register'] %}
+                            <li class="nav-item">
+                                <a href="/login" class="btn btn-light btn-sm ms-2 rounded-pill shadow-sm">
+                                    <i class="fas fa-sign-in-alt me-1"></i> Войти
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/initial_register" class="btn btn-primary btn-sm ms-2 rounded-pill shadow-sm">
+                                    <i class="fas fa-user-plus me-1"></i> Регистрация
+                                </a>
+                            </li>
+                        {% endif %}
                     {% endif %}
                 </ul>
             </nav>
         </div>
     </div>
 </header>
-
 {% block sidebar_menu %}
     <div class="main-container">
 
@@ -265,7 +267,7 @@
                             <p class="text-muted small mb-2">Войдите или зарегистрируйтесь, чтобы писать комментарии ,
                                 сообщения, добавлять друзей и многое другое.</p>
                             <a href="/login" class="btn btn-outline-primary btn-sm w-100 mb-2">Войти</a>
-                            <a href="/register" class="btn btn-success btn-sm w-100">Зарегистрироваться</a>
+                            <a href="/initial_register" class="btn btn-success btn-sm w-100">Зарегистрироваться</a>
                         </div>
                     </li>
                 {% endif %}

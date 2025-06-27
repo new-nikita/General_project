@@ -1,38 +1,109 @@
+import re
 import logging
+from typing import Union, ClassVar
 
 from passlib.context import CryptContext
 from passlib.exc import UnknownHashError
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    filename="password_attack.log",
-)
 logger = logging.getLogger(__name__)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+logger.setLevel(logging.WARNING)
+
+
+class ErrorMessages:
+    EMPTY_PASSWORD = "Пароль не может быть пустым"
+    PASSWORD_TOO_LONG = "Пароль слишком длинный (максимум {max_length} символов)"
+    PASSWORD_TOO_SHORT = "Пароль слишком короткий (минимум {min_length} символов)"
+    INVALID_CREDENTIALS = "Неверные учетные данные"
+    PASSWORD_TYPE_ERROR = "Пароль должен быть строкой или bytes"
+    HASH_TYPE_ERROR = "Хэш должен быть строкой или bytes"
+    WEAK_PASSWORD = (
+        "Пароль должен содержать:\n"
+        "- Минимум 8 символов\n"
+        "- Заглавные и строчные буквы\n"
+        "- Цифры\n"
+        "- Специальные символы"
+    )
 
 
 class PasswordVerificationError(Exception):
-    pass
+    """Ошибка проверки пароля."""
+
+    def __init__(
+        self, message: str = ErrorMessages.INVALID_CREDENTIALS, status_code: int = 400
+    ):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 
 class PasswordHelper:
-    """Класс для работы с паролями."""
+    """Класс для безопасной работы с паролями."""
 
-    @staticmethod
-    def generate_password(password: str) -> str:
-        """Генерирует хеш пароля."""
-        return pwd_context.hash(password)
+    # Конфигурация
+    MAX_PASSWORD_LENGTH: int = 72  # Ограничение bcrypt
+    PWD_CONTEXT: ClassVar[CryptContext] = CryptContext(
+        schemes=["bcrypt"], deprecated="auto"
+    )
+    MIN_PASSWORD_LENGTH: int = 8
 
-    @staticmethod
-    def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Проверяет, соответствует ли введенный пароль хэшированному."""
+    # Регулярные выражения для валидации пароля
+    PASSWORD_PATTERN: ClassVar[re.Pattern] = re.compile(
+        r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+    )
+
+    @classmethod
+    def validate_password(cls, password: str) -> None:
+        """Проверяет сложность пароля."""
+        if not password:
+            raise ValueError(ErrorMessages.EMPTY_PASSWORD)
+
+        if len(password) > cls.MAX_PASSWORD_LENGTH:
+            raise ValueError(
+                ErrorMessages.PASSWORD_TOO_LONG.format(
+                    max_length=cls.MAX_PASSWORD_LENGTH
+                )
+            )
+        if len(password) < cls.MIN_PASSWORD_LENGTH:
+            raise ValueError(
+                ErrorMessages.PASSWORD_TOO_SHORT.format(
+                    min_length=cls.MIN_PASSWORD_LENGTH
+                )
+            )
+
+        if not cls.PASSWORD_PATTERN.fullmatch(password):
+            raise ValueError(ErrorMessages.WEAK_PASSWORD)
+
+    @classmethod
+    def generate_password(cls, password: str) -> str:
+        """
+        Генерирует хеш пароля.
+
+        :param password: Пароль для хеширования
+        :return: Хэшированный пароль
+        :raise ValueError: Если пароль не соответствует требованиям
+        """
+        cls.validate_password(password)
+        return cls.PWD_CONTEXT.hash(password)
+
+    @classmethod
+    def verify_password(
+        cls,
+        plain_password: Union[str, bytes],
+        hashed_password: Union[str, bytes],
+    ) -> bool:
+        """
+        Безопасно проверяет пароль с защитой от timing-атак.
+
+        :param plain_password: Введенный пароль
+        :param hashed_password: Хэш для проверки
+        :return bool: True если пароль верный, False в любом другом случае
+        """
+        if not isinstance(plain_password, (str, bytes)):
+            raise TypeError(ErrorMessages.PASSWORD_TYPE_ERROR)
+
+        if not isinstance(hashed_password, (str, bytes)):
+            raise TypeError(ErrorMessages.HASH_TYPE_ERROR)
         try:
-            logger.info("Verifying password...")
-            flag = pwd_context.verify(plain_password, hashed_password)
-            if not flag:
-                raise PasswordVerificationError
-            return flag
-        except (ValueError, TypeError, UnknownHashError) as e:
-            logger.error(f"Password verification failed: {str(e)}")
-            raise PasswordVerificationError from e
+            return cls.PWD_CONTEXT.verify(plain_password, hashed_password)
+        except (UnknownHashError, ValueError):
+            return False

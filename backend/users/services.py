@@ -1,9 +1,10 @@
 from fastapi import HTTPException
+from pydantic import EmailStr
 
-from backend.users.repository import UserRepository
 from backend.users.schemas.profile_schemas import ProfileUpdate
+from backend.users.repository import UserRepository
 from backend.users.schemas.users_schemas import UserCreate
-from backend.core.models.user import User
+from backend.core.models import User
 
 
 class UserService:
@@ -12,7 +13,7 @@ class UserService:
     Предоставляет методы для создания, обновления и получения пользователей.
     """
 
-    def __init__(self, repository: UserRepository):
+    def __init__(self, repository: UserRepository) -> None:
         """
         Инициализация сервиса с репозиторием.
 
@@ -52,11 +53,30 @@ class UserService:
 
         return await self.repository.get_user_by_username(username)
 
-    async def update_profile(self, user: User, dto_profile: ProfileUpdate):
+    async def update_profile(self, user: User, dto_profile: ProfileUpdate) -> None:
         """
 
-        :param user:
-        :param dto_profile:
-        :return:
+        :param user: Объект пользователя.
+        :param dto_profile: Данные для обновления профиля пользователя
         """
         await self.repository.update_profile(user=user, dto_profile=dto_profile)
+
+    async def get_user_by_email(self, email: EmailStr) -> User | None:
+        """
+        Возвращает пользователя по его email пользователя (email).
+
+        :param email: Email пользователя.
+        :return: Объект пользователя или None, если пользователь не найден.
+        """
+
+        return await self.repository.get_user_by_email(email)
+
+    async def change_password_by_user(self, user: User, password: str) -> User | None:
+        """
+        Обновляет пароль по его email пользователя (email).
+
+        :param user: Объект пользователя.
+        :param password: Новый пароль пользователя.
+        :return: Объект пользователя или None, если пользователь не найден.
+        """
+        return await self.repository.change_password_by_user(user, password)

@@ -88,7 +88,7 @@ class PostRepository(BaseRepository[Post]):
             await self.session.rollback()
             raise ValueError(f"Неизвестная ошибка при обновлении поста: {str(e)}")
 
-    async def delete(self, post: Post) -> bool:
+    async def delete(self, post) -> bool:
         """
         Удаляет пост по его ID.
 

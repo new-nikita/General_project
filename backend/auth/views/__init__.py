@@ -16,8 +16,10 @@ from backend.auth.authorization import (
 )
 from backend.auth.views.login_view import router as login_router
 from backend.auth.views.register_view import router as register_router
+from backend.auth.views.reset_password import router as forgot_router
 from backend.posts.services import PostService
 from backend.posts.dependencies import get_post_service
+
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -28,6 +30,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Auth"])
 router.include_router(login_router)
 router.include_router(register_router)
+router.include_router(forgot_router)
 
 
 @router.get("/", response_class=HTMLResponse)

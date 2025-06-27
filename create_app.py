@@ -1,3 +1,4 @@
+import os
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -8,6 +9,9 @@ from starlette.staticfiles import StaticFiles
 from backend.core.models import db_helper
 from backend.core.config import BASE_DIR
 from backend.utils.save_images import BASE_STATIC_DIR
+
+
+os.makedirs(BASE_STATIC_DIR, exist_ok=True)
 
 STATIC_DIR = BASE_DIR / "static"
 logging.basicConfig(

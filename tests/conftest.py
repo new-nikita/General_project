@@ -1,4 +1,5 @@
 import asyncio
+import os.path
 from asyncio import AbstractEventLoop
 from typing import AsyncGenerator, Generator, Any
 
@@ -54,6 +55,7 @@ async def setup_test_database(db_helper: DatabaseHelper) -> AsyncGenerator[None,
         await conn.run_sync(Base.metadata.create_all)
 
     yield  # тут все действия с базой
+    #
 
     # async with db_helper.engine.begin() as conn:
     #     await conn.run_sync(Base.metadata.drop_all)

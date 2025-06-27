@@ -2,10 +2,19 @@ import os
 import uuid
 from pathlib import Path
 
+import aiofiles
 from fastapi import UploadFile, HTTPException, status
 
-MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 МБ
+MAX_MB = 5
+MAX_IMAGE_SIZE = MAX_MB * 1024 * 1024
 BASE_STATIC_DIR = "client_files"
+
+ERROR_MESSAGE_BY_LIMIT_SIZE = (
+    f"Размер файла превышает максимально допустимый ({MAX_MB} МБ)."
+)
+ERROR_MESSAGE_BY_INCORRECT_SIZE = (
+    "Некорректный размер файла: {} байт. Файл должен быть больше 0 байт."
+)
 
 
 async def upload_image(
@@ -36,18 +45,26 @@ async def upload_image(
     return format_image_url(image_path)
 
 
-def validate_image_size(file_size: int) -> None:
+def validate_image_size(file_size: int) -> bool:
     """
     Проверяет размер файла.
 
     :param file_size: Размер файла
     :raises HTTPException: Если размер файла превышает лимит.
     """
+
+    if file_size <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGE_BY_INCORRECT_SIZE.format(file_size),
+        )
+
     if file_size > MAX_IMAGE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Размер файла превышает допустимый лимит (5 МБ).",
+            detail=ERROR_MESSAGE_BY_LIMIT_SIZE,
         )
+    return True
 
 
 def generate_image_path(user_id: int, filename: str, directory: str) -> str:
@@ -74,8 +91,9 @@ async def save_image_to_disk(image_path: str, image_file: UploadFile) -> None:
     :raise HTTPException: Если произошла ошибка при записи файла.
     """
     try:
-        with open(image_path, "wb") as buffer:
-            buffer.write(await image_file.read())
+        async with aiofiles.open(image_path, "wb") as buffer:
+            while chunk := await image_file.read(1024 * 1024):  # Читаем по 1MB
+                await buffer.write(chunk)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

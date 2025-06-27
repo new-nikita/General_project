@@ -7,14 +7,19 @@ from fastapi import (
     Request,
     Response,
     Form,
+    HTTPException,
 )
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from backend.core.config import settings
 from backend.users.dependencies import get_user_service
 from backend.users.services import UserService
-from backend.auth.authorization import authenticate_user
-from backend.auth.tokens_service import TokenService
+
+from backend.auth.authorization import (
+    authenticate_user,
+    get_redirect_with_authentication_user,
+)
+
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -63,28 +68,30 @@ async def login(
     :raises HTTPException: 401 при неверных данных или 500 при внутренней ошибке.
     """
     try:
+        # Аутентификация пользователя
         user = await authenticate_user(service, username, password)
 
-        access_token = TokenService.create_access_token({"sub": user.username})
-        refresh_token = TokenService.create_refresh_token({"sub": user.username})
-
+        redirect = await get_redirect_with_authentication_user(user)
         logger.info(f"User {user.username} successfully authenticated")
-
-        redirect = RedirectResponse(
-            url=f"/profile/{user.id}",
-            status_code=303,
-        )
-        redirect.set_cookie("access-token", access_token, domain="my-vk")
-        redirect.set_cookie("refresh-token", refresh_token)
         return redirect
 
+    except HTTPException as e:
+        logger.error(f"Authentication failed: {e}")
+        return settings.templates.template_dir.TemplateResponse(
+            "users/login.html",
+            {
+                "request": request,
+                "error": e.detail,
+            },
+            status_code=e.status_code,
+        )
     except Exception as e:
         logger.error(f"Authentication failed: {e}")
         return settings.templates.template_dir.TemplateResponse(
             "users/login.html",
             {
                 "request": request,
-                "error": "Неверное имя пользователя или пароль.",
+                "error": str(e),
             },
         )
 

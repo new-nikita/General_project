@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Boolean
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Boolean, CheckConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from pydantic import EmailStr
 
 from .base import Base
@@ -16,6 +16,12 @@ if TYPE_CHECKING:
 
 class User(TimestampsMixin, Base):
     """Класс пользователя, которого определяет система."""
+
+    __table_args__ = (
+        CheckConstraint("username != ''", name="check_username_not_empty"),
+        CheckConstraint("hashed_password != ''", name="check_password_not_empty"),
+        CheckConstraint("email != ''", name="check_email_not_empty"),
+    )
 
     username: Mapped[str] = mapped_column(String(20), unique=True, index=True)
     hashed_password: Mapped[str]

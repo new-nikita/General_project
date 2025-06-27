@@ -1,7 +1,7 @@
 from typing import Optional, Self
 
 from fastapi import Form, UploadFile, File
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, PositiveInt
 
 
 class ContentBase(BaseModel):
@@ -28,7 +28,7 @@ class ContentCreate(ContentBase):
     Схема для создания поста
     """
 
-    author_id: int = Field(..., description="ID автора поста")
+    author_id: PositiveInt = Field(..., description="ID автора поста")
 
     @field_validator("image")
     def validate_image(cls, image: str | None) -> Optional[str]:
