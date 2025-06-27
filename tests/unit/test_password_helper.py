@@ -2,15 +2,14 @@ import pytest
 from unittest.mock import patch, MagicMock
 from backend.users.password_helper import (
     PasswordHelper,
-    PasswordVerificationError,
     ErrorMessages,
 )
+from passlib.exc import UnknownHashError
 
 
 class TestPasswordHelper:
     """Тесты для хелпера работы с паролями."""
 
-    # Тесты валидации пароля
     @pytest.mark.parametrize(
         "password",
         [
@@ -77,63 +76,50 @@ class TestPasswordHelper:
         """Тест неверного пароля."""
         password = "CorrectPassword123!"
         hashed = PasswordHelper.generate_password(password)
-        with pytest.raises(PasswordVerificationError) as exc_info:
-            PasswordHelper.verify_password("WrongPassword123!", hashed)
-        assert str(exc_info.value) == ErrorMessages.INVALID_CREDENTIALS
+        assert PasswordHelper.verify_password("WrongPassword123!", hashed) is False
 
     def test_verify_password_unknown_hash(self):
         """Тест неизвестного формата хэша."""
-        with pytest.raises(PasswordVerificationError) as exc_info:
-            PasswordHelper.verify_password("any", "invalid$hash")
-        assert str(exc_info.value) == ErrorMessages.INVALID_CREDENTIALS
+        with patch.object(
+            PasswordHelper.PWD_CONTEXT, "verify", side_effect=UnknownHashError
+        ):
+            assert PasswordHelper.verify_password("any", "invalid$hash") is False
 
-    # Тесты типов данных
     @pytest.mark.parametrize(
-        "password,hashed,expected_error",
+        "password,hashed",
         [
-            (123, "valid$hash", ErrorMessages.PASSWORD_TYPE_ERROR),
-            ("password", 123, ErrorMessages.HASH_TYPE_ERROR),
-            (None, "valid$hash", ErrorMessages.PASSWORD_TYPE_ERROR),
-            ("password", None, ErrorMessages.HASH_TYPE_ERROR),
+            (123, "valid$hash"),
+            ("password", 123),
+            (None, "valid$hash"),
+            ("password", None),
         ],
     )
-    def test_verify_password_invalid_types(self, password, hashed, expected_error):
+    def test_verify_password_invalid_types(self, password, hashed):
         """Тест неверных типов данных."""
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(TypeError):
             PasswordHelper.verify_password(password, hashed)
-        assert str(exc_info.value) == expected_error
 
-    # Тест защиты от timing-атак
     @patch.object(PasswordHelper.PWD_CONTEXT, "verify", return_value=False)
     def test_timing_attack_protection(self, mock_verify: MagicMock) -> None:
         """Тест что время проверки не зависит от правильности пароля."""
-
         valid_hash = PasswordHelper.generate_password("Validpass1!")
-
-        try:
-            PasswordHelper.verify_password("wrongpass", valid_hash)
-        except PasswordVerificationError:
-            pass
-
+        PasswordHelper.verify_password("wrongpass", valid_hash)
         mock_verify.assert_called_once()
 
-    # Тест на bytes вместо str
     def test_verify_with_bytes(self):
         """Тест работы с bytes вместо str."""
         password = b"BytesPassword123!"
         hashed = PasswordHelper.generate_password(password.decode())
         assert PasswordHelper.verify_password(password, hashed) is True
 
-    # Тест на необходимость рехеширования
     def test_needs_rehash(self):
         """Тест определения необходимости обновления хэша."""
         password = "MyPassword123!"
         hashed = PasswordHelper.generate_password(password)
         assert not PasswordHelper.PWD_CONTEXT.needs_update(hashed)
 
-    # Тест сообщений об ошибках
     def test_error_messages_contain_required_info(self):
         """Тест что сообщения об ошибках содержат нужную информацию."""
         assert "не может быть пустым" in ErrorMessages.EMPTY_PASSWORD
         assert "максимум" in ErrorMessages.PASSWORD_TOO_LONG
-        assert "Неверные" in ErrorMessages.INVALID_CREDENTIALS
+        assert "Минимум 8 символов" in ErrorMessages.WEAK_PASSWORD

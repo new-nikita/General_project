@@ -3,7 +3,7 @@ import logging
 from typing import Union, ClassVar
 
 from passlib.context import CryptContext
-
+from passlib.exc import UnknownHashError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -96,6 +96,14 @@ class PasswordHelper:
 
         :param plain_password: Введенный пароль
         :param hashed_password: Хэш для проверки
-        :return bool: True если пароль верный
+        :return bool: True если пароль верный, False в любом другом случае
         """
-        return cls.PWD_CONTEXT.verify(plain_password, hashed_password)
+        if not isinstance(plain_password, (str, bytes)):
+            raise TypeError(ErrorMessages.PASSWORD_TYPE_ERROR)
+
+        if not isinstance(hashed_password, (str, bytes)):
+            raise TypeError(ErrorMessages.HASH_TYPE_ERROR)
+        try:
+            return cls.PWD_CONTEXT.verify(plain_password, hashed_password)
+        except (UnknownHashError, ValueError):
+            return False
