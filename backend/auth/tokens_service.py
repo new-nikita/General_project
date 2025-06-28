@@ -7,6 +7,9 @@ from fastapi import HTTPException, status
 from backend.core.config import settings
 from backend.exceptions.custom_token_exceptions import InvalidTokenError
 
+logging.basicConfig(
+    format=settings.logging.log_format, level=settings.logging.log_level_value
+)
 logger = logging.getLogger(__name__)
 
 
@@ -44,14 +47,9 @@ class TokenService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
             )
-
         username = payload.get("sub")
-        exp = payload.get("exp")
-
-        if not username or (exp and exp < int(datetime.now(timezone.utc).timestamp())):
-            logger.warning("Refresh Token истек или содержит некорректные данные")
+        if not username:
             raise ValueError("Invalid refresh token")
-
         # Создаем новый Access Token
         new_access_token = cls.create_access_token(data={"sub": username})
         logger.info(f"Access Token успешно обновлен для пользователя: {username}")
@@ -104,8 +102,8 @@ class TokenService:
         :param token: JWT-токен.
         :return: Payload токена.
         """
+
         payload = cls._decode_token(token)
-        cls._validate_payload(payload)
         return payload
 
     @classmethod
@@ -124,23 +122,6 @@ class TokenService:
         except jwt.ExpiredSignatureError:
             logger.warning("Токен истек")
             raise HTTPException(status_code=401, detail="Token expired")
-        except jwt.InvalidTokenError as e:
-            logger.error(f"Ошибка при декодировании токена: {e}")
-            raise HTTPException(status_code=401, detail="Invalid token")
-
-    @classmethod
-    def _validate_payload(cls, payload: dict) -> None:
-        """
-        Проверяет валидность payload токена.
-
-        :param payload: Payload токена.
-        :raises HTTPException: 401 если токен недействителен.
-        """
-        exp = payload.get("exp")
-        if not payload.get("sub") or (
-            exp and exp < int(datetime.now(timezone.utc).timestamp())
-        ):
-            raise InvalidTokenError()
 
     @classmethod
     def is_token_valid(cls, token: str) -> bool:
@@ -153,5 +134,7 @@ class TokenService:
         try:
             cls.decode_and_validate_token(token)
             return True
+        except jwt.InvalidTokenError:
+            raise InvalidTokenError()
         except HTTPException:
             return False
