@@ -2,8 +2,10 @@ import logging
 
 import jwt
 from datetime import datetime, timezone, timedelta
-from fastapi import HTTPException
+from fastapi import HTTPException, status
+
 from backend.core.config import settings
+from backend.exceptions.custom_token_exceptions import InvalidTokenError
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ class TokenService:
         :param expires_delta: Время жизни токена.
         :return: Новый Access Token
         """
-
+        data["type"] = "access"
         expires_delta = expires_delta or timedelta(
             minutes=settings.jwt.access_token_expire_minutes
         )
@@ -33,9 +35,16 @@ class TokenService:
 
         :param refresh_token: Токен обновления.
         :return: Новый Access Token.
-        :raises ValueError: Если Refresh Token недействителен.
+        :raise ValueError: Если Refresh Token недействителен.
+        :raise HTTPException: Если передан неверный тип токена.
         """
         payload = cls.decode_and_validate_token(refresh_token)
+        if payload.get("type") == "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+            )
+
         username = payload.get("sub")
         exp = payload.get("exp")
 
@@ -56,6 +65,7 @@ class TokenService:
         :param data: Данные для кодирования в токене.
         :return: Новый Refresh Token.
         """
+        data["type"] = "refresh"
         expires_delta = timedelta(days=settings.jwt.refresh_token_expire_days)
         return cls._create_jwt_token(data, expires_delta)
 
@@ -70,7 +80,7 @@ class TokenService:
         """
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + expires_delta
-        to_encode.update({"exp": expire})
+        to_encode.update({"exp": int(expire.timestamp())})
 
         if not settings.jwt.secret_key or not settings.jwt.algorithm:
             raise ValueError(
@@ -93,12 +103,8 @@ class TokenService:
 
         :param token: JWT-токен.
         :return: Payload токена.
-        :raises HTTPException: 401 если токен недействителен.
         """
-        try:
-            payload = cls._decode_token(token)
-        except HTTPException:
-            raise HTTPException(status_code=401, detail="Не угадал")
+        payload = cls._decode_token(token)
         cls._validate_payload(payload)
         return payload
 
@@ -115,7 +121,11 @@ class TokenService:
             return jwt.decode(
                 token, settings.jwt.secret_key, algorithms=[settings.jwt.algorithm]
             )
-        except jwt.PyJWTError:
+        except jwt.ExpiredSignatureError:
+            logger.warning("Токен истек")
+            raise HTTPException(status_code=401, detail="Token expired")
+        except jwt.InvalidTokenError as e:
+            logger.error(f"Ошибка при декодировании токена: {e}")
             raise HTTPException(status_code=401, detail="Invalid token")
 
     @classmethod
@@ -130,8 +140,18 @@ class TokenService:
         if not payload.get("sub") or (
             exp and exp < int(datetime.now(timezone.utc).timestamp())
         ):
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise InvalidTokenError()
 
     @classmethod
     def is_token_valid(cls, token: str) -> bool:
-        return cls.decode_and_validate_token(token) is not None
+        """
+        Проверяет валидность токена.
+
+        :param token: Токен
+        :return: True если токен валидный, иначе False
+        """
+        try:
+            cls.decode_and_validate_token(token)
+            return True
+        except HTTPException:
+            return False

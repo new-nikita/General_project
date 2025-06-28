@@ -8,6 +8,7 @@ from starlette.types import ASGIApp
 
 from backend.auth.tokens_service import TokenService
 from backend.auth.token_cookie_service import TokenCookieService
+from backend.exceptions.custom_token_exceptions import InvalidTokenError
 
 logger = logging.getLogger(__name__)
 
@@ -54,8 +55,8 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
 
         if new_access_token:
             request.state.new_access_token = new_access_token
-
         response = await call_next(request)
+
         if hasattr(request.state, "new_access_token"):
             TokenCookieService.set_access_token_to_cookie(
                 request.state.new_access_token, response
@@ -76,25 +77,17 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
         access_token = request.cookies.get("access-token")
         refresh_token = request.cookies.get("refresh-token")
 
-        if access_token and TokenService.is_token_valid(access_token):
-            return
-
         if not refresh_token:
-            return
+            return None
 
-        try:
-            new_access_token = TokenService.refresh_access_token(refresh_token)
-            if client := f"{request.client.host}:{request.client.port}":
-                logger.info(f"Access Token успешно обновлён для клиента: {client}")
-            return new_access_token
-        except HTTPException as e:
-            logger.warning(f"Ошибка при обновлении токена: {e.detail}")
-            raise e
-        except Exception as e:
-            logger.error(
-                "Неизвестная ошибка при обновлении токена: %s", str(e), exc_info=True
-            )
-            raise
+        if not access_token or not TokenService.is_token_valid(access_token):
+            try:
+                return TokenService.refresh_access_token(refresh_token)
+            except InvalidTokenError:
+                raise
+            except Exception as e:
+                logger.error(f"Ошибка при обновлении токена: {e}", exc_info=True)
+                raise
 
     @classmethod
     def _unauthorized_response(
