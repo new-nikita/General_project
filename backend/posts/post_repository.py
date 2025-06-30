@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.base_repository import BaseRepository
-from backend.core.models import Post
+from backend.core.models import Post, Comment
 from backend.posts.schemas import PostCreate, PostUpdate
 from backend.core.models import LikePost
 
@@ -103,20 +103,20 @@ class PostRepository(BaseRepository[Post]):
         self,
         author_id: int,
         current_user_id: Optional[int] = None,
+        limit_comments_per_post=3,
     ) -> Sequence[Post]:
         """
         Возвращает все посты пользователя с информацией о лайках.
 
         :param author_id: ID автора
         :param current_user_id: ID текущего пользователя (опционально)
+        :param limit_comments_per_post: Максимальное количество комментариев для каждого поста
         :return: список постов с дополнительной информацией о лайках
         """
         stmt = (
             select(self.model)
             .outerjoin(self.model.likes)
-            .options(selectinload(self.model.likes))
             .where(self.model.author_id == author_id)
-            .group_by(self.model.id)
             .order_by(self.model.created_at.desc())
         )
 
@@ -124,7 +124,11 @@ class PostRepository(BaseRepository[Post]):
         posts = result.scalars().all()
 
         for post in posts:
+            post.count_comments = await self.session.scalar(
+                select(func.count(Comment.id)).where(Comment.post_id == post.id)
+            )
             self._enrich_post_with_likes(post, current_user_id)
+
         return posts
 
     async def remove_image(self, post: Post) -> dict:

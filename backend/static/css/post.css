@@ -1,8 +1,8 @@
 .post-item {
     background: white;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 24px;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     border: 1px solid #eaeaea;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -35,7 +35,8 @@
 }
 
 .post-content {
-    margin: 16px 0;
+    padding: 10px;
+    margin: 5px 0;
     white-space: pre-line;
     line-height: 1.5;
     font-size: 0.95rem;
@@ -53,7 +54,7 @@
 
 .post-image {
     width: 100%;
-    max-height: 500px;
+    /*max-height: 500px;*/
     object-fit: contain;
     display: block;
 }
@@ -63,6 +64,7 @@
     color: #888;
     text-align: right;
     margin-top: 12px;
+    margin-bottom: 12px;
 }
 
 .post-date:before {
@@ -71,37 +73,22 @@
     color: #ddd;
 }
 
-.post-actions {
-    display: flex;
-    border-top: 1px solid #f0f0f0;
-    padding-top: 12px;
-    margin-top: 16px;
-}
-
-.post-action {
-    display: flex;
-    align-items: center;
-    margin-right: 20px;
-    color: #666;
-    cursor: pointer;
-    transition: color 0.2s ease;
-    font-size: 0.9rem;
-}
-
-.post-action:hover {
-    color: #4a76a8;
-}
-
-.post-action i {
-    margin-right: 6px;
-    font-size: 1rem;
-}
-
 .no-posts {
     text-align: center;
-    padding: 40px;
-    color: #999;
-    font-size: 0.95rem;
+    padding: 30px;
+    border: 1px dashed #ccc;
+    border-radius: 10px;
+    background-color: #fafafa;
+}
+
+.no-posts i {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.no-posts p {
+    font-size: 16px;
+    color: #666;
 }
 
 
@@ -157,4 +144,83 @@
 .btn-publish:hover {
     background-color: #3a5f8a;
     transform: translateY(-2px);
+}
+
+/* Контейнер действий поста */
+.post-actions {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.post-action {
+    margin-left: 10px;
+}
+
+.post-action i {
+    font-size: 16px;
+    vertical-align: middle;
+}
+
+.delete-post-btn {
+    font-size: 12px;
+    background: none;
+    border: none;
+    color: red;
+    cursor: pointer;
+}
+
+.edit-post-btn {
+    font-size: 12px;
+    color: blue;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.edit-post-btn i {
+    margin-right: 5px;
+}
+
+.separator {
+    position: relative;
+    width: 100%; /* Ширина линии */
+    height: 1px; /* Высота линии */
+    overflow: hidden; /* Скрываем выходящие края */
+    margin: 20px 20px; /* Отступы сверху и снизу */
+}
+
+.separator::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10%; /* Оставляем промежуток слева */
+    right: 10%; /* Оставляем промежуток справа */
+    height: 1px; /* Толщина линии */
+    background-color: #ccc; /* Цвет линии */
+}
+
+
+/* Отдельный стиль для кнопки "Показать ещё комментарии" */
+.load-more-btn {
+    display: block; /* Заставляем кнопку занять всю ширину */
+    width: 100%; /* Растягиваем кнопку на всю ширину */
+    margin-top: 10px; /* Маленький отступ сверху */
+    padding: 10px; /* Внутренние отступы */
+    background-color: #f0f0f0; /* Светлый фон кнопки */
+    color: #333; /* Цвет текста */
+    border: 1px solid #ccc; /* Тонкая рамка */
+    border-radius: 5px; /* Скруглённые углы */
+    text-align: center; /* Центрированный текст */
+    font-size: 14px; /* Размер шрифта */
+    cursor: pointer; /* Курсор руки при наведении */
+    transition: background-color 0.3s ease; /* Плавный переход цвета */
+}
+
+.load-more-btn:hover {
+    background-color: #e0e0e0; /* Меняем цвет при наведении */
+}
+
+.comments-section {
+    margin-top: 15px;
 }

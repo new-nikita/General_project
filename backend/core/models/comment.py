@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Text, Integer, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,18 +12,12 @@ if TYPE_CHECKING:
 
 
 class Comment(TimestampsMixin, Base):
-    """
-    Модель комментария пользователя к посту.
-
-    Атрибуты:
-    - user_id: ID автора комментария
-    - post_id: ID поста, к которому относится комментарий
-    - text: текст самого комментария
-    """
+    """Модель комментария в посте."""
 
     __table_args__ = (
         Index("idx_comment_user_id", "user_id"),
         Index("idx_comment_post_id", "post_id"),
+        Index("idx_comment_parent_id", "parent_id"),
     )
 
     user_id: Mapped[int] = mapped_column(
@@ -36,7 +30,20 @@ class Comment(TimestampsMixin, Base):
         ForeignKey("posts.id", ondelete="CASCADE"),
         nullable=False,
     )
+    parent_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("comments.id", ondelete="CASCADE"),
+        nullable=True,
+    )
     text: Mapped[str] = mapped_column(Text, nullable=False)
 
+    # Связи
     user: Mapped["User"] = relationship("User", back_populates="comments")
     post: Mapped["Post"] = relationship("Post", back_populates="comments")
+
+    parent: Mapped[Optional["Comment"]] = relationship(
+        "Comment", remote_side="Comment.id", back_populates="replies"
+    )
+    replies: Mapped[list["Comment"]] = relationship(
+        "Comment", back_populates="parent", cascade="all, delete-orphan"
+    )

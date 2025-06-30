@@ -30,4 +30,6 @@ class Post(TimestampsMixin, Base):
         back_populates="post", lazy="selectin"
     )
 
-    # comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="post")
+    comments: Mapped[list["Comment"] | None] = relationship(
+        "Comment", back_populates="post"
+    )

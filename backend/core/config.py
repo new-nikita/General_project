@@ -12,6 +12,8 @@ from pydantic_settings import (
 )
 from dotenv import find_dotenv, load_dotenv
 
+from backend.utils.date_filter_style import custom_filters
+
 if find_dotenv():
     load_dotenv()  # take environment variables from.env.
 else:
@@ -52,8 +54,11 @@ class LoggingConfig(BaseModel):
 
 class Jinja2Settings(BaseModel):
     template_dir: ClassVar[Jinja2Templates] = Jinja2Templates(TEMPLATES_DIR)
-    template_dir.env.globals["current_user"] = None
-
+    
+    @classmethod
+    def configure_templates(cls) -> None:
+        cls.template_dir.env.filters.update(custom_filters)
+        cls.template_dir.env.globals['current_user'] = None
 
 class DatabaseConfig(BaseModel):
     url: PostgresDsn
@@ -119,3 +124,4 @@ CONVENTION = {
 }
 
 settings = Settings()
+settings.templates.configure_templates()

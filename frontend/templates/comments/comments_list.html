@@ -1,0 +1,69 @@
+<div class="comments-list">
+    {% for comment in comments %}
+        <div class="comment-item" id="comment-{{ comment.id }}">
+            <img src="{{ comment.user.profile.avatar }}" alt="Аватар" class="comment-avatar">
+            <div class="comment-content">
+                <div class="d-flex align-items-center">
+                    <span class="comment-author">{{ comment.user.profile.full_name or comment.user.username }}</span>
+                </div>
+                <div class="comment-text">{{ comment.text }}</div>
+                <div class="comment-date">{{ comment.created_at|custom_date }}</div>
+                {% if comment.image %}
+                    <img src="{{ comment.image }}" class="comment-image" alt="Изображение комментария">
+                {% endif %}
+                <div class="comment-meta">
+                    <button class="comment-action-btn like-comment-btn" data-comment-id="{{ comment.id }}">
+                        <i class="far fa-heart"></i> Нравится
+                    </button>
+                    <button class="comment-action-btn reply-comment-btn" data-comment-id="{{ comment.id }}"
+                            data-post-id="{{ post_id }}">
+                        <i class="far fa-comment"></i> Ответить
+                    </button>
+                    {% if comment.author_id == current_user.id or current_user.is_superuser %}
+                        <button class="comment-action-btn delete-comment-btn" data-comment-id="{{ comment.id }}">
+                            <i class="far fa-trash-alt"></i> Удалить
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="separator"></div>
+    {% endfor %}
+
+    <!-- Форма добавления комментария -->
+    <div class="add-comment-form mt-3">
+        <form class="comment-form" method="post" action="/posts/{{ post_id }}/comments" enctype="multipart/form-data">
+            <div class="mb-2">
+            <textarea class="form-control comment-textarea" name="content" rows="2"
+                      placeholder="Напишите комментарий..." required></textarea>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="comment-actions">
+                    <label class="comment-image-btn btn btn-sm btn-outline-secondary me-2">
+                        <i class="fas fa-image"></i>
+                        <input type="file" name="image" accept="image/*" class="d-none">
+                    </label>
+                    <button type="button" class="btn btn-sm btn-outline-secondary emoji-btn">
+                        <i class="far fa-smile"></i>
+                    </button>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary btn-sm comment-submit-btn">
+                        <i class="fas fa-paper-plane me-1"></i> Отправить
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if has_more %}
+        <button class="btn btn-sm btn-outline-primary load-more-comments"
+                data-post-id="{{ post_id }}"
+                data-offset="{{ offset }}"
+                data-limit="{{ limit }}">
+            Показать ещё комментарии
+        </button>
+    {% endif %}
+    # TODO: дорабоать вывод формы добавления комментариев, и отправку на сервер контента
+    {% include "comments/comment_form.html" %}
+</div>
