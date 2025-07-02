@@ -11,6 +11,9 @@ from fastapi import status
         "/",
         "/login",
         "/register",
+        "/initial_register",
+        "/forgot_password",
+        "/reset_password",
     ],
 )
 async def test_all_views_to_status_200(async_client: AsyncClient, url: str) -> None:

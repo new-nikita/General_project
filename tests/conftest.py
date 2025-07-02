@@ -3,16 +3,20 @@ import os.path
 from asyncio import AbstractEventLoop
 from typing import AsyncGenerator, Generator, Any
 
+
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient, ASGITransport
+from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.pool import NullPool
+from watchfiles import awatch
 
 from backend.core.config import settings
 from backend.core.models import Base
 from backend.core.models.db_helper import DatabaseHelper
+from backend.auth.redis_client import AsyncRedisClient
 from main import main_app
 
 
@@ -50,6 +54,7 @@ async def setup_test_database(db_helper: DatabaseHelper) -> AsyncGenerator[None,
     Асинхронная фикстура для настройки тестовой базы данных.
     Перед запуском тестов создаются все таблицы. После выполнения тестов — удаляются.
     """
+    print(settings.db.url)
     assert settings.db.MODE == "TEST"
     async with db_helper.engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -84,3 +89,50 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
             base_url="http://testserver",
         ) as client:
             yield client
+
+
+@pytest.fixture(scope="function", autouse=True)
+def redis_client() -> AsyncGenerator[AsyncRedisClient, None]:
+    """
+    Фикстура, представляющая сессию временной БД
+    Каждая сессия открывается отдельно и корректно закрывается после использования.
+    """
+
+    client = AsyncRedisClient()
+    await client.connect()
+    yield client
+
+    if client.r:
+        await client.r.close()
+
+
+    # TODO: закончить фикстуру
+    #   - корректно сделать подключение к редис или эмулятору
+    #   -
+
+    return ...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
