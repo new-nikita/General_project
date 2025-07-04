@@ -42,7 +42,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Пол</label><br>
+                                <label for="gender" class="form-label">Пол</label><br>
                                 <div class="d-flex gap-3">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="gender"
@@ -97,7 +97,7 @@
                             <div class="mb-3">
                                 <label for="bio" class="form-label">О себе</label>
                                 <textarea id="bio" name="bio" rows="4"
-                                          class="form-control shadow-sm">{{ profile_data.get('bio', '') }}</textarea>
+                                          class="form-control shadow-sm">{{ profile_data.bio }}</textarea>
                             </div>
 
                             <!-- Кнопки -->

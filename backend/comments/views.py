@@ -38,13 +38,12 @@ async def create_comment(
     post_id: int,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     service: Annotated[CommentService, Depends(get_comment_service)],
-    content: CommentCreate,
+    content: str = Form(...),
 ):
-
     return await service.create_comment(
         user_id=current_user.id,
         post_id=post_id,
-        text=content.content,
+        text=content,
         parent_id=None,
     )
 

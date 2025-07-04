@@ -61,10 +61,17 @@ document.addEventListener("DOMContentLoaded", function () {
                     commentsList.appendChild(newLoadMoreButton);
                     setupLoadMoreHandler(container);
                 }
+                // Перенос формы отправки комментария в конец блока
+                const commentForm = commentsList.querySelector('.add-comment-form');
+                if (commentForm) {
+                    commentsList.appendChild(commentForm);
+                }
+
             } catch (error) {
                 console.error('Ошибка при подгрузке комментариев:', error);
             }
         });
     }
+
 
 });

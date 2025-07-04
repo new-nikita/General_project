@@ -339,20 +339,6 @@
         <script src=/static/js/show_toast.js type=text/javascript></script>
         <script src=/static/js/like.js type=text/javascript></script>
         <script src=/static/js/comment_handlers.js type=text/javascript></script>
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                // Открытие формы комментария при клике на иконку
-                document.querySelectorAll('.comment-icon').forEach(icon => {
-                    icon.addEventListener('click', function () {
-                        const postId = this.getAttribute('data-post-id');
-                        const formContainer = document.getElementById(`comment-form-${postId}`);
-                        if (formContainer) {
-                            formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
-                        }
-                    });
-                });
-            });
-        </script>
         <script type="text/javascript">
             document.addEventListener("DOMContentLoaded", function () {
                 setupPostUpdateHandlers();

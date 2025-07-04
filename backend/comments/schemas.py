@@ -1,5 +1,6 @@
 from typing import Optional
 
+from fastapi import Form
 from pydantic import BaseModel
 
 from backend.core.schemas.base_content_schemas import (
@@ -9,7 +10,7 @@ from backend.core.schemas.base_content_schemas import (
 )
 
 
-class CommentCreate(BaseModel):
+class CommentCreate(ContentCreate):
     content: str
 
 
