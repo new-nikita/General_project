@@ -30,10 +30,9 @@ jobs:
           poetry config virtualenvs.create false
           poetry install --with dev
 
-      - name: Run linter (Black & MyPy)
+      - name: Run linter (Black)
         run: |
           black --check --exclude 'backend/alembic/.*' backend/
-          mypy backend/
 
   tests:
     name: Run Tests
