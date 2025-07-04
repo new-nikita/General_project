@@ -6,6 +6,8 @@ from .profile import Profile
 from .like import LikePost
 from .post import Post
 
+from .comment import Comment
+
 __all__ = (
     "Base",
     "User",
@@ -13,4 +15,5 @@ __all__ = (
     "LikePost",
     "Profile",
     "Post",
+    "Comment",
 )

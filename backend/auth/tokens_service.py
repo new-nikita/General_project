@@ -2,9 +2,14 @@ import logging
 
 import jwt
 from datetime import datetime, timezone, timedelta
-from fastapi import HTTPException
-from backend.core.config import settings
+from fastapi import HTTPException, status
 
+from backend.core.config import settings
+from backend.exceptions.custom_token_exceptions import InvalidTokenError
+
+logging.basicConfig(
+    format=settings.logging.log_format, level=settings.logging.log_level_value
+)
 logger = logging.getLogger(__name__)
 
 
@@ -20,7 +25,7 @@ class TokenService:
         :param expires_delta: Время жизни токена.
         :return: Новый Access Token
         """
-
+        data["type"] = "access"
         expires_delta = expires_delta or timedelta(
             minutes=settings.jwt.access_token_expire_minutes
         )
@@ -33,16 +38,18 @@ class TokenService:
 
         :param refresh_token: Токен обновления.
         :return: Новый Access Token.
-        :raises ValueError: Если Refresh Token недействителен.
+        :raise ValueError: Если Refresh Token недействителен.
+        :raise HTTPException: Если передан неверный тип токена.
         """
         payload = cls.decode_and_validate_token(refresh_token)
+        if payload.get("type") == "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+            )
         username = payload.get("sub")
-        exp = payload.get("exp")
-
-        if not username or (exp and exp < int(datetime.now(timezone.utc).timestamp())):
-            logger.warning("Refresh Token истек или содержит некорректные данные")
+        if not username:
             raise ValueError("Invalid refresh token")
-
         # Создаем новый Access Token
         new_access_token = cls.create_access_token(data={"sub": username})
         logger.info(f"Access Token успешно обновлен для пользователя: {username}")
@@ -56,6 +63,7 @@ class TokenService:
         :param data: Данные для кодирования в токене.
         :return: Новый Refresh Token.
         """
+        data["type"] = "refresh"
         expires_delta = timedelta(days=settings.jwt.refresh_token_expire_days)
         return cls._create_jwt_token(data, expires_delta)
 
@@ -70,7 +78,7 @@ class TokenService:
         """
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + expires_delta
-        to_encode.update({"exp": expire})
+        to_encode.update({"exp": int(expire.timestamp())})
 
         if not settings.jwt.secret_key or not settings.jwt.algorithm:
             raise ValueError(
@@ -93,13 +101,9 @@ class TokenService:
 
         :param token: JWT-токен.
         :return: Payload токена.
-        :raises HTTPException: 401 если токен недействителен.
         """
-        try:
-            payload = cls._decode_token(token)
-        except HTTPException:
-            raise HTTPException(status_code=401, detail="Не угадал")
-        cls._validate_payload(payload)
+
+        payload = cls._decode_token(token)
         return payload
 
     @classmethod
@@ -115,23 +119,22 @@ class TokenService:
             return jwt.decode(
                 token, settings.jwt.secret_key, algorithms=[settings.jwt.algorithm]
             )
-        except jwt.PyJWTError:
-            raise HTTPException(status_code=401, detail="Invalid token")
-
-    @classmethod
-    def _validate_payload(cls, payload: dict) -> None:
-        """
-        Проверяет валидность payload токена.
-
-        :param payload: Payload токена.
-        :raises HTTPException: 401 если токен недействителен.
-        """
-        exp = payload.get("exp")
-        if not payload.get("sub") or (
-            exp and exp < int(datetime.now(timezone.utc).timestamp())
-        ):
-            raise HTTPException(status_code=401, detail="Invalid token")
+        except jwt.ExpiredSignatureError:
+            logger.warning("Токен истек")
+            raise HTTPException(status_code=401, detail="Token expired")
 
     @classmethod
     def is_token_valid(cls, token: str) -> bool:
-        return cls.decode_and_validate_token(token) is not None
+        """
+        Проверяет валидность токена.
+
+        :param token: Токен
+        :return: True если токен валидный, иначе False
+        """
+        try:
+            cls.decode_and_validate_token(token)
+            return True
+        except jwt.InvalidTokenError:
+            raise InvalidTokenError()
+        except HTTPException:
+            return False

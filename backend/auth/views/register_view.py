@@ -4,31 +4,28 @@ from typing import Annotated, Optional
 from fastapi import (
     APIRouter,
     Depends,
+    File,
+    Form,
     HTTPException,
     Request,
-    Form,
     UploadFile,
-    File,
 )
-
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import EmailStr, ValidationError
 
+from backend.auth import AsyncRedisClient, TokenService
+from backend.auth.authorization import (
+    get_current_user_from_cookie,
+    get_redirect_with_authentication_user,
+)
+from backend.auth.Celery.tasks import send_confirmation_email_task
 from backend.core.config import settings
 from backend.core.models import User
 from backend.users.dependencies import get_user_service
 from backend.users.schemas.register_schema import RegisterForm
 from backend.users.schemas.users_schemas import ProfileCreate, UserCreate
 from backend.users.services import UserService
-from backend.auth import AsyncRedisClient, TokenService
-
-from backend.auth.Celery.tasks import send_confirmation_email_task
-from backend.auth.authorization import (
-    get_current_user_from_cookie,
-    get_redirect_with_authentication_user,
-)
 from backend.utils.save_images import upload_image
-
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -55,6 +52,8 @@ async def get_register_form(
     bio: Optional[str] = Form(None),
     avatar: UploadFile | str | None = File(None),
 ) -> RegisterForm:
+    """Функция для конвертации данных формы регистрации в JSON'о валидный
+    формат для схем Pydantic, а точнее для RegisterForm."""
     return RegisterForm(
         username=username,
         email=email,
@@ -75,14 +74,13 @@ async def get_register_form(
 
 
 @router.get("/initial_register", response_class=HTMLResponse)
-async def get_register_page(
+async def get_initial_register_page(
     request: Request,
     current_user: Annotated[
         Optional[User], Depends(get_current_user_from_cookie)
     ] = None,
 ) -> Response:
-    """
-    Отображает страницу регистрации.
+    """Отображает страницу для подтверждения регистрации пользователя по почте.
 
     :param request: Запрос FastAPI.
     :param current_user: Текущий пользователь (если авторизован).
@@ -104,12 +102,18 @@ async def get_register_page(
 
 
 @router.post("/initial_register", response_class=HTMLResponse)
-async def register_user(
+async def initial_register_user(
     request: Request,
     redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
     email: EmailStr = Form(...),
 ) -> Response:
+    """Отправляет письмо с подтверждением регистрации на указанный email.
 
+    :param request: Запрос FastAPI.
+    :param redis: Объект для работы с Redis.
+    :param email: Email пользователя для регистрации.
+    :return: HTML-страница с сообщением о регистрации или ошибкой.
+    """
     temporary_user_token = TokenService.create_refresh_token({"sub": email})
 
     try:
@@ -153,11 +157,19 @@ async def get_register_page(
         Optional[User], Depends(get_current_user_from_cookie)
     ] = None,
 ) -> Response:
+    """Отображает страницу регистрации нового пользователя.
+
+    А также принимает токен для подтверждения регистрации по email. Если
+    токен не указан, то отображается форма для ввода данных, в которой
+    не возможно ввести email.
+    :param request: Запрос FastAPI.
+    :param token: Токен подтверждения регистрации.
+    :param current_user: Пользователь, если он уже авторизован.
+    :return: HTML-страница с формой регистрации.
+    """
     if current_user:
         return RedirectResponse(url="/", status_code=303)
-
     form_data = {}
-
     if token:
         try:
             payload = TokenService.decode_and_validate_token(token)
@@ -245,6 +257,18 @@ async def register_user(
                 "current_user": None,
                 "form_data": form_data.model_dump(),
                 "errors": errors,
+            },
+            status_code=400,
+        )
+    except ValueError as e:
+        await service.repository.session.rollback()
+        logger.error(f"Registration error: {str(e)}", exc_info=True)
+        return settings.templates.template_dir.TemplateResponse(
+            "users/register.html",
+            {
+                "request": request,
+                "form_data": form_data.model_dump(),
+                "errors": {"errors": e.args[0]},
             },
             status_code=400,
         )

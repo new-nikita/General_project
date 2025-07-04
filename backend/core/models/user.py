@@ -38,9 +38,17 @@ class User(TimestampsMixin, Base):
         lazy="selectin",
     )
     likes: Mapped[list["LikePost"]] = relationship(
-        "LikePost", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
+        "LikePost",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
-    # comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="user")
+    comments: Mapped[list["Comment"] | None] = relationship(
+        "Comment",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, username={self.username!r})"

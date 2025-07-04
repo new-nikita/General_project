@@ -6,33 +6,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.core.base_repository import BaseRepository
-from backend.core.models import User, Profile
-from backend.users.schemas.users_schemas import UserCreate
+from backend.core.models import Profile, User
 from backend.users.password_helper import PasswordHelper
 from backend.users.schemas.profile_schemas import ProfileUpdate
+from backend.users.schemas.users_schemas import UserCreate
 
 
 class UserRepository(BaseRepository[User]):
-    """
-    Репозиторий для работы с пользователями.
+    """Репозиторий для работы с пользователями.
+
     Содержит методы для взаимодействия с базой данных.
     """
 
     def __init__(self, session: AsyncSession) -> None:
-        """
-        Инициализация репозитория с сессией базы данных.
+        """Инициализация репозитория с сессией базы данных.
 
         :param session: Асинхронная сессия SQLAlchemy.
         """
         super().__init__(session=session, model=User)
 
     async def get_by_id_with_likes(self, id_: int) -> User:
-        """
-        Получает пользователя по ID вместе с его лайками.
-        """
+        """Получает пользователя по ID вместе с его лайками."""
         stmt = (
             select(self.model)
-            .options(selectinload(self.model.likes))  # Загружаем все лайки пользователя
+            .options(selectinload(self.model.likes))
             .where(self.model.id == id_)
         )
 
@@ -40,12 +37,12 @@ class UserRepository(BaseRepository[User]):
         return result.scalar_one()
 
     async def create(self, dto_user: UserCreate) -> User:
-        """
-        Создает нового пользователя в базе данных.
+        """Создает нового пользователя в базе данных.
 
         :param dto_user: DTO с данными для создания пользователя.
         :return: Созданный объект пользователя.
-        :raises IntegrityError: Если пользователь с таким email или username уже существует.
+        :raises IntegrityError: Если пользователь с таким email или
+            username уже существует.
         """
         hashed_password = PasswordHelper.generate_password(dto_user.password)
         user = User(
@@ -63,11 +60,11 @@ class UserRepository(BaseRepository[User]):
         return user
 
     async def get_user_by_username(self, username: str) -> User | None:
-        """
-        Возвращает пользователя по его имени пользователя (username).
+        """Возвращает пользователя по его имени пользователя (username).
 
         :param username: Имя пользователя.
-        :return: Объект пользователя или None, если пользователь не найден.
+        :return: Объект пользователя или None, если пользователь не
+            найден.
         """
         result = await self.session.execute(
             select(self.model)
@@ -77,30 +74,30 @@ class UserRepository(BaseRepository[User]):
         return result.scalar_one_or_none()
 
     async def get_user_by_email(self, email: EmailStr) -> User | None:
-        """
-        Возвращает пользователя по его email.
+        """Возвращает пользователя по его email.
 
         :param email: Email пользователя.
-        :return: Объект пользователя или None, если пользователь не найден.
+        :return: Объект пользователя или None, если пользователь не
+            найден.
         """
         result = await self.session.execute(
             select(self.model).where(self.model.email == email)
         )
         return result.scalar_one_or_none()
 
-    async def change_password_by_user(self, user: User, new_password: str) -> User | None:
-        """
-        Обновляет пароль пользователя
+    async def change_password_by_user(
+        self, user: User, new_password: str
+    ) -> User | None:
+        """Обновляет пароль пользователя.
 
         :param user: Объект пользователя.
         :param new_password: Новый пароль от пользователя
-        :return: Объект пользователя или None, если пользователь не найден.
+        :return: Объект пользователя или None, если пользователь не
+            найден.
         """
         hashed_password = PasswordHelper.generate_password(new_password)
         user.hashed_password = hashed_password
         await self.session.commit()
-
-
 
     async def update(self, id_: int, data: dict[str, Any]) -> str | None: ...
 
@@ -109,10 +106,10 @@ class UserRepository(BaseRepository[User]):
         user: User,
         dto_profile: ProfileUpdate,
     ) -> None:
-        """
-        Обновляет профиль пользователя.
-        Если профиля нет — создаёт его.
-        Если есть — обновляет только указанные поля.
+        """Обновляет профиль пользователя.
+
+        Если профиля нет — создаёт его. Если есть — обновляет только
+        указанные поля.
         :param user: Пользователь, чей профиль нужно обновить.
         :param dto_profile: Данные для обновления профиля.
         """
@@ -133,8 +130,7 @@ class UserRepository(BaseRepository[User]):
     async def delete(self, id_: int) -> str | None: ...
 
     async def update_user_avatar(self, user: User, avatar_url: str):
-        """
-        Обновляет аватар пользователя.
+        """Обновляет аватар пользователя.
 
         :param user: Пользователь.
         :param avatar_url: URL аватара.
@@ -147,8 +143,7 @@ class UserRepository(BaseRepository[User]):
         user: User,
         default_avatar: str = "/client_files/avatars/дефолтный_аватар.jpg",
     ) -> str | None:
-        """
-        Удаляет аватар пользователя.
+        """Удаляет аватар пользователя.
 
         :param user: Пользователь.
         :param default_avatar: URL дефолтного аватара.

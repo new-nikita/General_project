@@ -1,0 +1,91 @@
+.comments-list {
+    border: 2px solid #c4c4c4;
+    border-radius: 10px;
+    padding: 35px;
+    margin-top: 30px;
+}
+
+.comment-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.d-flex.align-items-center.justify-content-between {
+    margin-bottom: 5px;
+}
+
+.comment-date {
+    font-size: 0.8em;
+    color: #888;
+    margin-top: 8px;
+    margin-left: 0; /* дата будет начинаться с той же границы, что и текст */
+    align-self: flex-start;
+}
+
+.comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+
+.comment-text {
+    margin-top: 5px;
+    padding: 15px;
+    word-wrap: break-word;
+    max-width: 95%;
+    overflow-y: auto;
+    background-color: #ffffff;
+    display: block;
+    white-space: normal;
+}
+
+.comment-author {
+    font-weight: bold; /* Жирный шрифт для автора */
+    font-size: 14px; /* Размер шрифта побольше */
+    margin-bottom: 5px; /* Небольшой отступ снизу */
+}
+
+.comment-image {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.comment-action-btn {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-right: 10px; /* Интервал между кнопками */
+}
+
+.comment-action-btn:hover {
+    color: #007bff;
+}
+
+.comment-item {
+    position: relative;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+}
+
+
+.comment-meta {
+    display: flex;
+    align-items: center;
+    margin-top: 8px; /* отступ от даты */
+    margin-left: 0; /* кнопки также с одной границы */
+}
+
+
+.separator {
+    height: 1px;
+    background-color: #ddd;
+    margin: 20px 0;
+}
