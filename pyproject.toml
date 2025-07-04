@@ -43,3 +43,16 @@ pre-commit = "^4.2.0"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.black]
+line-length = 88
+exclude = '''
+/(
+    alembic/versions
+)/
+/(
+    frontend/
+)/
+'''
+
+[tool.isort]
+profile = "black"
