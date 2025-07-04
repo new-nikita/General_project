@@ -1,16 +1,12 @@
 import logging
 import os
 from pathlib import Path
-from typing import Literal, ClassVar
+from typing import ClassVar, Literal
 
-from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, PostgresDsn, AnyUrl, RedisDsn
-
-from pydantic_settings import (
-    BaseSettings,
-    SettingsConfigDict,
-)
 from dotenv import find_dotenv, load_dotenv
+from fastapi.templating import Jinja2Templates
+from pydantic import AmqpDsn, BaseModel, PostgresDsn, RedisDsn
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from backend.utils.date_filter_style import custom_filters
 
@@ -23,7 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = BASE_DIR.parent / "frontend" / "templates"
 
 LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
+    "[%(asctime)s.%(msecs)03d] "
+    "%(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
 )
 
 SECRET_KEY = os.getenv("SECRET_KEY", "test_secret_key")
@@ -54,11 +51,12 @@ class LoggingConfig(BaseModel):
 
 class Jinja2Settings(BaseModel):
     template_dir: ClassVar[Jinja2Templates] = Jinja2Templates(TEMPLATES_DIR)
-    
+
     @classmethod
     def configure_templates(cls) -> None:
         cls.template_dir.env.filters.update(custom_filters)
-        cls.template_dir.env.globals['current_user'] = None
+        cls.template_dir.env.globals["current_user"] = None
+
 
 class DatabaseConfig(BaseModel):
     url: PostgresDsn
@@ -69,17 +67,27 @@ class DatabaseConfig(BaseModel):
     MODE: str = "TEST"
 
 
-class RedisConfig(BaseModel):
+class RedisConfig(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=(BASE_DIR / ".env"),
+        env_prefix="REDIS_",
+    )
     host: str = "localhost"
     port: int = 6379
     db: int = 0
 
 
-class CeleryConfig(BaseModel):
+class CeleryConfig(BaseSettings):
     # broker_url: AnyUrl = "redis://localhost:6379/0"  #  REDIS
-    broker_url: AnyUrl = "pyamqp://guest:guest@localhost//"  # AMQP (RabbitMQ)
-    result_backend: RedisDsn = "redis://localhost:6379/0"
-    task_routes: dict[str, dict[str, str]] = {"app.tasks.*": {"queue": "email_tasks"}}
+    model_config = SettingsConfigDict(
+        env_file=(BASE_DIR / ".env"),
+        env_prefix="CELERY_",
+    )
+    broker_url: AmqpDsn
+    result_backend: RedisDsn
+    task_routes: dict[str, dict[str, str]] = {
+        "app.tasks.*": {"queue": "email_tasks"},
+    }
 
 
 class SMTPSettings(BaseSettings):
