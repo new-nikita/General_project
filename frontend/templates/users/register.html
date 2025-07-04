@@ -19,13 +19,12 @@
             {% if errors %}
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {% for field, message in errors.items() %}
-                        <strong> {{ message }}</strong><br>
+                        <pre>{{ message }}</pre>
                     {% endfor %}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endif %}
             <form method="post" action="/register" enctype="multipart/form-data">
-
                 <div class="form-section">
                     <h4 class="section-title">Основная информация</h4>
 
@@ -148,8 +147,7 @@
                     <div class="mb-3">
                         <label for="bio" class="form-label">Краткая биография</label>
                         <textarea id="bio" name="bio" class="form-control" rows="3"
-                                  placeholder="Расскажите немного о себе">{% if form_data %}
-                            {{ form_data.bio }}{% endif %}</textarea>
+                                  placeholder="Расскажите немного о себе">{{ form_data.bio or '' }}</textarea>
                     </div>
                 </div>
 

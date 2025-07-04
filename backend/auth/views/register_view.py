@@ -248,6 +248,18 @@ async def register_user(
             },
             status_code=400,
         )
+    except ValueError as e:
+        await service.repository.session.rollback()
+        logger.error(f"Registration error: {str(e)}", exc_info=True)
+        return settings.templates.template_dir.TemplateResponse(
+            "users/register.html",
+            {
+                "request": request,
+                "form_data": form_data.model_dump(),
+                "errors": {"errors": e.args[0]},
+            },
+            status_code=400,
+        )
     except Exception as e:
         await service.repository.session.rollback()
         logger.error(f"Registration error: {str(e)}", exc_info=True)

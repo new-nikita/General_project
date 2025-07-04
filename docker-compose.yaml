@@ -28,10 +28,10 @@ services:
     restart: always
     ports:
       - "6379:6379"
-  #    volumes:
-  #      - ./redis-data:/data
-  #      - ./backend/redis.conf:/usr/local/etc/redis/redis.conf
-  #    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./redis-data:/data:z
+      - ./backend/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server --appendonly yes
 
   flower:
     image: mher/flower:0.9.7
@@ -54,4 +54,4 @@ services:
 volumes:
   pgdata:
   pgdata_test:
-#  redis_data:
+  redis_data:
