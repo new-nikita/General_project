@@ -73,6 +73,10 @@ async def get_register_form(
     )
 
 
+def get_redis_client() -> AsyncRedisClient:
+    return AsyncRedisClient()
+
+
 @router.get("/initial_register", response_class=HTMLResponse)
 async def get_initial_register_page(
     request: Request,
@@ -104,7 +108,7 @@ async def get_initial_register_page(
 @router.post("/initial_register", response_class=HTMLResponse)
 async def initial_register_user(
     request: Request,
-    redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
+    redis: Annotated[AsyncRedisClient, Depends(get_redis_client)],
     email: EmailStr = Form(...),
 ) -> Response:
     """Отправляет письмо с подтверждением регистрации на указанный email.

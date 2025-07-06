@@ -1,8 +1,7 @@
 import redis.asyncio as redis
 import logging
-import json
 from backend.core.config import settings
-from typing import Optional, Any, Coroutine
+from typing import Optional
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -14,14 +13,15 @@ logger = logging.getLogger(__name__)
 class AsyncRedisClient:
     """Класс для временной работы хранения токенов при авторизации через ссылку"""
 
-    def __init__(self):
+    def __init__(self, redis_instance=None):
         self.redis_url = f"redis://{settings.redis.host}:{settings.redis.port}/0"
-        self.r = None
+        self.r = redis_instance  #  Для тестов
 
     async def connect(self):
         """Создаёт подключение к Redis"""
         try:
-            self.r = redis.from_url(self.redis_url, decode_responses=True)
+            if self.r is None:
+                self.r = redis.from_url(self.redis_url, decode_responses=True)
             compound = await self.r.ping()  # проверка на подключение
             if compound:
                 logger.info("Установлено подключение к Redis")
@@ -77,7 +77,7 @@ class AsyncRedisClient:
             logger.error(f"Redis error (save_email): {e}")
             return False
 
-    async def get_pending_token(self, token: str) -> dict | str | None:
+    async def get_pending_token(self, token: str) -> str | None:
         """
         Извлекает значение по ключу из Redis
         :param token: токен из ссылки отправленный пользователю на почту
@@ -123,6 +123,7 @@ class AsyncRedisClient:
             logger.info(f"Проверка токена: {token} -> {exists}")
             if exists:
                 return True
+            return False
         except Exception as e:
             logger.error(f"Redis error (exists): {e}")
             return False

@@ -74,13 +74,17 @@ class TestUserModel:
     ) -> None:
         """Проверяет, что дублирование username вызывает ошибку целостности."""
         user1 = User(
-            username="unique_user", hashed_password="pass1234", email="unique1@test.com"
+            username="unique_user",
+            hashed_password="pass1234",
+            email="unique1@test.com",
         )
         db_session.add(user1)
         await db_session.commit()
 
         user2 = User(
-            username="unique_user", hashed_password="pass1234", email="unique2@test.com"
+            username="unique_user",
+            hashed_password="pass1234",
+            email="unique2@test.com",
         )
         db_session.add(user2)
 
@@ -95,15 +99,21 @@ class TestUserModel:
     async def test_duplicate_email_raises_integrity_error(
         self, db_session: AsyncSession
     ) -> None:
+        from pydantic import EmailStr
+
         """Проверяет, что дублирование email вызывает ошибку целостности."""
         user1 = User(
-            username="user1", hashed_password="pass1234", email="same_email@test.com"
+            username="user1",
+            hashed_password="pass1234",
+            email="same_email@test.com",
         )
         db_session.add(user1)
         await db_session.commit()
 
         user2 = User(
-            username="user2", hashed_password="pass1234", email="same_email@test.com"
+            username="user2",
+            hashed_password="pass1234",
+            email="same_email@test.com",
         )
         db_session.add(user2)
 
@@ -156,7 +166,9 @@ class TestUserModel:
     async def test_update_user_data(self, db_session: AsyncSession) -> None:
         """Тест обновления данных пользователя."""
         user = User(
-            username="to_update", hashed_password="old_pass", email="update@test.com"
+            username="to_update",
+            hashed_password="old_pass",
+            email="update@test.com",
         )
         db_session.add(user)
         await db_session.commit()

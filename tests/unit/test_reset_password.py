@@ -1,21 +1,18 @@
 import pytest
-from unittest.mock import AsyncMock
 from httpx import AsyncClient
-
+from fastapi import status
 
 
 @pytest.mark.asyncio
-async def test_reset_password_form_simplified(async_client: AsyncClient, monkeypatch):
+async def test_reset_password(
+    async_client: AsyncClient,
+    redis_test_client,
+):
+    token = "token123"
+    email = "user@example.com"
+    url = f"/reset_password?token={token}"
 
-    # Мокаем Redis
-    mock_redis = AsyncMock()
-    mock_redis.get_pending_token.return_value = "user@example.com"
-    monkeypatch.setattr("backend.auth.routes.reset_password.AsyncRedisClient", lambda: mock_redis)
+    await redis_test_client.save_pending_email_token(token, email)
 
-    response = await async_client.get("/reset_password?token=valid-token")
-
-    assert response.status_code == 200
-    assert "reset" in response.text.lower()
-
-
-
+    response = await async_client.get(url)
+    assert response.status_code == status.HTTP_200_OK

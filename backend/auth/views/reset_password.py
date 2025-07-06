@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
-
 import uuid
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -9,17 +9,13 @@ from fastapi import (
     Request,
     Form,
 )
-
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import EmailStr
 
 from backend.auth.Celery.tasks import send_confirmation_email_task
 from backend.core.config import settings
-
 from backend.auth import AsyncRedisClient
 from backend.auth.authorization import get_redirect_with_authentication_user
-
-
 from backend.users.dependencies import get_user_service
 from backend.users.services import UserService
 
@@ -85,7 +81,10 @@ async def request_reset(
         logger.error(f"Reset failed: {e}")
         return settings.templates.template_dir.TemplateResponse(
             "info/forgot_password.html",
-            {"request": request, "error": "Пользователя с таким Email не существует."},
+            {
+                "request": request,
+                "error": "Пользователя с таким Email не существует.",
+            },
         )
 
 
@@ -107,7 +106,10 @@ async def reset_password_form(
 
     except HTTPException:
         logger.error(f"Reset password failed")
-        raise HTTPException(status_code=400, detail="Неверный или истекший токен")
+        raise HTTPException(
+            status_code=400,
+            detail="Неверный или истекший токен",
+        )
 
 
 # Обработка сброса
@@ -125,7 +127,10 @@ async def reset_password(
         email = await redis.get_pending_token(token)
         user = await service.get_user_by_email(email)
         if not user:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
+            raise HTTPException(
+                status_code=404,
+                detail="Пользователь не найден",
+            )
 
         if new_password != confirm_password:
             raise HTTPException(status_code=400, detail="Пароли не совпадают")

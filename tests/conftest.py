@@ -1,17 +1,16 @@
 import asyncio
-import os.path
+
 from asyncio import AbstractEventLoop
 from typing import AsyncGenerator, Generator, Any
-
 
 import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient, ASGITransport
-from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.pool import NullPool
-from watchfiles import awatch
+
+import fakeredis
 
 from backend.core.config import settings
 from backend.core.models import Base
@@ -49,7 +48,9 @@ def db_helper() -> DatabaseHelper:
 
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
-async def setup_test_database(db_helper: DatabaseHelper) -> AsyncGenerator[None, None]:
+async def setup_test_database(
+    db_helper: DatabaseHelper,
+) -> AsyncGenerator[None, None]:
     """
     Асинхронная фикстура для настройки тестовой базы данных.
     Перед запуском тестов создаются все таблицы. После выполнения тестов — удаляются.
@@ -67,7 +68,9 @@ async def setup_test_database(db_helper: DatabaseHelper) -> AsyncGenerator[None,
 
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
-async def db_session(db_helper: DatabaseHelper) -> AsyncGenerator[AsyncSession, None]:
+async def db_session(
+    db_helper: DatabaseHelper,
+) -> AsyncGenerator[AsyncSession, None]:
     """
     Фикстура, предоставляющая сессию БД для каждого теста.
     Каждая сессия открывается отдельно и корректно закрывается после использования.
@@ -91,48 +94,16 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
             yield client
 
 
-@pytest.fixture(scope="function", autouse=True)
-def redis_client() -> AsyncGenerator[AsyncRedisClient, None]:
-    """
-    Фикстура, представляющая сессию временной БД
-    Каждая сессия открывается отдельно и корректно закрывается после использования.
-    """
-
-    client = AsyncRedisClient()
-    await client.connect()
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def fake_redis_client():
+    client = fakeredis.aioredis.FakeRedis(decode_responses=True)
     yield client
-
-    if client.r:
-        await client.r.close()
-
-
-    # TODO: закончить фикстуру
-    #   - корректно сделать подключение к редис или эмулятору
-    #   -
-
-    return ...
+    await client.flushall()
+    await client.close()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def redis_test_client(fake_redis_client):
+    redis_client = AsyncRedisClient(redis_instance=fake_redis_client)
+    await redis_client.connect()
+    yield redis_client
