@@ -75,4 +75,4 @@ jobs:
 
       - name: Tests
         run: |
-          python pytest -v --asyncio-mode=strict
+          pytest -v --asyncio-mode=strict
