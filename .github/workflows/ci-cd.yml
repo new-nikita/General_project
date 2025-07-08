@@ -29,6 +29,7 @@ jobs:
           pip install poetry
           poetry config virtualenvs.create false
           poetry install --with dev
+          pip list
 
       - name: Run linter (Black)
         run: |
@@ -36,10 +37,8 @@ jobs:
 
       - name: Lint the code with flake8
         run: |
-          # остановит сборку, если есть синтаксические ошибки Python или неопределенные имена
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # функция exit-zero обрабатывает все ошибки как предупреждения. Ширина редактора GitHub составляет 127 символов
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
   tests:
     name: Run Tests
