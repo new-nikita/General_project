@@ -59,8 +59,8 @@ async def setup_test_database(db_helper: DatabaseHelper) -> AsyncGenerator[None,
 
     yield  # тут все действия с базой
 
-    async with db_helper.engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    # async with db_helper.engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
