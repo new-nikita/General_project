@@ -72,6 +72,15 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --with dev
+
+      - name: Check installed packages
+        run: |
+          pip list
       - name: Tests
         run: |
-          pytest -v --asyncio-mode=strict
+          pytest -v --asyncio-mode=strict 
