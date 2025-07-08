@@ -1,12 +1,12 @@
-from backend.auth.Celery.email_service import EmailService
-from backend.core.config import settings
 from celery import Celery, shared_task
 
+from backend.auth.Celery.email_service import EmailService
+from backend.core.config import settings
 
 celery_app = Celery(
     "worker",
-    broker=settings.celery.broker_url,
-    backend=settings.celery.result_backend,
+    broker=str(settings.celery.broker_url),
+    backend=str(settings.celery.result_backend),
 )
 
 
@@ -17,9 +17,9 @@ def send_confirmation_email_task(
     email_to: str,
     token: str,
     base_url: str,
-):
-    """
-    Задача Celery. Отправляет сообщение пользователю на почту для подтверждения регистрации.
+) -> None:
+    """Задача Celery. Отправляет сообщение пользователю на почту для
+    подтверждения регистрации.
 
     :param name_endpoint: Имя эндоинта для генерации валидной ссылки
     :param name_message: Имя шаблона для генерации валидной ссылки

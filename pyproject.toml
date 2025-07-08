@@ -36,6 +36,8 @@ asgi-lifespan = "^2.1.0"
 faker = "^37.4.0"
 factory-boy = "^3.3.3"
 pytest-factoryboy = "^2.7.0"
+pre-commit = "^4.2.0"
+flake8 = "^7.3.0"
 
 [build-system]
 requires = ["poetry-core"]

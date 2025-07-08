@@ -1,37 +1,32 @@
 import logging
-from typing import Annotated
 import uuid
+from typing import Annotated
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    Request,
-    Form,
-)
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import EmailStr
 
-from backend.auth.Celery.tasks import send_confirmation_email_task
-from backend.core.config import settings
-from backend.auth import AsyncRedisClient
 from backend.auth.authorization import get_redirect_with_authentication_user
+from backend.auth.Celery.tasks import send_confirmation_email_task
+from backend.auth.redis_client import AsyncRedisClient
+from backend.core.config import settings
 from backend.users.dependencies import get_user_service
 from backend.users.services import UserService
-
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
 )
 logger = logging.getLogger(__name__)
 
+NOT_FOUND_USER_MESSAGE = "Пользователь с таким email не найден"
+INVALID_TOKEN_MESSAGE = "Невалидный токен"
 
 router = APIRouter()
 
 
-# Форма запроса сброса
 @router.get("/forgot_password", response_class=HTMLResponse)
-def request_reset_form(request: Request):
+def request_reset_form(request: Request) -> HTMLResponse:
+    """Форма запроса сброса пароля."""
     return settings.templates.template_dir.TemplateResponse(
         "users/forgot_password.html",
         {"request": request},
@@ -45,15 +40,14 @@ async def request_reset(
     service: Annotated[UserService, Depends(get_user_service)],
     redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
     email: EmailStr = Form(...),
-):
-    """
-    Ендпоинт восстановления пароля
+) -> HTMLResponse:
+    """Ендпоинт восстановления пароля.
 
-    :param request:
+    :param request: Запрос FastAPI
     :param email: Email пользователя
     :param service: Сервис работы с данными пользователя
     :param redis: Временное бд для отложенных задач
-    :return:
+    :return: HTMLResponse
     """
 
     try:
@@ -78,7 +72,7 @@ async def request_reset(
         )
 
     except Exception as e:
-        logger.error(f"Reset failed: {e}")
+        logger.error("Reset failed: %s", e)
         return settings.templates.template_dir.TemplateResponse(
             "info/forgot_password.html",
             {
@@ -88,13 +82,13 @@ async def request_reset(
         )
 
 
-# Ссылка сброса
 @router.get("/reset_password", response_class=HTMLResponse)
 async def reset_password_form(
     request: Request,
     token: str,
     redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
-):
+) -> HTMLResponse:
+    """Страница сброса пароля."""
     try:
         await redis.connect()
         await redis.get_pending_token(token)
@@ -105,9 +99,9 @@ async def reset_password_form(
         )
 
     except HTTPException:
-        logger.error(f"Reset password failed")
+        logger.error("Reset password failed")
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Неверный или истекший токен",
         )
 
@@ -115,7 +109,6 @@ async def reset_password_form(
 # Обработка сброса
 @router.post("/reset_password")
 async def reset_password(
-    request: Request,
     service: Annotated[UserService, Depends(get_user_service)],
     redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
     token: str = Form(...),
@@ -123,23 +116,31 @@ async def reset_password(
     confirm_password: str = Form(...),
 ) -> RedirectResponse:
     try:
-        await redis.connect()
-        email = await redis.get_pending_token(token)
-        user = await service.get_user_by_email(email)
-        if not user:
-            raise HTTPException(
-                status_code=404,
-                detail="Пользователь не найден",
-            )
-
         if new_password != confirm_password:
             raise HTTPException(status_code=400, detail="Пароли не совпадают")
 
+        await redis.connect()
+        email = await redis.get_pending_token(token)
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=INVALID_TOKEN_MESSAGE,
+            )
+        user = await service.get_user_by_email(email)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=NOT_FOUND_USER_MESSAGE,
+            )
         await service.change_password_by_user(user, new_password)
 
         redirect = await get_redirect_with_authentication_user(user)
         return redirect
 
     except Exception as e:
-        logger.error(f"Reset password failed: %s", e)
-        raise HTTPException(status_code=500, detail="Ошибка при смене пароля")
+        logger.error("Reset password failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Ошибка при смене пароля",
+        )
+        

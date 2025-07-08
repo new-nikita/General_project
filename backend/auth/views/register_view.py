@@ -13,12 +13,13 @@ from fastapi import (
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import EmailStr, ValidationError
 
-from backend.auth import AsyncRedisClient, TokenService
 from backend.auth.authorization import (
     get_current_user_from_cookie,
     get_redirect_with_authentication_user,
 )
 from backend.auth.Celery.tasks import send_confirmation_email_task
+from backend.auth.redis_client import AsyncRedisClient
+from backend.auth.tokens_service import TokenService
 from backend.core.config import settings
 from backend.core.models import User
 from backend.users.dependencies import get_user_service

@@ -14,6 +14,13 @@ repos:
     rev: 7.3.0
     hooks:
       - id: flake8
+        # игнорировать E501
+        args: [
+          "--ignore=E501",
+          "--max-line-length=100",
+          "--exclude=backend/alembic/.*",
+          "--exclude=backend/core/config,py",
+        ]
 
 
   - repo: https://github.com/PyCQA/autoflake
