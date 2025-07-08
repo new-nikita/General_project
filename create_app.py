@@ -40,7 +40,11 @@ def create_app() -> FastAPI:
     :return: FastAPI: Настроенный экземпляр приложения
     """
     application = FastAPI(lifespan=lifespan)
-    application.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    application.mount(
+        "/static",
+        StaticFiles(directory=str(STATIC_DIR)),
+        name="static",
+    )
     application.mount(
         "/client_files",
         StaticFiles(directory=str(BASE_STATIC_DIR)),

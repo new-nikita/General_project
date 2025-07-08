@@ -9,9 +9,12 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.pool import NullPool
 
+import fakeredis
+
 from backend.core.config import settings
 from backend.core.models import Base
 from backend.core.models.db_helper import DatabaseHelper
+from backend.auth.redis_client import AsyncRedisClient
 from main import main_app
 
 
@@ -50,9 +53,13 @@ def db_helper() -> DatabaseHelper:
 async def setup_test_database(db_helper: DatabaseHelper) -> AsyncGenerator[None, None]:
     """Асинхронная фикстура для настройки тестовой базы данных.
 
-    Перед запуском тестов создаются все таблицы. После выполнения тестов
-    — удаляются.
+    Перед запуском тестов создаются все таблицы. 
+    После выполнения тестов — удаляются.
     """
+    Асинхронная фикстура для настройки тестовой базы данных.
+    Перед запуском тестов создаются все таблицы. После выполнения тестов — удаляются.
+    """
+    print(settings.db.url)
     assert settings.db.MODE == "TEST"
     async with db_helper.engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -87,3 +94,18 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
             base_url="http://testserver",
         ) as client:
             yield client
+
+
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def fake_redis_client():
+    client = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    yield client
+    await client.flushall()
+    await client.close()
+
+
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def redis_test_client(fake_redis_client):
+    redis_client = AsyncRedisClient(redis_instance=fake_redis_client)
+    await redis_client.connect()
+    yield redis_client

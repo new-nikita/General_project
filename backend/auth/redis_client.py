@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from backend.core.config import settings
 from backend.exceptions.token_exceptions import NotFoundTokenWithEmailInRedis
 
+
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
 )
@@ -16,17 +17,17 @@ logger = logging.getLogger(__name__)
 class AsyncRedisClient:
     """Класс для временной работы хранения токенов при авторизации через
     ссылку."""
-
-    def __init__(self) -> None:
+    def __init__(self, redis_instance = None) -> None:
         self.redis_url = (
             f"redis://{settings.redis.host}:{settings.redis.port}/{settings.redis.db}"
         )
-        self.r = None
+        self.r = redis_instance
 
     async def connect(self) -> None:
         """Создаёт подключение к Redis."""
         try:
-            self.r = redis.from_url(self.redis_url, decode_responses=True)
+            if self.r is None:
+                self.r = redis.from_url(self.redis_url, decode_responses=True)
             compound = await self.r.ping()  # проверка на подключение
             if compound:
                 logger.info("Установлено подключение к Redis")

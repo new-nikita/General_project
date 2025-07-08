@@ -14,6 +14,8 @@ from backend.core.models import User
         "/",
         "/login",
         "/register",
+        "/initial_register",
+        "/forgot_password",
     ],
 )
 async def test_all_views_to_status_200(

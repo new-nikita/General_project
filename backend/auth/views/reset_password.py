@@ -143,3 +143,4 @@ async def reset_password(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка при смене пароля",
         )
+        
