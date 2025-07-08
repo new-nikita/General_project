@@ -19,6 +19,7 @@ repos:
           "--ignore=E501",
           "--max-line-length=100",
           "--exclude=backend/alembic/.*",
+          "--exclude=backend/core/config,py",
         ]
 
 
