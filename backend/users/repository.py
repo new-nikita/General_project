@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, List
+import datetime
 
 from pydantic import EmailStr
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -154,3 +155,25 @@ class UserRepository(BaseRepository[User]):
         user.profile.avatar = default_avatar
         await self.session.commit()
         return default_avatar
+
+    async def get_count_user_every_day(self, data, intervals) -> List[int | None]:
+        """
+        Получает список пользователей зарегистрированных каждый день
+        :param data: Текущая дата
+        :param intervals: Временные интервалы
+        :return: Список по количеству пользователей зарегистрированных в 4-х отрезках времени
+        """
+        result = [
+            (
+                await self.session.execute(
+                    select(func.count()).where(
+                        self.model.created_at.between(
+                            datetime.combine(data, start), datetime.combine(data, end)
+                        )
+                    )
+                )
+            ).scalar_one()
+            for start, end in intervals
+        ]
+
+        return result

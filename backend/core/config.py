@@ -1,91 +1,59 @@
 import logging
+import os
 from pathlib import Path
 from typing import ClassVar, Literal
 
+from dotenv import find_dotenv, load_dotenv
 from fastapi.templating import Jinja2Templates
-from pydantic import (
-    AmqpDsn,
-    BaseModel,
-    EmailStr,
-    Field,
-    PostgresDsn,
-    RedisDsn,
-    SecretStr,
-)
+from pydantic import AmqpDsn, BaseModel, PostgresDsn, RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from backend.utils.date_filter_style import custom_filters
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if find_dotenv():
+    load_dotenv()  # take environment variables from.env.
+else:
+    raise RuntimeError("Couldn't find .env file")
 
-TEMPLATES_DIR = BASE_DIR / "frontend" / "templates"
+BASE_DIR = Path(__file__).resolve().parent.parent
+TEMPLATES_DIR = BASE_DIR.parent / "frontend" / "templates"
 
 LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
+    "[%(asctime)s.%(msecs)03d] "
+    "%(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
 )
 
-LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-
+SECRET_KEY = os.getenv("SECRET_KEY", "test_secret_key")
 DEFAULT_PATH_TO_AVATAR = "/client_files/avatars/дефолтный_аватар.jpg"
-
-type SMTPUser = EmailStr
-type TaskRoute = dict[str, str]
-type TaskRoutes = dict[str, TaskRoute]
-type Algorithm = Literal[
-    "HS256",
-    "HS384",
-    "HS512",
-    "RS256",
-    "RS384",
-    "RS512",
-    "ES256",
-]
-type LogLevel = Literal[
-    "debug",
-    "info",
-    "warning",
-    "error",
-    "critical",
-]
 
 
 class JwtConfig(BaseModel):
-    secret_key: SecretStr
-    algorithm: Algorithm
+    secret_key: str = SECRET_KEY
+    algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
 
 
 class LoggingConfig(BaseModel):
-    log_level: LogLevel = "info"
+    log_level: Literal[
+        "debug",
+        "info",
+        "warning",
+        "error",
+        "critical",
+    ] = "info"
     log_format: str = LOG_DEFAULT_FORMAT
 
     @property
     def log_level_value(self) -> int:
-        """Функция для получения значения уровня логирования."""
         return logging.getLevelNamesMapping()[self.log_level.upper()]
 
 
 class Jinja2Settings(BaseModel):
     template_dir: ClassVar[Jinja2Templates] = Jinja2Templates(TEMPLATES_DIR)
 
-    def model_post_init(self, __context: object) -> None:
-        """Специальная функция Pydantic, которая автоматически вызывается при
-        инициализации модели, и вызывает функцию configure_templates для
-        настройки шаблонов Jinja2."""
-
-        self.configure_templates()
-
     @classmethod
     def configure_templates(cls) -> None:
-        """Функция для настройки шаблонов Jinja2.
-
-        - Добавляет фильтр для форматирования даты.
-        - Добавляет глобальную переменную для текущего пользователя,
-          чтобы шаблоны, где нет аутентифицированного пользователя,
-          мог посещать сайт, так как current_user обязателен для base.html
-        """
-
         cls.template_dir.env.filters.update(custom_filters)
         cls.template_dir.env.globals["current_user"] = None
 
@@ -99,26 +67,38 @@ class DatabaseConfig(BaseModel):
     MODE: str = "TEST"
 
 
-class RedisConfig(BaseModel):
-    host: str
-    port: int
-    db: int
+class RedisConfig(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=(BASE_DIR / ".env"),
+        env_prefix="REDIS_",
+    )
+    host: str = "localhost"
+    port: int = 6379
+    db: int = 0
 
 
-class CeleryConfig(BaseModel):
+class CeleryConfig(BaseSettings):
+    # broker_url: AnyUrl = "redis://localhost:6379/0"  #  REDIS
+    model_config = SettingsConfigDict(
+        env_file=(BASE_DIR / ".env"),
+        env_prefix="CELERY_",
+    )
     broker_url: AmqpDsn
     result_backend: RedisDsn
-    task_routes: TaskRoutes = Field(
-        default_factory=lambda: {"app.tasks.*": {"queue": "email_tasks"}},
-        description="Routing configuration for Celery tasks",
+    task_routes: dict[str, dict[str, str]] = {
+        "app.tasks.*": {"queue": "email_tasks"},
+    }
+
+
+class SMTPSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=(BASE_DIR / ".env"),
+        env_prefix="SMTP_",
     )
-
-
-class SMTPSettings(BaseModel):
     host: str
     port: int
-    user: SMTPUser
-    password: SecretStr
+    user: str
+    password: str
     use_tls: bool = True
     use_ssl: bool = False
 
@@ -126,24 +106,20 @@ class SMTPSettings(BaseModel):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(
-            BASE_DIR / ".test.env",
             BASE_DIR / ".env.template",
             BASE_DIR / ".env",
-            # порядок важен, т.к. pydantic_settings отдаёт приоритет
-            # последнеиу файлу, и если последний файл это не продакшн,
-            # .env то найстройки будут искаться в .env.template
+            BASE_DIR / ".test.env",
         ),
-        env_file_encoding="utf-8",
         case_sensitive=False,
         env_nested_delimiter="__",
         env_prefix="APP_CONFIG__",
     )
-    logging: LoggingConfig = Field(default_factory=LoggingConfig)
-    jwt: JwtConfig = Field(default_factory=JwtConfig)
-    templates: Jinja2Settings = Field(default_factory=Jinja2Settings)
-    redis: RedisConfig = Field(default_factory=RedisConfig)
-    celery: CeleryConfig = Field(default_factory=CeleryConfig)
-    smtp: SMTPSettings = Field(default_factory=SMTPSettings)
+    logging: LoggingConfig = LoggingConfig()
+    jwt: JwtConfig = JwtConfig()
+    templates: Jinja2Settings = Jinja2Settings()
+    redis: RedisConfig = RedisConfig()
+    celery: CeleryConfig = CeleryConfig()
+    smtp: SMTPSettings = SMTPSettings()
     db: DatabaseConfig
 
 
@@ -156,3 +132,4 @@ CONVENTION = {
 }
 
 settings = Settings()
+settings.templates.configure_templates()
