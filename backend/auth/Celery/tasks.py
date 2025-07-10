@@ -17,7 +17,7 @@ app = Celery(
 app.conf.beat_schedule = {
     "task_report_statistic_every_day": {
         "task": "tasks.report_statistic_every_day",
-        "schedule": crontab(),
+        "schedule": crontab(minute=0, hour=0),
     }
 }
 
