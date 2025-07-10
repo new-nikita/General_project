@@ -1,13 +1,25 @@
+import asyncio
+
+from celery.schedules import crontab
+
 from backend.auth.Celery.email_service import EmailService
 from backend.core.config import settings
 from celery import Celery, shared_task
+from backend.report_every_day import report_statistic_every_day
 
 
-celery_app = Celery(
+app = Celery(
     "worker",
     broker=settings.celery.broker_url,
     backend=settings.celery.result_backend,
 )
+
+app.conf.beat_schedule = {
+    "task_report_statistic_every_day": {
+        "task": "tasks.report_statistic_every_day",
+        "schedule": crontab(),
+    }
+}
 
 
 @shared_task
@@ -31,3 +43,10 @@ def send_confirmation_email_task(
     link = EmailService.build_confirmation_link(name_endpoint, base_url, token)
     message = EmailService.compose_email(name_message, email_to, link)
     EmailService.send_email(message, email_to)
+
+
+@shared_task(name="tasks.report_statistic_every_day")
+def sending_statistic_to_the_email():
+    result_statistic = asyncio.run(report_statistic_every_day())
+    message = EmailService.statistics_message_configuration(result_statistic)
+    EmailService.sending_a_message_from_statistic(message)
