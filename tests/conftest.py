@@ -1,38 +1,33 @@
 import asyncio
-from asyncio import AbstractEventLoop
-from typing import Any, AsyncGenerator, Generator
+from typing import AsyncGenerator
 
-import pytest
+import fakeredis
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
+from fakeredis.aioredis import FakeRedis
 from httpx import ASGITransport, AsyncClient
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.pool import NullPool
 
-import fakeredis
-
+from backend.auth.redis_client import AsyncRedisClient
 from backend.core.config import settings
 from backend.core.models import Base
 from backend.core.models.db_helper import DatabaseHelper
-from backend.auth.redis_client import AsyncRedisClient
 from main import main_app
 
 
-@pytest.fixture(scope="function")
-def event_loop() -> Generator[AbstractEventLoop, Any, None]:
-    """Фикстура для создания и управления event loop'ом на уровне сессии.
-
-    Убеждается, что все асинхронные тесты используют один и тот же event
-    loop.
-    """
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def event_loop() -> AsyncGenerator[asyncio.AbstractEventLoop, None]:
+    """Фикстура, предоставляющая цикл событий для тестирования."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     asyncio.set_event_loop(loop)
     yield loop
     loop.close()
 
 
-@pytest.fixture(scope="function", autouse=True)
-def db_helper() -> DatabaseHelper:
+@pytest_asyncio.fixture(scope="session")
+async def db_helper() -> DatabaseHelper:
     """Фикстура, предоставляющая экземпляр `DatabaseHelper`, настроенный для
     тестовой БД.
 
@@ -49,29 +44,27 @@ def db_helper() -> DatabaseHelper:
     )
 
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
+@pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_test_database(db_helper: DatabaseHelper) -> AsyncGenerator[None, None]:
     """Асинхронная фикстура для настройки тестовой базы данных.
 
-    Перед запуском тестов создаются все таблицы. 
-    После выполнения тестов — удаляются.
+    Перед запуском тестов создаются все таблицы. После выполнения тестов
+    — удаляются.
     """
-    Асинхронная фикстура для настройки тестовой базы данных.
-    Перед запуском тестов создаются все таблицы. После выполнения тестов — удаляются.
-    """
-    print(settings.db.url)
     assert settings.db.MODE == "TEST"
     async with db_helper.engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     yield  # тут все действия с базой
 
-    # async with db_helper.engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.drop_all)
+    async with db_helper.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
-async def db_session(db_helper: DatabaseHelper) -> AsyncGenerator[AsyncSession, None]:
+@pytest_asyncio.fixture(scope="session")
+async def db_session(
+    db_helper: DatabaseHelper,
+) -> AsyncGenerator[AsyncSession, None]:
     """Фикстура, предоставляющая сессию БД для каждого теста.
 
     Каждая сессия открывается отдельно и корректно закрывается после
@@ -79,10 +72,9 @@ async def db_session(db_helper: DatabaseHelper) -> AsyncGenerator[AsyncSession, 
     """
     async for session in db_helper.session_getter():
         yield session
-        await session.close()
 
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
+@pytest_asyncio.fixture(scope="session")
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """Фикстура, предоставляющая HTTP клиент для тестирования API.
 
@@ -96,16 +88,20 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
             yield client
 
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
-async def fake_redis_client():
+@pytest_asyncio.fixture
+async def fake_redis_client() -> AsyncGenerator[FakeRedis, None]:
+    """Фикстура, предоставляющая фейковый Redis клиент для тестирования."""
     client = fakeredis.aioredis.FakeRedis(decode_responses=True)
     yield client
     await client.flushall()
     await client.close()
 
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
-async def redis_test_client(fake_redis_client):
+@pytest_asyncio.fixture
+async def redis_test_client(
+    fake_redis_client: FakeRedis,
+) -> AsyncGenerator[Redis, None]:
+    """Фикстура, предоставляющая Redis клиент для тестирования."""
     redis_client = AsyncRedisClient(redis_instance=fake_redis_client)
     await redis_client.connect()
     yield redis_client

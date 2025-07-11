@@ -1,12 +1,12 @@
 from datetime import date
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from backend.core.models import User, Profile
+from backend.core.models import Profile, User
 
 
 @pytest.mark.asyncio
@@ -41,8 +41,7 @@ class TestUserModel:
         assert user.profile is None
         assert user.likes == []
 
-        await db_session.delete(user)
-        await db_session.commit()
+        await db_session.rollback()
 
     async def test_delete_user(self, db_session: AsyncSession) -> None:
         """Тестирования удаления пользователя."""
@@ -99,8 +98,6 @@ class TestUserModel:
     async def test_duplicate_email_raises_integrity_error(
         self, db_session: AsyncSession
     ) -> None:
-        from pydantic import EmailStr
-
         """Проверяет, что дублирование email вызывает ошибку целостности."""
         user1 = User(
             username="user1",
@@ -186,7 +183,8 @@ class TestUserModel:
     async def test_user_is_not_active_by_default(
         self, db_session: AsyncSession
     ) -> None:
-        """Проверяет, что пользователь не активен, если явно не указано иное."""
+        """Проверяет, что пользователь не активен, если явно не указано
+        иное."""
         user = User(
             username="inactive_user",
             hashed_password="pass1234",
@@ -206,7 +204,8 @@ class TestUserModel:
     async def test_query_nonexistent_user_returns_none(
         self, db_session: AsyncSession
     ) -> None:
-        """Проверяет, что запрос несуществующего пользователя возвращает None."""
+        """Проверяет, что запрос несуществующего пользователя возвращает
+        None."""
         result = await db_session.execute(select(User).where(User.id == 9999))
         user = result.scalars().first()
         assert user is None
