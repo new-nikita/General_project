@@ -4,7 +4,7 @@ from email.message import EmailMessage
 from email.mime.image import MIMEImage
 from urllib.parse import urljoin
 
-from backend.core.config import settings, TEMPLATES_DIR
+from backend.core.config import settings
 
 logging.basicConfig(
     format=settings.logging.log_format, level=settings.logging.log_level_value
@@ -24,7 +24,7 @@ class EmailService:
     ) -> str:
         """Создает валидную ссылку с токеном."""
         url = urljoin(base_url, f"/{name_endpoint}?token={token}")
-        logger.info(f"Ссылка с токеном создана: {url}")
+        logger.info("Ссылка с токеном создана: %s", url)
         return url
 
     @staticmethod
@@ -67,10 +67,10 @@ class EmailService:
                 settings.smtp.password.get_secret_value(),
             )
             smtp_obj.send_message(message)
-            logger.info(f"Письмо успешно отправлено на {to_email}")
+            logger.info("Письмо успешно отправлено на %s", to_email)
             return True
         except Exception as e:
-            logger.error(f"Ошибка при отправке письма: {e}")
+            logger.error("Ошибка при отправке письма: %s", e)
             return False
         finally:
             if smtp_obj:

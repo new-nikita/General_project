@@ -1,5 +1,4 @@
 import asyncio
-
 from celery.schedules import crontab
 
 from backend.auth.Celery.email_service import EmailService
@@ -30,8 +29,8 @@ def send_confirmation_email_task(
     token: str,
     base_url: str,
 ) -> None:
-    """
-    Задача Celery. Отправляет сообщение пользователю на почту для подтверждения регистрации.
+    """Задача Celery. Отправляет сообщение пользователю на почту для
+    подтверждения регистрации.
 
     :param name_endpoint: Имя эндоинта для генерации валидной ссылки
     :param name_message: Имя шаблона для генерации валидной ссылки
