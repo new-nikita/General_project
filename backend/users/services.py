@@ -32,13 +32,14 @@ class UserService:
         if await self.repository.get_user_by_email(dto_user.email):
             raise HTTPException(
                 status_code=400,
-                detail=f"Пользователь с email {dto_user.email!r} уже существует.",
+                detail=f"Пользователь с email {dto_user.email!r} " f"уже существует.",
             )
 
         if await self.repository.get_user_by_username(dto_user.username):
             raise HTTPException(
                 status_code=400,
-                detail=f"Пользователь с username {dto_user.username!r} уже существует.",
+                detail=f"Пользователь с username {dto_user.username!r} "
+                f"уже существует.",
             )
 
         return await self.repository.create(dto_user)
@@ -53,7 +54,11 @@ class UserService:
 
         return await self.repository.get_user_by_username(username)
 
-    async def update_profile(self, user: User, dto_profile: ProfileUpdate) -> None:
+    async def update_profile(
+        self,
+        user: User,
+        dto_profile: ProfileUpdate,
+    ) -> None:
         """
 
         :param user: Объект пользователя.
@@ -71,7 +76,11 @@ class UserService:
 
         return await self.repository.get_user_by_email(email)
 
-    async def change_password_by_user(self, user: User, password: str) -> User | None:
+    async def change_password_by_user(
+        self,
+        user: User,
+        password: str,
+    ) -> User | None:
         """
         Обновляет пароль по его email пользователя (email).
 

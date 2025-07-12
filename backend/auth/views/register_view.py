@@ -13,12 +13,13 @@ from fastapi import (
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import EmailStr, ValidationError
 
-from backend.auth import AsyncRedisClient, TokenService
 from backend.auth.authorization import (
     get_current_user_from_cookie,
     get_redirect_with_authentication_user,
 )
 from backend.auth.Celery.tasks import send_confirmation_email_task
+from backend.auth.redis_client import AsyncRedisClient
+from backend.auth.tokens_service import TokenService
 from backend.core.config import settings
 from backend.core.models import User
 from backend.users.dependencies import get_user_service
@@ -73,6 +74,10 @@ async def get_register_form(
     )
 
 
+def get_redis_client() -> AsyncRedisClient:
+    return AsyncRedisClient()
+
+
 @router.get("/initial_register", response_class=HTMLResponse)
 async def get_initial_register_page(
     request: Request,
@@ -104,7 +109,7 @@ async def get_initial_register_page(
 @router.post("/initial_register", response_class=HTMLResponse)
 async def initial_register_user(
     request: Request,
-    redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
+    redis: Annotated[AsyncRedisClient, Depends(get_redis_client)],
     email: EmailStr = Form(...),
 ) -> Response:
     """Отправляет письмо с подтверждением регистрации на указанный email.

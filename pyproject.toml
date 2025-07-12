@@ -1,11 +1,15 @@
 [tool.poetry]
-package-mode = false
 name = "social-network"
 version = "0.1.0"
 description = "A team educational project to create a social network."
 authors = ["Дмитрий Афанасьев <wackymc@yandex.ru>", "Никита Иванович nik.popkov.98@list.ru"]
 license = "MIT"
 readme = "README.md"
+
+packages = [
+    { include = "backend", from = "." },
+    { include = "tests", from = "." },
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -25,6 +29,7 @@ celery = { extras = ["redis"], version = "^5.5.2" }
 aio-pika = "^9.5.5"
 python-dotenv = "^1.1.0"
 aiofiles = "^24.1.0"
+matplotlib = "^3.10.3"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -38,21 +43,17 @@ faker = "^37.4.0"
 factory-boy = "^3.3.3"
 pytest-factoryboy = "^2.7.0"
 pre-commit = "^4.2.0"
+flake8 = "^7.3.0"
+fakeredis = "^2.30.1"
+flake8-pytest-style = "^2.1.0"
+pytest-mock = "^3.14.1"
+isort = "^6.0.1"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.black]
-line-length = 88
-exclude = '''
-/(
-    alembic/versions
-)/
-/(
-    frontend/
-)/
-'''
+[tool.mypy]
+strict = true
+pretty = true
 
-[tool.isort]
-profile = "black"

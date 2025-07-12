@@ -1,15 +1,15 @@
 from datetime import date
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from backend.core.models import User, Profile
+from backend.core.models import Profile, User
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="class")
 class TestUserModel:
     """Группа тестов для модели пользователя User."""
 
@@ -43,6 +43,7 @@ class TestUserModel:
 
         await db_session.delete(user)
         await db_session.commit()
+        await db_session.close()
 
     async def test_delete_user(self, db_session: AsyncSession) -> None:
         """Тестирования удаления пользователя."""
@@ -74,13 +75,17 @@ class TestUserModel:
     ) -> None:
         """Проверяет, что дублирование username вызывает ошибку целостности."""
         user1 = User(
-            username="unique_user", hashed_password="pass1234", email="unique1@test.com"
+            username="unique_user",
+            hashed_password="pass1234",
+            email="unique1@test.com",
         )
         db_session.add(user1)
         await db_session.commit()
 
         user2 = User(
-            username="unique_user", hashed_password="pass1234", email="unique2@test.com"
+            username="unique_user",
+            hashed_password="pass1234",
+            email="unique2@test.com",
         )
         db_session.add(user2)
 
@@ -97,13 +102,17 @@ class TestUserModel:
     ) -> None:
         """Проверяет, что дублирование email вызывает ошибку целостности."""
         user1 = User(
-            username="user1", hashed_password="pass1234", email="same_email@test.com"
+            username="user1",
+            hashed_password="pass1234",
+            email="same_email@test.com",
         )
         db_session.add(user1)
         await db_session.commit()
 
         user2 = User(
-            username="user2", hashed_password="pass1234", email="same_email@test.com"
+            username="user2",
+            hashed_password="pass1234",
+            email="same_email@test.com",
         )
         db_session.add(user2)
 
@@ -112,8 +121,6 @@ class TestUserModel:
 
         assert "duplicate" in str(exc_info.value).lower()
         await db_session.rollback()
-        await db_session.delete(user1)
-        await db_session.commit()
 
     @pytest.mark.parametrize(
         "username, password, email",
@@ -156,7 +163,9 @@ class TestUserModel:
     async def test_update_user_data(self, db_session: AsyncSession) -> None:
         """Тест обновления данных пользователя."""
         user = User(
-            username="to_update", hashed_password="old_pass", email="update@test.com"
+            username="to_update",
+            hashed_password="old_pass",
+            email="update@test.com",
         )
         db_session.add(user)
         await db_session.commit()
@@ -174,7 +183,8 @@ class TestUserModel:
     async def test_user_is_not_active_by_default(
         self, db_session: AsyncSession
     ) -> None:
-        """Проверяет, что пользователь не активен, если явно не указано иное."""
+        """Проверяет, что пользователь не активен, если явно не указано
+        иное."""
         user = User(
             username="inactive_user",
             hashed_password="pass1234",
@@ -194,7 +204,8 @@ class TestUserModel:
     async def test_query_nonexistent_user_returns_none(
         self, db_session: AsyncSession
     ) -> None:
-        """Проверяет, что запрос несуществующего пользователя возвращает None."""
+        """Проверяет, что запрос несуществующего пользователя возвращает
+        None."""
         result = await db_session.execute(select(User).where(User.id == 9999))
         user = result.scalars().first()
         assert user is None

@@ -1,12 +1,13 @@
 import random
-from datetime import datetime, timedelta, date
+from datetime import date, datetime, timedelta
 
 import pytest
 
 from backend.utils.date_filter_style import (
-    custom_date,
-    ERROR_MESSAGE_INVALID__FORMAT_DATE,
     ERROR_MESSAGE_DATE_IS_FUTURE,
+    ERROR_MESSAGE_INVALID__FORMAT_DATE,
+    RU_MONTHS,
+    custom_date,
 )
 
 
@@ -24,7 +25,7 @@ from backend.utils.date_filter_style import (
         ),
         (
             any_other_day := datetime.now() - timedelta(days=random.randint(2, 30)),
-            any_other_day.strftime("%d %B %Y"),
+            f"{any_other_day.day} {RU_MONTHS[any_other_day.month]} {any_other_day.year}",
         ),
     ],
 )
@@ -32,12 +33,12 @@ def test_valid_date_custom_date(
     input_date: datetime,
     expected_output: str,
 ) -> None:
-    """ "Тестирует валидные даты"""
+    """Тестирует валидные даты."""
     assert custom_date(input_date) == expected_output
 
 
 def test_random_past_days_custom_date() -> None:
-    """Тестирует случайные прошлые дни"""
+    """Тестирует случайные прошлые дни."""
     for _ in range(5):
         past_days = random.randint(2, 365 * 10)
         past_date = datetime.now() - timedelta(days=past_days)
@@ -46,14 +47,14 @@ def test_random_past_days_custom_date() -> None:
 
 
 def test_start_of_month_custom_date() -> None:
-    """Проверяет первую дату текущего месяца"""
+    """Проверяет первую дату текущего месяца."""
     first_day_of_month = datetime(datetime.now().year, datetime.now().month, 1)
     result = custom_date(first_day_of_month)
     assert result != "Сегодня", "Первая дата месяца должна отличаться от 'Сегодня'"
 
 
 def test_end_of_last_month_custom_date() -> None:
-    """Проверяет последнюю дату предыдущего месяца"""
+    """Проверяет последнюю дату предыдущего месяца."""
     last_day_prev_month = datetime.now().replace(day=1) - timedelta(days=1)
     result = custom_date(last_day_prev_month)
     assert not result.startswith(
@@ -62,14 +63,14 @@ def test_end_of_last_month_custom_date() -> None:
 
 
 def test_date_input_type() -> None:
-    """Проверяет обработку типа 'date'"""
+    """Проверяет обработку типа 'date'."""
     today_as_date = date.today()
     result = custom_date(today_as_date)
     assert result.startswith("Сегодня"), "Результат для даты должен содержать 'Сегодня'"
 
 
 def test_string_input() -> None:
-    """Проверяет строку формата 'YYYY-MM-DD'"""
+    """Проверяет строку формата 'YYYY-MM-DD'."""
     current_year = datetime.now().year
     string_date = f"{current_year}-01-01"
     parsed_date = datetime.strptime(string_date, "%Y-%m-%d").date()
@@ -90,7 +91,7 @@ def test_string_input() -> None:
     ],
 )
 def test_invalid_format_date(invalid_date: str, expected_error: str) -> None:
-    """ "Проверяет невалидные даты в месяцах и днях"""
+    """Проверяет невалидные даты в месяцах и днях."""
     with pytest.raises(ValueError) as exc_info:
         date_formatted = date.fromisoformat(invalid_date)
         custom_date(date_formatted)
@@ -102,7 +103,7 @@ def test_invalid_format_date(invalid_date: str, expected_error: str) -> None:
     "invalid_date", ["2023-01-01-01", 2023, "2023-01-01 01:01:01", 2023.01]
 )
 def test_invalid_format_date_invalid(invalid_date: str) -> None:
-    """Проверяет невалидные форматы сырой строки даты"""
+    """Проверяет невалидные форматы сырой строки даты."""
     with pytest.raises(ValueError) as exc_info:
         custom_date(invalid_date)
 
@@ -125,7 +126,7 @@ def test_invalid_format_date_invalid(invalid_date: str) -> None:
     ],
 )
 def test_future_date(current_date: datetime, future_date: datetime) -> None:
-    """Проверяет даты в будущем"""
+    """Проверяет даты в будущем."""
     with pytest.raises(ValueError) as exc_info:
         custom_date(future_date)
 
