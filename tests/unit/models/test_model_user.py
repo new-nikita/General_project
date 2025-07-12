@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from backend.core.models import Profile, User
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="class")
 class TestUserModel:
     """Группа тестов для модели пользователя User."""
 
@@ -41,7 +41,9 @@ class TestUserModel:
         assert user.profile is None
         assert user.likes == []
 
-        await db_session.rollback()
+        await db_session.delete(user)
+        await db_session.commit()
+        await db_session.close()
 
     async def test_delete_user(self, db_session: AsyncSession) -> None:
         """Тестирования удаления пользователя."""
@@ -119,8 +121,6 @@ class TestUserModel:
 
         assert "duplicate" in str(exc_info.value).lower()
         await db_session.rollback()
-        await db_session.delete(user1)
-        await db_session.commit()
 
     @pytest.mark.parametrize(
         "username, password, email",
