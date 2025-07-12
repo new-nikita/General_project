@@ -30,7 +30,6 @@ jobs:
           pip install poetry
           poetry config virtualenvs.create false
           poetry install --with dev
-          pip list
 
       - name: Run linter (Black)
         run: |

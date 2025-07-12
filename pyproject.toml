@@ -6,6 +6,11 @@ authors = ["Дмитрий Афанасьев <wackymc@yandex.ru>", "Никит�
 license = "MIT"
 readme = "README.md"
 
+packages = [
+    { include = "backend", from = "." },
+    { include = "tests", from = "." },
+]
+
 [tool.poetry.dependencies]
 python = "^3.12"
 fastapi = { extras = ["standard"], version = "^0.115.12" }
