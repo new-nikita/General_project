@@ -9,6 +9,13 @@ repos:
     rev: 6.0.1
     hooks:
       - id: isort
+        args: [
+          "--force-grid-wrap=0",  # Всегда переносить импорты на новую строку
+          "--lines-after-imports=2",  # 2 пустые строки после импортов
+          "--line-length=100",  # Совместимость с flake8
+          "--multi-line=3",  # Вертикальное выравнивание скобок
+          "--trailing-comma",  # Добавлять запятую после последнего элемента
+        ]
 
   - repo: https://github.com/PyCQA/flake8
     rev: 7.3.0
