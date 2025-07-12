@@ -17,9 +17,10 @@ from backend.core.models.db_helper import DatabaseHelper
 from main import main_app
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="function")
 async def event_loop() -> AsyncGenerator[asyncio.AbstractEventLoop, None]:
     """Фикстура, предоставляющая цикл событий для тестирования."""
+    print("Запуск цикла событий для уровня тестирования function")
     loop = asyncio.get_event_loop_policy().new_event_loop()
     asyncio.set_event_loop(loop)
     yield loop
@@ -61,20 +62,38 @@ async def setup_test_database(db_helper: DatabaseHelper) -> AsyncGenerator[None,
         await conn.run_sync(Base.metadata.drop_all)
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
+async def db_helper_for_get_session() -> DatabaseHelper:
+    """Фикстура, предоставляющая экземпляр `DatabaseHelper`, настроенный для
+    тестовой БД.
+
+    Использует NullPool для предотвращения проблем с соединениями между
+    тестами.
+    """
+    return DatabaseHelper(
+        url=str(settings.db.url),
+        echo=settings.db.echo,
+        echo_pool=settings.db.echo_pool,
+        pool_size=settings.db.pool_size,
+        max_overflow=settings.db.max_overflow,
+        poolclass=NullPool,
+    )
+
+
+@pytest_asyncio.fixture(scope="function")
 async def db_session(
-    db_helper: DatabaseHelper,
+    db_helper_for_get_session: DatabaseHelper,
 ) -> AsyncGenerator[AsyncSession, None]:
     """Фикстура, предоставляющая сессию БД для каждого теста.
 
     Каждая сессия открывается отдельно и корректно закрывается после
     использования.
     """
-    async for session in db_helper.session_getter():
+    async for session in db_helper_for_get_session.session_getter():
         yield session
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """Фикстура, предоставляющая HTTP клиент для тестирования API.
 
