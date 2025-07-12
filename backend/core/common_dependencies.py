@@ -1,11 +1,12 @@
+from typing import Any, AsyncGenerator
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.models.db_helper import db_helper
 
 
-async def get_db_session() -> AsyncSession:
-    """
-    Возвращает асинхронную сессию базы данных.
+async def get_db_session() -> AsyncGenerator[AsyncSession, Any]:
+    """Возвращает асинхронную сессию базы данных.
 
     Использует `db_helper.session_getter` для создания новой сессии SQLAlchemy.
     Сессия автоматически закрывается после завершения использования.

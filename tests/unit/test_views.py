@@ -27,11 +27,11 @@ async def test_all_views_to_status_200(
     if url == "/profile/":
         user = User(username="test", hashed_password="test", email="test@test.com")
         db_session.add(user)  # TODO: сделать нормальные моки
-        await db_session.flush()
         await db_session.commit()
         user_id = user.id
         response = await async_client.get(f"{url}{user_id}")
         await db_session.delete(user)
+        await db_session.commit()
         assert response.status_code == status.HTTP_200_OK
         await db_session.close()
     else:
