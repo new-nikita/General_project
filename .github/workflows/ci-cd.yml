@@ -78,13 +78,6 @@ jobs:
           poetry config virtualenvs.create false
           poetry install --with dev
 
-      - name: Set up locale
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y locales
-          sudo locale-gen ru_RU.UTF-8
-          sudo update-locale LANG=ru_RU.UTF-8
-
       - name: Check installed packages
         run: |
           pip list
