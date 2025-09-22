@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .post import Post
     from .like import LikePost
     from .comment import Comment
+    from .friends import Friendship
 
 
 class User(TimestampsMixin, Base):
@@ -48,6 +49,13 @@ class User(TimestampsMixin, Base):
         back_populates="user",
         cascade="all, delete-orphan",
         lazy="selectin",
+    )
+    friendships: Mapped[list["Friendship"]] = relationship(
+        "Friendship",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        foreign_keys="Friendship.user_id",
     )
 
     def __str__(self) -> str:

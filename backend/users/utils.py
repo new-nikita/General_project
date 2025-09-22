@@ -1,7 +1,10 @@
 from fastapi import HTTPException, status
 
 
-def checkout_profile_owner(profile_id: int | None, current_user_id: int | None) -> None:
+def checkout_profile_owner(
+    profile_id: int | None,
+    current_user_id: int | None,
+) -> None:
     """
     Проверяет, что profile_id принадлежит current_user_id.
 

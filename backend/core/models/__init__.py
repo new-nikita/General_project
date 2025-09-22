@@ -5,6 +5,7 @@ from .user import User
 from .profile import Profile
 from .like import LikePost
 from .post import Post
+from .friends import Friendship
 
 from .comment import Comment
 
