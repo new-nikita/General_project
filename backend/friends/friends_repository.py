@@ -76,3 +76,19 @@ class FriendsRepository(BaseRepository[Friendship]):
 
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
+    async def friend_request(self, user: User) -> None:
+        """Отправляет запрос на дружбу пользователю (User)
+
+        :param user: Объект пользователя.
+        :return: None
+        """
+        ...
+
+    async def make_a_friend(self, user: User) -> None:
+        """Принимает запрос на дружбу от пользователя (User)
+
+        :param user: Объект пользователя.
+        :return: None
+        """
+        ...

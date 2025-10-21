@@ -73,6 +73,29 @@ class UserRepository(BaseRepository[User]):
         )
         return result.scalar_one_or_none()
 
+    async def search_users_by_username(
+        self,
+        username: str,
+        your_id: int,
+    ) -> list[User] | None:
+        """Возвращает список пользователей по имени пользователя (username).
+
+        :param username: Имя пользователя.
+        :param your_id: Id пользователя.
+        :return: Список объектов пользователей или None, если пользователи не
+            найдены.
+        """
+        result = await self.session.execute(
+            select(self.model)
+            .options(selectinload(User.likes))
+            .where(
+                self.model.username.ilike(f"%{username}%"),
+                self.model.id != your_id,
+            )
+            # частичное, регистронезависимое совпадение
+        )
+        return result.scalars().all()  # возвращаем список пользователей
+
     async def get_user_by_email(self, email: EmailStr) -> User | None:
         """Возвращает пользователя по его email.
 

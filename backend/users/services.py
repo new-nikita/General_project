@@ -51,8 +51,21 @@ class UserService:
         :param username: Имя пользователя.
         :return: Объект пользователя или None, если пользователь не найден.
         """
-
         return await self.repository.get_user_by_username(username)
+
+    async def search_users_by_username(
+        self,
+        username: str,
+        your_id: int,
+    ) -> list[User] | None:
+        """Возвращает список пользователей по имени пользователя (username).
+
+        :param username: Имя пользователя.
+        :param your_id: Id пользователя.
+        :return: Список объектов пользователей или None, если пользователи не
+            найдены.
+        """
+        return await self.repository.search_users_by_username(username, your_id)
 
     async def update_profile(
         self,

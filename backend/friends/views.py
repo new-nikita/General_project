@@ -53,6 +53,7 @@ async def get_friends(
     :return: HTML-страница профиля пользователя.
     :raises HTTPException: 404 если пользователь с указанным ID не найден.
     """
+
     error_message = None
 
     try:
@@ -84,85 +85,65 @@ async def get_friends(
     )
 
 
-# @router.get("/search/{username}", response_class=HTMLResponse)
-# async def get_search_for_friends_username(
-#     request: Request,
-#     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-#     user_service: Annotated[UserService, Depends(get_user_service)],
-#     username: str | None = None,
-# ):
-#     """Отображает поиск друзей по имени.
-#
-#     :param request: Запрос FastAPI.
-#     :param username: Username искомого пользователя.
-#     :param current_user: Текущий авторизованный пользователь.
-#     :param user_service: Сервис работы с пользователя.
-#     :return: HTML-страница со списком подходящих пользователей.
-#     :raises.
-#     """
-#
-#     try:
-#         user = user_service.get_user_by_username(username)
-#
-#     except SomeExpectedException as e:
-#         error_message = e.detail
-#     except Exception:
-#         error_message = "Произошла непредвиденная ошибка. Попробуйте позже."
-#
-#     return settings.templates.template_dir.TemplateResponse(
-#         "users/search_for_friends_username.html",
-#         {
-#             "request": request,
-#             "current_user": current_user,
-#             "user": user,
-#             "error_message": error_message,
-#         },
-#     )
-#
-#
-# @router.get("/search/", response_class=HTMLResponse)
-# async def get_search_friends(
-#     request: Request,
-#     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-#     user_service: Annotated[UserService, Depends(get_user_service)],
-#     filters: FriendSearchFilters = Depends(),
-#     username: str | None = None,
-# ):
-#     """Отображает поиск друзей по фильтрам.
-#
-#     :param request: Запрос FastAPI.
-#     :param username: Username искомого пользователя.
-#     :param current_user: Текущий авторизованный пользователь.
-#     :param user_service: Сервис работы с пользователя.
-#     :param filters: Фильтры для поиска.
-#     :return: HTML-страница со списком подходящих пользователей.
-#     :raises.
-#     """
+@router.get("/search", response_class=HTMLResponse)
+async def get_search_for_friends_username(
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    username: str | None = None,
+):
+    """Отображает поиск друзей по имени.
+
+    :param request: Запрос FastAPI.
+    :param username: Username искомого пользователя.
+    :param current_user: Текущий авторизованный пользователь.
+    :param user_service: Сервис работы с пользователя.
+    :return: HTML-страница со списком подходящих пользователей.
+    :raises.
+    """
+    users = []
+    error_message = None
+
+    if username:
+        try:
+            users = await user_service.search_users_by_username(
+                username,
+                current_user.id,
+            )
+
+        except SomeExpectedException as e:
+            error_message = e.detail
+        except Exception:
+            error_message = "Произошла непредвиденная ошибка. Попробуйте позже."
+
+    return settings.templates.template_dir.TemplateResponse(
+        "users/search_for_friends_username.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "users": users,
+            "error_message": error_message,
+        },
+    )
+
+
+@router.get("/add", response_class=HTMLResponse)
+async def add_friends(
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    friend_service: Annotated[FriendsService, Depends(get_friends_service)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    username: str | None = None,
+): ...
+
+
 #     # TODO
-#     #  Сделать отображение всех друзей по фильтрам
+#     #  Сделать отображение всех друзей по фильтрам ///
 #     #  Сделать прокидку фильтров через эндпоинт или еще как нибудь
 #     #  Добавить в сервис и репозиторий поиск по фильтрам
 #     #  Реализовать функционал отправки заявки и ее принятия
-#
-#     try:
-#         user = user_service.get_user_by_username(username)
-#
-#     except SomeExpectedException as e:
-#         error_message = e.detail
-#     except Exception:
-#         error_message = "Произошла непредвиденная ошибка. Попробуйте позже."
-#
-#     return settings.templates.template_dir.TemplateResponse(
-#         "users/search_for_friends_username.html",
-#         {
-#             "request": request,
-#             "current_user": current_user,
-#             "user": user,
-#             "filters": filters,
-#             "error_message": error_message,
-#         },
-#     )
-# #
+
+
 # @router.post("/{profile_id}", response_class=HTMLResponse)
 # async def get__register_page(
 #     request: Request,

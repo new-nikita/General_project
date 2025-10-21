@@ -175,7 +175,7 @@
 
             <!-- Строка поиска -->
             <form class="d-flex ms-3" action="/friends/search" method="get" role="search">
-                <input class="form-control me-2" type="search" name="query" placeholder="Поиск друзей" aria-label="Search" value="{{ request.query_params.get('query', '') }}">
+                <input class="form-control me-2" type="search" name="username" placeholder="Поиск друзей" value="{{ request.query_params.get('username', '') }}">>
                 <button class="btn btn-light" type="submit"><i class="fas fa-search"></i></button>
             </form>
 

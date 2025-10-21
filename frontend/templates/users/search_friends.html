@@ -8,6 +8,13 @@
         <div class="sidebar-header border-top">
             <h6 class="mb-0 mt-3 px-3">Фильтры поиска</h6>
         </div>
+
+        {% if error_message %}
+            <div class="alert alert-danger px-3 mt-2">
+                {{ error_message }}
+            </div>
+        {% endif %}
+
         <div class="sidebar-body px-3">
             <form method="get" action="/friends/search">
                 <!-- Поиск по имени или email -->
@@ -79,6 +86,12 @@
 
 {% block content %}
 <div class="container">
+    {% if error_message %}
+        <div class="alert alert-danger mb-3">
+            {{ error_message }}
+        </div>
+    {% endif %}
+
     <h2 class="mb-4">Результаты поиска</h2>
 
     {% if users %}
@@ -116,14 +129,3 @@
     {% endif %}
 </div>
 {% endblock %}
-
-
-
-
-
-<!--
-Обработка фильтров на бэкенде (в views.py или routes.py)
-Передача отфильтрованных пользователей в переменную users
-Отображение статуса дружбы через user.is_friend
-Дополнительные поля в модели пользователя: gender, age, city, country, is_online
--->
