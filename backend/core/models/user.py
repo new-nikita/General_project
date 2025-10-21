@@ -58,6 +58,54 @@ class User(TimestampsMixin, Base):
         foreign_keys="Friendship.user_id",
     )
 
+    # Кого я добавил в друзья
+    initiated_friendships: Mapped[list["Friend"]] = relationship(
+        "Friendship",
+        foreign_keys="Friend.user_id",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    # Кто добавил меня в друзья
+    received_friendships: Mapped[list["Friend"]] = relationship(
+        "Friendship",
+        foreign_keys="Friend.friend_id",
+        back_populates="friend",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+    # На кого я подписался
+    followings: Mapped[list["Follower"]] = relationship(
+        "Follower",
+        foreign_keys="Follower.follower_id",
+        back_populates="follower",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    # Кто подписался на меня
+    followers: Mapped[list["Follower"]] = relationship(
+        "Follower",
+        foreign_keys="Follower.following_id",
+        back_populates="following",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+    # Прокси: список друзей (User), а не объектов Friend
+    my_friends: AssociationProxy[list["User"]] = association_proxy(
+        "initiated_friendships",
+        "friend",
+    )
+    my_followers: AssociationProxy[list["User"]] = association_proxy(
+        "followers",
+        "following",
+    )
+    followed: AssociationProxy[list["User"]] = association_proxy(
+        "followings",
+        "follower",
+    )
+
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, username={self.username!r})"
 
