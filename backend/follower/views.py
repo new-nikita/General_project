@@ -42,8 +42,6 @@ async def add_friends(
 #     #  Сделать ограничение просмотра контента для подписок ( выставляет только владелец )
 
 
-
-
 # @router.get("", response_class=HTMLResponse)
 # async def get_friends(
 #     request: Request,
