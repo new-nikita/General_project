@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Boolean, CheckConstraint
+from sqlalchemy.ext.associationproxy import AssociationProxy, association_proxy
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from pydantic import EmailStr
 
@@ -13,14 +14,21 @@ if TYPE_CHECKING:
     from .like import LikePost
     from .comment import Comment
     from .friends import Friendship
+    from .followers import Follower
 
 
 class User(TimestampsMixin, Base):
     """Класс пользователя, которого определяет система."""
 
     __table_args__ = (
-        CheckConstraint("username != ''", name="check_username_not_empty"),
-        CheckConstraint("hashed_password != ''", name="check_password_not_empty"),
+        CheckConstraint(
+            "username != ''",
+            name="check_username_not_empty",
+        ),
+        CheckConstraint(
+            "hashed_password != ''",
+            name="check_password_not_empty",
+        ),
         CheckConstraint("email != ''", name="check_email_not_empty"),
     )
 
@@ -59,17 +67,17 @@ class User(TimestampsMixin, Base):
     )
 
     # Кого я добавил в друзья
-    initiated_friendships: Mapped[list["Friend"]] = relationship(
+    initiated_friendships: Mapped[list["Friendship"]] = relationship(
         "Friendship",
-        foreign_keys="Friend.user_id",
+        foreign_keys="Friendship.user_id",
         back_populates="user",
         cascade="all, delete-orphan",
         lazy="selectin",
     )
     # Кто добавил меня в друзья
-    received_friendships: Mapped[list["Friend"]] = relationship(
+    received_friendships: Mapped[list["Friendship"]] = relationship(
         "Friendship",
-        foreign_keys="Friend.friend_id",
+        foreign_keys="Friendship.friend_id",
         back_populates="friend",
         cascade="all, delete-orphan",
         lazy="selectin",

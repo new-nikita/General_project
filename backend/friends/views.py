@@ -127,7 +127,7 @@ async def get_search_for_friends_username(
     )
 
 
-@router.get("/add", response_class=HTMLResponse)
+@router.post("/add", response_class=HTMLResponse)
 async def add_friends(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
@@ -142,38 +142,3 @@ async def add_friends(
 #     #  Сделать прокидку фильтров через эндпоинт или еще как нибудь
 #     #  Добавить в сервис и репозиторий поиск по фильтрам
 #     #  Реализовать функционал отправки заявки и ее принятия
-
-
-# @router.post("/{profile_id}", response_class=HTMLResponse)
-# async def get__register_page(
-#     request: Request,
-#     profile_id: int,
-#     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-#     user_service: Annotated[UserService, Depends(get_user_service)],
-#     is_own_profile: bool = False,
-# ):
-#     """
-#
-#     :param request: Запрос FastAPI.
-#     :param profile_id: ID профиля пользователя.
-#     :param current_user: Текущий авторизованный пользователь.
-#     :param user_service: Сервис для работы с пользователями.
-#     :param is_own_profile: Флаг, указывающий, является ли профиль собственным.
-#     :return: HTML-страница профиля пользователя.
-#     :raises HTTPException: 404 если пользователь с указанным ID не найден.
-#     """
-#     redirect = get_redirect_with_authentication_user(current_user)
-#
-#     return settings.templates.template_dir.TemplateResponse(
-#         "users/search_friends.html",
-#         {"request": request},
-#     )
-#
-#
-# """
-# Сделать:
-#  Аунтефикацию по кукам
-#  Сделать форму для ввода имени и тд
-#
-
-# """
