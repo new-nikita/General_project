@@ -38,35 +38,3 @@ async def get_friends_service(
     :returns: FriendsRepository: Экземпляр сервиса для работы с пользователями.
     """
     return FriendsService(repository=repository)
-
-
-# async def get_update_form(
-#     first_name: Optional[str] = Form(None),
-#     last_name: Optional[str] = Form(None),
-#     middle_name: Optional[str] = Form(None),
-#     birth_date: Optional[str] = Form(None),
-#     gender: Optional[str] = Form(None),
-#     phone_number: Optional[str] = Form(None),
-#     country: Optional[str] = Form(None),
-#     city: Optional[str] = Form(None),
-#     street: Optional[str] = Form(None),
-#     bio: Optional[str] = Form(None),
-# ) -> ProfileUpdate:
-#     """
-#     Принимает данные формы редактирования профиля из запроса и возвращает объект ProfileUpdate.
-#     Используется как зависимость в роутах, чтобы автоматически собрать данные из формы.
-#
-#     :return: Объект `ProfileUpdate` с данными из формы.
-#     """
-#     return ProfileUpdate(
-#         first_name=first_name,
-#         last_name=last_name,
-#         middle_name=middle_name,
-#         birth_date=birth_date,
-#         gender=gender,
-#         phone_number=phone_number,
-#         country=country,
-#         city=city,
-#         street=street,
-#         bio=bio,
-#     )

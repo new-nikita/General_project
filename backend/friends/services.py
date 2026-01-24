@@ -1,5 +1,5 @@
 from backend.friends.friends_repository import FriendsRepository
-from backend.core.models import User
+from backend.core.models import User, Friendship
 
 
 class FriendsService:
@@ -43,27 +43,49 @@ class FriendsService:
         :param filters: Фильтры поиска
         :return: Список объектов пользователей или None, если пользователи не найдены.
         """
-        return await self.repository.get_search_for_filters(user, filters)
+        return await self.repository.get_search_for_filters(filters)
 
-    async def friend_request(self, user: User) -> None:
+    async def friend_add(
+        self,
+        current_user_id: int,
+        your_user_id: int,
+    ) -> None:
         """Отправляет запрос на дружбу пользователю (User)
 
-        :param user: Объект пользователя.
-        :return: None
-        TODO
-         Сначала надо реализовать запрос на дружбу, если пользователь примет, создавать запись
-          friendship = Friendship(user_id=current_user_id, friend_id=target_user_id, status=“Accepted”)
-          self.session.add(friendship)
-          self.session.commit()
-          В репозитории
-        """
-
-        ...
-
-    async def make_a_friend(self, user: User) -> None:
-        """Принимает запрос на дружбу от пользователя (User)
-
-        :param user: Объект пользователя.
+        :param current_user_id: ID пользователя.
+        :param your_user_id: ID друга
         :return: None
         """
-        ...
+        return await self.repository.friend_add(current_user_id, your_user_id)
+
+    async def friend_accept(
+        self,
+        current_user_id: int,
+        from_user_id: int,
+    ) -> None:
+        """Принимает запрос на дружбу
+
+        :param current_user_id: тот, кто принимает заявку
+        :param from_user_id: тот, кто её отправил
+        """
+
+        return await self.repository.friend_accept(
+            current_user_id,
+            from_user_id,
+        )
+
+    async def friend_reject(
+        self,
+        current_user_id: int,
+        from_user_id: int,
+    ) -> None:
+        """Отклоняет запрос на дружбу
+
+        :param current_user_id: тот, кто принимает заявку
+        :param from_user_id: тот, кто её отправил
+        """
+
+        return await self.repository.friend_reject(
+            current_user_id,
+            from_user_id,
+        )

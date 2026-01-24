@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class FollowStatus(Enum):
+class FollowStatus(StrEnum):
     """Список статусов подписки пользователя на пользователя."""
 
     PENDING = "pending"  #  в ожидании

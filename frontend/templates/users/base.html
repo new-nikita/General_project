@@ -43,6 +43,19 @@
             font-size: 1.25rem;
         }
 
+        /* Стиль кнопки "Назад" */
+        .back-button {
+            color: white;
+            font-size: 1.25rem;
+            margin-right: 10px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .back-button:hover {
+            opacity: 0.8;
+        }
+
         /* Main layout */
         .main-container {
             display: flex;
@@ -127,20 +140,6 @@
             }
         }
 
-        /* Utility classes */
-        .text-primary {
-            color: var(--primary-color) !important;
-        }
-
-        .bg-primary {
-            background-color: var(--primary-color) !important;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
@@ -159,7 +158,6 @@
             background: #aaa;
         }
     </style>
-    <link href="/static/css/style.css" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -168,16 +166,25 @@
 <header class="d-flex align-items-center">
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center">
-            <a href="/" class="navbar-brand text-white d-flex align-items-center">
-                <i class="fas fa-home me-2"></i>
-                <span>МояВКонтакте</span>
-            </a>
 
+            <div class="d-flex align-items-center">
+                <a href="/" class="navbar-brand text-white d-flex align-items-center">
+                    <i class="fas fa-home me-2"></i>
+                    <span>МояВКонтакте</span>
+                </a>
+
+                <!-- 🔙 Кнопка "Назад" -->
+                <span class="back-button ms-5" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </span>
+            </div>
+
+            {% if current_user %}
             <!-- Строка поиска -->
-            <form class="d-flex ms-3" action="/friends/search" method="get" role="search">
-                <input class="form-control me-2" type="search" name="username" placeholder="Поиск друзей" value="{{ request.query_params.get('username', '') }}">>
-                <button class="btn btn-light" type="submit"><i class="fas fa-search"></i></button>
-            </form>
+            <button class="btn btn-light ms-1" onclick="location.href='/friends/search'">
+                <i class="fas fa-search"></i> Поиск друзей
+            </button>
+            {% endif %}
 
             <button class="navbar-toggler d-lg-none btn btn-outline-light border-0 shadow-none sidebar-toggle"
                     type="button" style="display: none;">
@@ -218,7 +225,7 @@
     </div>
 </header>
 
-<!-- 🔍 Search bar (вставляется только в friends.html) -->
+<!-- 🔍 Search bar -->
 {% block search_bar %}{% endblock %}
 
 {% block sidebar_menu %}
@@ -299,7 +306,7 @@
     </div>
 </footer>
 
-<!-- Подключение Bootstrap JS -->
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 {% block extra_js %}{% endblock %}

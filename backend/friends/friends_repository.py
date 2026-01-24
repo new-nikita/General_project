@@ -2,12 +2,14 @@ from typing import Any, List
 
 from mypy.checker import and_conditional_maps
 from pydantic import EmailStr
-from sqlalchemy import select
+from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.core.base_repository import BaseRepository
 from backend.core.models import User, Friendship
+from backend.core.enums.follow_status import FollowStatus
+from backend.exceptions.message_exceptions import FriendException
 from backend.users.password_helper import PasswordHelper
 from backend.users.schemas.profile_schemas import ProfileUpdate
 from backend.users.schemas.users_schemas import UserCreate
@@ -44,6 +46,28 @@ class FriendsRepository(BaseRepository[Friendship]):
         )
         return result.scalars().all()
 
+    async def get_friendship(
+        self,
+        current_user_id: int,
+        your_user_id: int,
+    ) -> Friendship | None:
+        result = await self.session.execute(
+            select(Friendship).where(
+                or_(
+                    and_(
+                        Friendship.user_id == current_user_id,
+                        Friendship.friend_id == your_user_id,
+                    ),
+                    and_(
+                        Friendship.user_id == your_user_id,
+                        Friendship.friend_id == current_user_id,
+                    ),
+                )
+            )
+        )
+
+        return result.scalars().first()
+
     async def get_search_for_filters(self, filters: dict) -> list[User] | None:
         conditions = []
 
@@ -77,18 +101,90 @@ class FriendsRepository(BaseRepository[Friendship]):
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
-    async def friend_request(self, user: User) -> None:
-        """Отправляет запрос на дружбу пользователю (User)
+    async def friend_add(self, current_user_id: int, your_user_id: int) -> None:
+        """Отправляет запрос на дружбу
 
-        :param user: Объект пользователя.
+        :param current_user_id: Объект пользователя.
+        :param your_user_id: ID друга
         :return: None
         """
-        ...
+        if current_user_id == your_user_id:
+            raise FriendException("Нельзя добавить себя")
 
-    async def make_a_friend(self, user: User) -> None:
-        """Принимает запрос на дружбу от пользователя (User)
+        user_id = min(current_user_id, your_user_id)
+        friend_id = max(current_user_id, your_user_id)
 
-        :param user: Объект пользователя.
-        :return: None
+        friendship = await self.get_friendship(
+            user_id,
+            friend_id,
+        )
+
+        if friendship:
+            if friendship.status == FollowStatus.PENDING:
+                raise FriendException("Заявка уже отправлена")
+            if friendship.status == FollowStatus.ACCEPTED:
+                raise FriendException("Вы уже друзья")
+            if friendship.status == FollowStatus.BLOCKED:
+                raise FriendException("Пользователь заблокирован")
+
+        self.session.add(
+            Friendship(
+                user_id=user_id,
+                friend_id=friend_id,
+                status=FollowStatus.PENDING.value,
+            )
+        )
+        await self.session.commit()
+
+    async def friend_accept(
+        self,
+        current_user_id: int,
+        from_user_id: int,
+    ) -> None:
         """
-        ...
+        Метод принятия заявки
+
+        :param current_user_id: тот, кто принимает заявку
+        :param from_user_id: тот, кто её отправил
+        """
+        query = select(Friendship).where(
+            Friendship.user_id == from_user_id,
+            Friendship.friend_id == current_user_id,
+            Friendship.status == FollowStatus.PENDING,
+        )
+
+        result = await self.session.execute(query)
+        friendship = result.scalar_one_or_none()
+
+        if not friendship:
+            raise FriendException("Заявка не найдена")
+
+        friendship.status = FollowStatus.ACCEPTED
+        await self.session.commit()
+
+    async def friend_reject(
+        self,
+        current_user_id: int,
+        from_user_id: int,
+    ) -> None:
+        """
+        Метод отклонения заявки
+
+        :param current_user_id: тот, кто отклоняет заявку
+        :param from_user_id: тот, кто её отправил
+        :return:
+        """
+        query = select(Friendship).where(
+            Friendship.user_id == from_user_id,
+            Friendship.friend_id == current_user_id,
+            Friendship.status == FollowStatus.PENDING,
+        )
+
+        result = await self.session.execute(query)
+        friendship = result.scalar_one_or_none()
+
+        if not friendship:
+            raise FriendException("Заявка не найдена")
+
+        friendship.status = FollowStatus.REJECTED
+        await self.session.commit()

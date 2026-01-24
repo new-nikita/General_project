@@ -67,6 +67,14 @@ class UserService:
         """
         return await self.repository.search_users_by_username(username, your_id)
 
+    async def get_all_users(self, your_id) -> list[User] | None:
+        """Возвращает всех пользователей системы кроме самого пользователя
+
+        :param your_id: ID пользователя выполняемый поиск.
+        :return: Список всех пользователей системы
+        """
+        return await self.repository.get_all_users(your_id)
+
     async def update_profile(
         self,
         user: User,

@@ -1,7 +1,7 @@
 from typing import Any
 
 from pydantic import EmailStr
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -10,6 +10,8 @@ from backend.core.models import Profile, User
 from backend.users.password_helper import PasswordHelper
 from backend.users.schemas.profile_schemas import ProfileUpdate
 from backend.users.schemas.users_schemas import UserCreate
+from backend.core.models import Friendship
+from backend.core.enums.follow_status import FollowStatus
 
 
 class UserRepository(BaseRepository[User]):
@@ -59,6 +61,20 @@ class UserRepository(BaseRepository[User]):
         await self.session.refresh(user)
         return user
 
+    async def get_user_by_id(self, user_id: int) -> User | None:
+        """
+        Возвращает пользователя по его id пользователя (user_id).
+
+        :param user_id: ID пользователя.
+        :return: Объект пользователя или None, если пользователь не найден.
+        """
+        result = await self.session.execute(
+            select(self.model)
+            .options(selectinload(User.likes))
+            .where(self.model.id == user_id)
+        )
+        return result.scalar_one_or_none()
+
     async def get_user_by_username(self, username: str) -> User | None:
         """Возвращает пользователя по его имени пользователя (username).
 
@@ -95,6 +111,46 @@ class UserRepository(BaseRepository[User]):
             # частичное, регистронезависимое совпадение
         )
         return result.scalars().all()  # возвращаем список пользователей
+
+    async def get_all_users(self, current_user_id: int) -> list[dict]:
+        """
+        Возвращает всех пользователей кроме текущего с флагами дружбы:
+        - is_friend: True, если уже друзья
+        - friend_request_sent: True, если текущий пользователь отправил заявку
+        """
+
+        stmt = (
+            select(User, Friendship.status, Friendship.user_id.label("initiator_id"))
+            .outerjoin(
+                Friendship,
+                or_(
+                    # текущий пользователь инициатор
+                    (Friendship.user_id == current_user_id)
+                    & (Friendship.friend_id == User.id),
+                    # другой пользователь инициатор
+                    (Friendship.friend_id == current_user_id)
+                    & (Friendship.user_id == User.id),
+                ),
+            )
+            .where(User.id != current_user_id)
+        )
+
+        result = await self.session.execute(stmt)
+        rows = result.all()
+
+        # Формируем список пользователей с нужными флагами
+        users = []
+        for user, status, initiator_id in rows:
+            users.append(
+                {
+                    **user.__dict__,
+                    "is_friend": status == FollowStatus.ACCEPTED,
+                    "friend_request_sent": status == FollowStatus.PENDING
+                    and initiator_id == current_user_id,
+                }
+            )
+
+        return users
 
     async def get_user_by_email(self, email: EmailStr) -> User | None:
         """Возвращает пользователя по его email.

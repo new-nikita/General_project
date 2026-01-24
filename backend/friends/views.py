@@ -1,4 +1,5 @@
 from typing import Annotated, Optional
+import logging
 
 from fastapi import (
     APIRouter,
@@ -6,9 +7,11 @@ from fastapi import (
     HTTPException,
     Request,
     status,
+    Form,
 )
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
+
 
 from backend.core.config import settings
 from backend.core.models import User
@@ -17,7 +20,10 @@ from backend.friends.services import FriendsService
 from backend.friends.dependencies import get_friends_service
 from backend.users.services import UserService
 from backend.users.dependencies import get_user_service
-from backend.exceptions.message_exceptions import SomeExpectedException
+from backend.exceptions.message_exceptions import (
+    SomeExpectedException,
+    FriendException,
+)
 
 
 router = APIRouter(
@@ -90,12 +96,10 @@ async def get_search_for_friends_username(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     user_service: Annotated[UserService, Depends(get_user_service)],
-    username: str | None = None,
 ):
-    """Отображает поиск друзей по имени.
+    """Отображает поиск друзей.
 
     :param request: Запрос FastAPI.
-    :param username: Username искомого пользователя.
     :param current_user: Текущий авторизованный пользователь.
     :param user_service: Сервис работы с пользователя.
     :return: HTML-страница со списком подходящих пользователей.
@@ -104,20 +108,16 @@ async def get_search_for_friends_username(
     users = []
     error_message = None
 
-    if username:
-        try:
-            users = await user_service.search_users_by_username(
-                username,
-                current_user.id,
-            )
+    try:
+        users = await user_service.get_all_users(current_user.id)
 
-        except SomeExpectedException as e:
-            error_message = e.detail
-        except Exception:
-            error_message = "Произошла непредвиденная ошибка. Попробуйте позже."
+    except SomeExpectedException as e:
+        error_message = e.detail
+    except Exception:
+        error_message = "Произошла непредвиденная ошибка. Попробуйте позже."
 
     return settings.templates.template_dir.TemplateResponse(
-        "users/search_for_friends_username.html",
+        "users/search_friends.html",
         {
             "request": request,
             "current_user": current_user,
@@ -127,18 +127,95 @@ async def get_search_for_friends_username(
     )
 
 
-@router.post("/add", response_class=HTMLResponse)
+@router.post("/add")
 async def add_friends(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     friend_service: Annotated[FriendsService, Depends(get_friends_service)],
     user_service: Annotated[UserService, Depends(get_user_service)],
-    username: str | None = None,
-): ...
+    username: str | None = Form(...),
+):
+    try:
+        friend_user = await user_service.get_user_by_username(username)
+        if not friend_user:
+            return JSONResponse(
+                {
+                    "success": False,
+                    "message": "Пользователь не найден",
+                }
+            )
+
+        await friend_service.friend_add(current_user.id, friend_user.id)
+        return JSONResponse(
+            {
+                "success": True,
+                "message": "Запрос отправлен",
+            }
+        )
+
+    except FriendException as e:
+        return JSONResponse(
+            {
+                "success": False,
+                "message": e.detail,
+            }
+        )
 
 
-#     # TODO
-#     #  Сделать отображение всех друзей по фильтрам ///
-#     #  Сделать прокидку фильтров через эндпоинт или еще как нибудь
-#     #  Добавить в сервис и репозиторий поиск по фильтрам
-#     #  Реализовать функционал отправки заявки и ее принятия
+@router.post("/accept", response_class=HTMLResponse)
+async def accept_friend(
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    friend_service: Annotated[FriendsService, Depends(get_friends_service)],
+    from_user_id: int = Form(...),
+):
+    try:
+        await friend_service.friend_accept(
+            current_user_id=current_user.id,
+            from_user_id=from_user_id,
+        )
+        return JSONResponse(
+            {
+                "success": True,
+                "message": "Запрос отправлен",
+            }
+        )
+
+    except SomeExpectedException as e:
+        return JSONResponse(
+            {
+                "success": False,
+                "message": e.detail,
+            }
+        )
+
+
+@router.post("/reject")
+async def reject_friend(
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    friend_service: Annotated[FriendsService, Depends(get_friends_service)],
+    from_user_id: int = Form(...),
+):
+    try:
+        await friend_service.friend_reject(
+            current_user_id=current_user.id,
+            from_user_id=from_user_id,
+        )
+        return JSONResponse(
+            {
+                "success": True,
+                "message": "Запрос отправлен",
+            }
+        )
+    except SomeExpectedException as e:
+        return JSONResponse(
+            {
+                "success": False,
+                "message": e.detail,
+            }
+        )
+
+
+# TODO
+#  Дописать
+#  Дописать условие проверку, отправлена заявка уже или нет( и если оправлена то при обновлении страницы не сбрасывалась кнопка
+#  А то запрос можно отправить повторно

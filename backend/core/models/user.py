@@ -58,14 +58,6 @@ class User(TimestampsMixin, Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
-    friendships: Mapped[list["Friendship"]] = relationship(
-        "Friendship",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        lazy="selectin",
-        foreign_keys="Friendship.user_id",
-    )
-
     # Кого я добавил в друзья
     initiated_friendships: Mapped[list["Friendship"]] = relationship(
         "Friendship",

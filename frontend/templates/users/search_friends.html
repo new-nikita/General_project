@@ -2,130 +2,174 @@
 
 {% block title %}Поиск друзей{% endblock %}
 
-{% block sidebar_menu %}
-    {{ super() }}
-    {% if current_user %}
-        <div class="sidebar-header border-top">
-            <h6 class="mb-0 mt-3 px-3">Фильтры поиска</h6>
-        </div>
-
-        {% if error_message %}
-            <div class="alert alert-danger px-3 mt-2">
-                {{ error_message }}
-            </div>
-        {% endif %}
-
-        <div class="sidebar-body px-3">
-            <form method="get" action="/friends/search">
-                <!-- Поиск по имени или email -->
-                <div class="mb-3">
-                    <input type="text" name="query" class="form-control"
-                           placeholder="Имя или Email"
-                           value="{{ request.query_params.get('query', '') }}">
-                </div>
-
-                <!-- Пол -->
-                <div class="mb-3">
-                    <select class="form-select" name="gender">
-                        <option value="">Пол: любой</option>
-                        <option value="male" {{ 'selected' if request.query_params.get('gender') == 'male' }}>Мужской</option>
-                        <option value="female" {{ 'selected' if request.query_params.get('gender') == 'female' }}>Женский</option>
-                    </select>
-                </div>
-
-                <!-- Возраст -->
-                <div class="mb-3">
-                    <div class="input-group">
-                        <input type="number" name="age_min" class="form-control" placeholder="Возраст от"
-                               value="{{ request.query_params.get('age_min', '') }}">
-                        <input type="number" name="age_max" class="form-control" placeholder="до"
-                               value="{{ request.query_params.get('age_max', '') }}">
-                    </div>
-                </div>
-
-                <!-- Город -->
-                <div class="mb-3">
-                    <input type="text" name="city" class="form-control" placeholder="Город"
-                           value="{{ request.query_params.get('city', '') }}">
-                </div>
-
-                <!-- Страна -->
-                <div class="mb-3">
-                    <input type="text" name="country" class="form-control" placeholder="Страна"
-                           value="{{ request.query_params.get('country', '') }}">
-                </div>
-
-                <!-- Онлайн -->
-                <div class="mb-3">
-                    <select class="form-select" name="online">
-                        <option value="">Статус: любой</option>
-                        <option value="1" {{ 'selected' if request.query_params.get('online') == '1' }}>Сейчас онлайн</option>
-                        <option value="0" {{ 'selected' if request.query_params.get('online') == '0' }}>Оффлайн</option>
-                    </select>
-                </div>
-
-                <!-- Дружба -->
-                <div class="mb-3">
-                    <select class="form-select" name="friend_status">
-                        <option value="">Дружба: любой</option>
-                        <option value="friends" {{ 'selected' if request.query_params.get('friend_status') == 'friends' }}>Уже друзья</option>
-                        <option value="not_friends" {{ 'selected' if request.query_params.get('friend_status') == 'not_friends' }}>Не в друзьях</option>
-                    </select>
-                </div>
-
-                <!-- Кнопка -->
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search me-1"></i> Найти
-                    </button>
-                </div>
-            </form>
-        </div>
-    {% endif %}
+{% block extra_css %}
+<style>
+  .filters-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 6px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+  }
+  .filters-header {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+  }
+</style>
 {% endblock %}
+
 
 {% block content %}
 <div class="container">
-    {% if error_message %}
-        <div class="alert alert-danger mb-3">
-            {{ error_message }}
-        </div>
-    {% endif %}
+  <div class="row">
+    <!-- Левая колонка: результаты -->
+    <div class="col-lg-9 order-lg-1 order-2">
+      <h2 class="mb-4">Результаты поиска</h2>
 
-    <h2 class="mb-4">Результаты поиска</h2>
-
-    {% if users %}
+      {% if users %}
         <div class="list-group">
-            {% for user in users %}
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>{{ user.username }}</strong><br>
-                        <small class="text-muted">{{ user.email }}</small><br>
-                        {% if user.city or user.country %}
-                            <small class="text-muted">
-                                {{ user.city }}{% if user.city and user.country %}, {% endif %}{{ user.country }}
-                            </small>
-                        {% endif %}
-                    </div>
+          {% for user in users %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ user.username }}</strong><br>
+                <small class="text-muted">{{ user.email }}</small><br>
+                {% if user.city or user.country %}
+                <small class="text-muted">{{ user.city }}{% if user.city and user.country %}, {% endif %}{{ user.country }}</small>
+                {% endif %}
+              </div>
 
-                    {% if user.is_friend %}
-                        <button class="btn btn-outline-secondary disabled" disabled>Уже в друзьях</button>
-                    {% else %}
-                        <form method="post" action="/friends/add/{{ user.id }}">
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-user-plus me-1"></i> Добавить
-                            </button>
-                        </form>
-                    {% endif %}
-                </div>
-            {% endfor %}
+              {% if user.is_friend %}
+                <button class="btn btn-outline-secondary disabled" disabled>Уже в друзьях</button>
+              {% else %}
+
+                <!-- Кнопка "Добавить в друзья" -->
+              <div class="d-flex gap-1">
+                <form method="post" action="/friends/add" class="mb-0">
+                  <input type="hidden" name="username" value="{{ user.username }}">
+                  <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center">
+                    <i class="fas fa-user-plus me-1"></i> Добавить
+                  </button>
+                </form>
+
+                <form method="post" action="/follow/add" class="mb-0">
+                  <input type="hidden" name="user_id" value="{{ user.id }}">
+                  <button type="submit" class="btn btn-success btn-sm d-flex align-items-center">
+                    <i class="fas fa-rss me-1"></i> Подписаться
+                  </button>
+                  </form>
+              </div>
+
+
+              {% endif %}
+            </div>
+          {% endfor %}
         </div>
-    {% elif request.query_params %}
-        <div class="alert alert-warning mt-4">
-            Пользователи не найдены по заданным фильтрам.
-        </div>
-    {% else %}
-        <p class="text-muted">Используйте фильтры слева для поиска новых друзей.</p>
-    {% endif %}
+      {% elif request.query_params | length > 0 %}
+        <div class="alert alert-warning mt-4">Пользователи не найдены по заданным фильтрам.</div>
+      {% else %}
+        <p class="text-muted">Используйте фильтры справа для поиска новых друзей.</p>
+      {% endif %}
+    </div>
+
+    <!-- Правая колонка: фильтры -->
+    <div class="col-lg-3 order-lg-2 order-1">
+      {% if current_user %}
+      <div class="filters-panel sticky-top" style="top: 80px;">
+        <h5 class="filters-header">Фильтры поиска</h5>
+
+        {% if error_message %}
+          <div class="alert alert-danger">
+            {{ error_message }}
+          </div>
+        {% endif %}
+
+        <form method="get" action="/friends/search" novalidate>
+          <div class="mb-3">
+            <input type="text" name="query" class="form-control"
+                   placeholder="Имя или Email"
+                   value="{{ request.query_params.get('query', '') }}">
+          </div>
+
+          <div class="mb-3">
+            <select class="form-select" name="gender">
+              <option value="">Пол: любой</option>
+              <option value="male" {{ 'selected' if request.query_params.get('gender') == 'male' }}>Мужской</option>
+              <option value="female" {{ 'selected' if request.query_params.get('gender') == 'female' }}>Женский</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <div class="input-group">
+              <input type="number" name="age_min" class="form-control" placeholder="Возраст от"
+                     value="{{ request.query_params.get('age_min', '') }}">
+              <input type="number" name="age_max" class="form-control" placeholder="до"
+                     value="{{ request.query_params.get('age_max', '') }}">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <input type="text" name="city" class="form-control" placeholder="Город"
+                   value="{{ request.query_params.get('city', '') }}">
+          </div>
+
+          <div class="mb-3">
+            <input type="text" name="country" class="form-control" placeholder="Страна"
+                   value="{{ request.query_params.get('country', '') }}">
+          </div>
+
+          <div class="mb-3">
+            <select class="form-select" name="online">
+              <option value="">Статус: любой</option>
+              <option value="1" {{ 'selected' if request.query_params.get('online') == '1' }}>Сейчас онлайн</option>
+              <option value="0" {{ 'selected' if request.query_params.get('online') == '0' }}>Оффлайн</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <select class="form-select" name="friend_status">
+              <option value="">Дружба: любой</option>
+              <option value="friends" {{ 'selected' if request.query_params.get('friend_status') == 'friends' }}>Уже друзья</option>
+              <option value="not_friends" {{ 'selected' if request.query_params.get('friend_status') == 'not_friends' }}>Не в друзьях</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-search me-1"></i> Найти
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('form[action="/friends/add"]').forEach(form => {
+    form.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Accept': 'application/json' }
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            const button = form.querySelector('button');
+            button.textContent = 'Запрос отправлен';
+            button.disabled = true;
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-outline-secondary');
+        } else {
+            alert(result.message);
+        }
+    });
+});
+</script>
+{% endblock %}
+
