@@ -41,10 +41,10 @@ async def get_user_profile(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     user_service: Annotated[UserService, Depends(get_user_service)],
     post_service: Annotated[PostService, Depends(get_post_service)],
-    is_own_profile: bool = False,
 ) -> HTMLResponse:
     """
     Отображает страницу профиля пользователя.
+    Работает как для собственного, так и для чужого профиля.
 
     :param request: Запрос FastAPI.
     :param profile_id: ID профиля пользователя.
@@ -61,17 +61,39 @@ async def get_user_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Пользователь с ID {profile_id} не найден",
         )
-    if current_user is not None:
-        # Определяем, является ли профиль собственным
-        is_own_profile = current_user.id == profile_user.id
 
-        current_user = await user_service.repository.get_by_id_with_likes(
-            current_user.id
-        )
+    is_own_profile = current_user.id == profile_user.id
 
-    # Получаем посты с полной информацией о лайках
+    # Подгружаем полные данные текущего пользователя
+    current_user_full = await user_service.repository.get_by_id_with_likes(
+        current_user.id
+    )
+    # Получаем посты пользователя с учетом лайков текущего пользователя
     posts = await post_service.repository.get_all_posts_by_author_id(
-        profile_id, current_user.id if current_user else None
+        profile_user.id, current_user.id
+    )
+    # Проверяем дружбу / подписку для чужого профиля
+    # являются ли друзьями
+    is_friend = await user_service.repository.check_friendship(
+        current_user.id,
+        profile_user.id,
+    )
+    # был ли какой-то запрос
+    friend_request_sent = await user_service.repository.check_friend_request(
+        current_user.id,
+        profile_user.id,
+    )
+    # есть ли подписка
+    is_subscribed = await user_service.repository.check_subscription(
+        current_user.id,
+        profile_user.id,
+    )
+    # Можно ли показывать приватную информацию
+    can_view_full_info = is_own_profile or is_friend
+    # Считаем друзей и подписчиков
+    friends_count = await user_service.repository.count_friends(profile_user.id)
+    subscribers_count = await user_service.repository.count_subscribers(
+        profile_user.id,
     )
 
     return settings.templates.template_dir.TemplateResponse(
@@ -79,11 +101,69 @@ async def get_user_profile(
         {
             "request": request,
             "user": profile_user,
+            "current_user": current_user_full,
             "is_own_profile": is_own_profile,
-            "current_user": current_user,
+            "is_friend": is_friend,
+            "friend_request_sent": friend_request_sent,
+            "is_subscribed": is_subscribed,
+            "can_view_full_info": can_view_full_info,
             "posts": posts,
+            "friends_count": friends_count,
+            "subscribers_count": subscribers_count,
         },
     )
+
+
+# @router.get("/{profile_id}", response_class=HTMLResponse)
+# async def get_user_profile(
+#     request: Request,
+#     profile_id: int,
+#     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+#     user_service: Annotated[UserService, Depends(get_user_service)],
+#     post_service: Annotated[PostService, Depends(get_post_service)],
+#     is_own_profile: bool = False,
+# ) -> HTMLResponse:
+#     """
+#     Отображает страницу профиля пользователя.
+#
+#     :param request: Запрос FastAPI.
+#     :param profile_id: ID профиля пользователя.
+#     :param current_user: Текущий авторизованный пользователь.
+#     :param user_service: Сервис для работы с пользователями.
+#     :param post_service: Сервис для работы с постами.
+#     :param is_own_profile: Флаг, указывающий, является ли профиль собственным.
+#     :return: HTML-страница профиля пользователя.
+#     :raises HTTPException: 404 если пользователь с указанным ID не найден.
+#     """
+#     profile_user = await user_service.repository.get_by_id(profile_id)
+#     if not profile_user:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail=f"Пользователь с ID {profile_id} не найден",
+#         )
+#     if current_user is not None:
+#         # Определяем, является ли профиль собственным
+#         is_own_profile = current_user.id == profile_user.id
+#
+#         current_user = await user_service.repository.get_by_id_with_likes(
+#             current_user.id
+#         )
+#
+#     # Получаем посты с полной информацией о лайках
+#     posts = await post_service.repository.get_all_posts_by_author_id(
+#         profile_id, current_user.id if current_user else None
+#     )
+#
+#     return settings.templates.template_dir.TemplateResponse(
+#         "users/profile.html",
+#         {
+#             "request": request,
+#             "user": profile_user,
+#             "is_own_profile": is_own_profile,
+#             "current_user": current_user,
+#             "posts": posts,
+#         },
+#     )
 
 
 @router.get("/edit/{profile_id}", response_class=HTMLResponse)
