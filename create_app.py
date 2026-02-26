@@ -50,4 +50,12 @@ def create_app() -> FastAPI:
         StaticFiles(directory=str(BASE_STATIC_DIR)),
         name="client_files",
     )
+    # Альтернативный фронтенд (без Node.js)
+    FRONTEND_ALT_DIR = BASE_DIR / "frontend-alt"
+    if FRONTEND_ALT_DIR.exists():
+        application.mount(
+            "/alt",
+            StaticFiles(directory=str(FRONTEND_ALT_DIR), html=True),
+            name="alt",
+        )
     return application

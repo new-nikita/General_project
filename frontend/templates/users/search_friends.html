@@ -31,37 +31,52 @@
         <div class="list-group">
           {% for user in users %}
             <div class="list-group-item d-flex justify-content-between align-items-center">
-              <div>
-                <strong>{{ user.username }}</strong><br>
-                <small class="text-muted">{{ user.email }}</small><br>
-                {% if user.city or user.country %}
-                <small class="text-muted">{{ user.city }}{% if user.city and user.country %}, {% endif %}{{ user.country }}</small>
-                {% endif %}
-              </div>
+
+              <!-- Кликабельная колонка пользователя -->
+              <a href="/users/{{ user.username }}"
+                 class="text-decoration-none text-dark flex-grow-1 me-3">
+
+                <div>
+                  <strong>{{ user.username }}</strong><br>
+                  <small class="text-muted">{{ user.email }}</small><br>
+
+                  {% if user.city or user.country %}
+                    <small class="text-muted">
+                      {{ user.city }}{% if user.city and user.country %}, {% endif %}{{ user.country }}
+                    </small>
+                  {% endif %}
+                </div>
+
+              </a>
 
               {% if user.is_friend %}
-                <button class="btn btn-outline-secondary disabled" disabled>Уже в друзьях</button>
+                <button class="btn btn-outline-secondary disabled" disabled>
+                  Уже в друзьях
+                </button>
               {% else %}
 
-                <!-- Кнопка "Добавить в друзья" -->
-              <div class="d-flex gap-1">
-                <form method="post" action="/friends/add" class="mb-0">
-                  <input type="hidden" name="username" value="{{ user.username }}">
-                  <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center">
-                    <i class="fas fa-user-plus me-1"></i> Добавить
-                  </button>
-                </form>
+                <div class="d-flex gap-1">
 
-                <form method="post" action="/follow/add" class="mb-0">
-                  <input type="hidden" name="user_id" value="{{ user.id }}">
-                  <button type="submit" class="btn btn-success btn-sm d-flex align-items-center">
-                    <i class="fas fa-rss me-1"></i> Подписаться
-                  </button>
+                  <!-- Добавить в друзья -->
+                  <form method="post" action="/friends/add" class="mb-0">
+                    <input type="hidden" name="username" value="{{ user.username }}">
+                    <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center">
+                      <i class="fas fa-user-plus me-1"></i> Добавить
+                    </button>
                   </form>
-              </div>
 
+                  <!-- Подписаться -->
+                  <form method="post" action="/follow/add" class="mb-0">
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <button type="submit" class="btn btn-success btn-sm d-flex align-items-center">
+                      <i class="fas fa-rss me-1"></i> Подписаться
+                    </button>
+                  </form>
+
+                </div>
 
               {% endif %}
+
             </div>
           {% endfor %}
         </div>

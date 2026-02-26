@@ -22,6 +22,20 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+@media (max-width: 768px) {
+    .user-avatar {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+@media (max-width: 576px) {
+    .user-avatar {
+        width: 120px;
+        height: 120px;
+    }
+}
+
 .profile-details {
     flex: 1;
     min-width: 300px;
@@ -41,6 +55,17 @@
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
+}
+
+@media (max-width: 576px) {
+    .profile-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .profile-actions .btn {
+        width: 100%;
+    }
 }
 
 #profile-info-btn {
@@ -143,6 +168,16 @@
     width: 90%;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     position: relative;
+}
+
+@media (max-width: 576px) {
+    .modal-content {
+        margin: 5% auto;
+        padding: 15px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
 }
 
 .close-modal {
@@ -281,6 +316,14 @@
     width: 90%;
     max-height: 80vh;
     overflow-y: auto;
+}
+
+@media (max-width: 576px) {
+    .profile-modal {
+        width: 95%;
+        padding: 15px;
+        max-height: 90vh;
+    }
 }
 
 .modal-overlay {

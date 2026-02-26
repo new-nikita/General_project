@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from typing import ClassVar, Literal
+from datetime import datetime
 
 from fastapi.templating import Jinja2Templates
 from pydantic import (
@@ -123,6 +124,13 @@ class SMTPSettings(BaseModel):
     use_ssl: bool = False
 
 
+class ChatMessage(BaseModel):
+    dialog_id: int
+    sender_id: int
+    text: str
+    created_at: datetime
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(
@@ -137,6 +145,7 @@ class Settings(BaseSettings):
         case_sensitive=False,
         env_nested_delimiter="__",
         env_prefix="APP_CONFIG__",
+        extra="ignore",
     )
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     jwt: JwtConfig = Field(default_factory=JwtConfig)
@@ -144,6 +153,8 @@ class Settings(BaseSettings):
     redis: RedisConfig = Field(default_factory=RedisConfig)
     celery: CeleryConfig = Field(default_factory=CeleryConfig)
     smtp: SMTPSettings = Field(default_factory=SMTPSettings)
+    msg: type[ChatMessage] = ChatMessage
+
     db: DatabaseConfig
 
 

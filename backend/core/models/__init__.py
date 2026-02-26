@@ -7,6 +7,8 @@ from .like import LikePost
 from .post import Post
 from .friends import Friendship
 from .followers import Follower
+from .dialogs import Dialog
+from .messages import Message
 
 from .comment import Comment
 
@@ -20,4 +22,6 @@ __all__ = (
     "Comment",
     "Follower",
     "Friendship",
+    "Dialog",
+    "Message",
 )
