@@ -75,3 +75,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 });
+
+document.addEventListener("click", function (e) {
+    const editBtn = e.target.closest(".edit-comment-btn");
+    if (!editBtn) return;
+
+    const commentId = editBtn.dataset.commentId;
+    const form = document.getElementById(`edit-comment-form-${commentId}`);
+
+    form.style.display =
+        form.style.display === "none" ? "block" : "none";
+});

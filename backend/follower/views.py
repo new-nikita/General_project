@@ -27,7 +27,7 @@ router = APIRouter(
 )
 
 
-@router.post("/subscribe", response_class=HTMLResponse)
+@router.post("/subscribe", tags=["follower"], response_class=HTMLResponse)
 async def add_friends(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
@@ -41,7 +41,6 @@ async def add_friends(
 #  Сделать ограничение просмотра контента для подписок ( выставляет только владелец )
 #  Сделать кнопку (подписаться) и проверку подписан ли пользователь
 #  И отображение своих подписок
-
 
 
 # @router.get("", response_class=HTMLResponse)

@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import Cookie, HTTPException, status, Depends, Request
+from fastapi import Cookie, HTTPException, status, Depends, Request, WebSocket
 from fastapi.responses import Response, RedirectResponse
 
 from backend.core.config import settings
@@ -93,6 +93,22 @@ async def get_current_user_from_cookie(
     username: str = payload.get("sub")
     user: User = await get_user_by_username_from_service(username, service)
     return user
+
+
+async def get_current_user_ws(
+    websocket: WebSocket,
+    service: Annotated[UserService, Depends(get_user_service)],
+) -> User | None:
+
+    access_token = websocket.cookies.get("access-token")
+
+    if not access_token:
+        return None
+
+    payload = TokenService.decode_and_validate_token(access_token)
+    username = payload.get("sub")
+
+    return await get_user_by_username_from_service(username, service)
 
 
 async def get_user_by_username_from_service(

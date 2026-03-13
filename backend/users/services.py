@@ -97,6 +97,16 @@ class UserService:
 
         return await self.repository.get_user_by_email(email)
 
+    async def get_user_by_id(self, user_id: int) -> User | None:
+        """
+        Возвращает пользователя по его id пользователя (id).
+
+        :param user_id: Id пользователя.
+        :return: Объект пользователя или None, если пользователь не найден.
+        """
+
+        return await self.repository.get_user_by_id(user_id)
+
     async def change_password_by_user(
         self,
         user: User,

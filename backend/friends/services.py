@@ -32,6 +32,21 @@ class FriendsService:
         """
         return await self.repository.get_pending_friends(user_id)
 
+    async def get_friendship(
+        self,
+        current_user_id: int,
+        your_user_id: int,
+    ) -> Friendship | None:
+        """Проверяет дружбу
+
+        :param current_user_id: id владельца аккаунта
+        :param your_user_id: id предполагаемого друга
+        """
+        return await self.repository.get_friendship(
+            current_user_id,
+            your_user_id,
+        )
+
     async def get_search_for_filters(
         self,
         user: User,

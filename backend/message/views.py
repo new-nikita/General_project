@@ -27,9 +27,7 @@ from backend.users.dependencies import get_user_service, get_update_form
 from backend.users.schemas.profile_schemas import ProfileUpdate
 from backend.users.services import UserService
 from backend.users.utils import checkout_profile_owner
-from backend.auth.authorization import (
-    get_current_user_from_cookie,
-)
+from backend.auth.authorization import get_current_user_from_cookie, get_current_user_ws
 from backend.core.config import settings, DEFAULT_PATH_TO_AVATAR
 from backend.core.models import User
 from backend.utils.save_images import upload_image
@@ -45,81 +43,95 @@ router = APIRouter(
 @router.websocket("/dialog/{companion_id}")
 async def websocket_endpoint(
     websocket: WebSocket,
-    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-    user_service: Annotated[UserService, Depends(get_user_service)],
     message_service: Annotated[MessageService, Depends(get_message_service)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    current_user_ws: Annotated[User, Depends(get_current_user_ws)],
     companion_id: int,
 ):
     """
     Отображает диалог пользователей
 
     :param websocket:
-    :param current_user: Текущий авторизованный пользователь (зависимость).
-    :param user_service: Сервис для работы с пользователями (зависимость).
     :param message_service: Сервис для работы с сообщениями (зависимость).
+    :param user_service: Сервис работы с пользователями.
+    :param current_user_ws: Авторизованный пользователь.
     :param companion_id: Тот пользователь которому пишут
     :return:
     """
 
-    dialog_id = await manager.get_or_create_dialog(current_user.id, companion_id)
-    await manager.connect(websocket, dialog_id, current_user.id)
+    dialog_id = await message_service.create_dialog(
+        current_user_ws.id,
+        companion_id,
+    )
+
+    await manager.connect(websocket, dialog_id, current_user_ws.id)
 
     try:
         while True:
-            data = await websocket.receive_json()
+            text = await websocket.receive_text()
             message = settings.msg(
-                dialog_id=dialog_id,
-                sender_id=current_user.id,
-                text=data["text"],
+                dialog_id=dialog_id.id,
+                sender_id=current_user_ws.id,
+                text=text,
                 created_at=datetime.utcnow(),
             )
-            await message_service.save_history_message(message.dict())
+            await message_service.save_message(message)
 
-            await manager.broadcast(message, dialog_id, current_user.id)
+            # await manager.broadcast(message, dialog_id, current_user_ws.id)
 
     except WebSocketDisconnect:
-        manager.disconnect(dialog_id, current_user.id)
+        manager.disconnect(dialog_id, current_user_ws.id)
 
 
-@router.get("/dialog_page/{companion_id}", response_class=HTMLResponse)
+@router.get(
+    "/dialog/{companion_id}",
+    tags=["message"],
+    response_class=HTMLResponse,
+)
 async def dialog_page(
     request: Request,
     companion_id: int,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
 ):
+    """Отображает страницу диалога
+
+    :param request: Request.
+    :param companion_id: id чата.
+    :param current_user: Авторизованный пользователь.
+    :param user_service: Сервис для работы с пользователями.
+    :return:
+    """
+
+    companion = await user_service.get_user_by_id(companion_id)
+    if not companion:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
     return settings.templates.template_dir.TemplateResponse(
         "chat/dialog.html",
         {
             "request": request,
             "companion_id": companion_id,
+            "companion": f"{companion.profile.first_name or ''} {companion.profile.last_name or ''}".strip()
+            or companion.username,
+            "current_user": current_user,
         },
     )
 
 
-@router.post("/join_chat", response_class=HTMLResponse)
-async def join_chat(
+@router.get("/dialogs", tags=["message"])
+async def dialogs(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-    user_service: Annotated[UserService, Depends(get_user_service)],
-    username: str = Form(...),
-    room_id: int = Form(...),
+    message_service: Annotated[MessageService, Depends(get_message_service)],
 ):
-    """
+    dialogs = await message_service.get_user_dialogs(current_user.id)
 
-
-    :param request:
-    :param current_user:
-    :param user_service:
-    :param username:
-    :param room_id:
-    :return:
-    """
     return settings.templates.template_dir.TemplateResponse(
-        "users/profile.html",
+        "chat/dialogs_list.html",
         {
             "request": request,
-            "room_id": room_id,
-            "username": username,
-            "user_id": user_id,
+            "dialogs": dialogs,
+            "current_user": current_user,
         },
     )

@@ -18,6 +18,8 @@ from backend.users.dependencies import get_user_service, get_update_form
 from backend.users.schemas.profile_schemas import ProfileUpdate
 from backend.users.services import UserService
 from backend.users.utils import checkout_profile_owner
+from backend.friends.services import FriendsService
+from backend.friends.dependencies import get_friends_service
 from backend.auth.authorization import (
     get_current_user_from_cookie,
 )
@@ -34,14 +36,14 @@ router = APIRouter(
 )
 
 
-@router.get("/{profile_id}", response_class=HTMLResponse)
+@router.get("/{profile_id}", tags=["user"], response_class=HTMLResponse)
 async def get_user_profile(
     request: Request,
     profile_id: int,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     user_service: Annotated[UserService, Depends(get_user_service)],
+    friend_service: Annotated[FriendsService, Depends(get_friends_service)],
     post_service: Annotated[PostService, Depends(get_post_service)],
-    is_own_profile: bool = False,
 ) -> HTMLResponse:
     """
     Отображает страницу профиля пользователя.
@@ -50,6 +52,7 @@ async def get_user_profile(
     :param profile_id: ID профиля пользователя.
     :param current_user: Текущий авторизованный пользователь.
     :param user_service: Сервис для работы с пользователями.
+    :param friend_service: Сервис для работы с друзьями.
     :param post_service: Сервис для работы с постами.
     :param is_own_profile: Флаг, указывающий, является ли профиль собственным.
     :return: HTML-страница профиля пользователя.
@@ -61,12 +64,34 @@ async def get_user_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Пользователь с ID {profile_id} не найден",
         )
-    if current_user is not None:
+
+    is_authenticated = current_user is not None
+    is_own_profile = False
+    is_friend = False
+    is_private = False
+
+    if is_authenticated:
         # Определяем, является ли профиль собственным
         is_own_profile = current_user.id == profile_user.id
 
         current_user = await user_service.repository.get_by_id_with_likes(
             current_user.id
+        )
+
+        if not is_own_profile:
+            is_friend = await friend_service.get_friendship(
+                current_user.id,
+                profile_user.id,
+            )
+
+    if is_private and not (is_friend or is_own_profile):
+        return settings.templates.template_dir.TemplateResponse(
+            "users/profile_private.html",
+            {
+                "request": request,
+                "current_user": current_user,
+                "user": profile_user,
+            },
         )
 
     # Получаем посты с полной информацией о лайках
@@ -82,11 +107,17 @@ async def get_user_profile(
             "is_own_profile": is_own_profile,
             "current_user": current_user,
             "posts": posts,
+            "is_friend": is_friend,
+            "is_authenticated": is_authenticated,
         },
     )
 
 
-@router.get("/edit/{profile_id}", response_class=HTMLResponse)
+@router.get(
+    "/edit/{profile_id}",
+    tags=["user"],
+    response_class=HTMLResponse,
+)
 async def edit_profile(
     request: Request,
     profile_id: int,
@@ -127,7 +158,7 @@ async def edit_profile(
     )
 
 
-@router.post("/edit/{profile_id}")
+@router.post("/edit/{profile_id}", tags=["user"])
 async def save_profile_data(
     profile_id: int,
     new_profile_data: Annotated[ProfileUpdate, Depends(get_update_form)],
@@ -161,7 +192,7 @@ async def save_profile_data(
     return RedirectResponse(url=f"/profile/{profile_user.id}", status_code=303)
 
 
-@router.post("/avatar")
+@router.post("/avatar", tags=["user"])
 async def upload_avatar(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     user_service: Annotated[UserService, Depends(get_user_service)],
@@ -196,7 +227,7 @@ async def upload_avatar(
         )
 
 
-@router.post("/avatar/remove")
+@router.post("/avatar/remove", tags=["user"])
 async def remove_avatar(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     user_service: Annotated[UserService, Depends(get_user_service)],

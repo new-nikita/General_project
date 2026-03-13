@@ -7,8 +7,8 @@ from .like import LikePost
 from .post import Post
 from .friends import Friendship
 from .followers import Follower
-from .dialogs import Dialog
-from .messages import Message
+from .dialogs import Dialog, DialogParticipant
+from .messages import Message, MessageRead
 
 from .comment import Comment
 

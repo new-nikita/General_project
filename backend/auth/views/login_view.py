@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/login", response_class=HTMLResponse)
+@router.get("/login", tags=["auth"], response_class=HTMLResponse)
 async def login_page(
     request: Request,
 ):
@@ -48,7 +48,7 @@ async def login_page(
     )
 
 
-@router.post("/login", response_class=HTMLResponse)
+@router.post("/login", tags=["auth"], response_class=HTMLResponse)
 async def login(
     response: Response,
     service: Annotated[UserService, Depends(get_user_service)],
@@ -96,7 +96,7 @@ async def login(
         )
 
 
-@router.get("/logout")
+@router.get("/logout", tags=["auth"])
 async def logout():
     """
     Выходит из системы, удаляя токены из HTTP-Only cookies.

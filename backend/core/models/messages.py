@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Index, BigInteger
+from sqlalchemy import ForeignKey, Index, BigInteger, Identity
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from .base import Base
@@ -63,6 +63,8 @@ class MessageRead(Base):
     """
 
     __tablename__ = "message_reads"
+
+    id = None
 
     message_id: Mapped[int] = mapped_column(
         ForeignKey("messages.id", ondelete="CASCADE"),

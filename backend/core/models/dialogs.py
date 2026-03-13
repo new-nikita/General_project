@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, BigInteger, Index, CheckConstraint
+from sqlalchemy import ForeignKey, BigInteger, Index, CheckConstraint, Identity
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from .base import Base
@@ -84,6 +84,8 @@ class Dialog(DialogUsersMixin, TimestampsMixin, Base):
 
 class DialogParticipant(Base):
     __tablename__ = "dialog_participants"
+
+    id = None
 
     dialog_id: Mapped[int] = mapped_column(
         ForeignKey("dialogs.id", ondelete="CASCADE"),

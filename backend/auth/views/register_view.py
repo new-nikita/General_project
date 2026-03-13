@@ -78,7 +78,11 @@ def get_redis_client() -> AsyncRedisClient:
     return AsyncRedisClient()
 
 
-@router.get("/initial_register", response_class=HTMLResponse)
+@router.get(
+    "/initial_register",
+    tags=["auth"],
+    response_class=HTMLResponse,
+)
 async def get_initial_register_page(
     request: Request,
     current_user: Annotated[
@@ -106,7 +110,11 @@ async def get_initial_register_page(
     )
 
 
-@router.post("/initial_register", response_class=HTMLResponse)
+@router.post(
+    "/initial_register",
+    tags=["auth"],
+    response_class=HTMLResponse,
+)
 async def initial_register_user(
     request: Request,
     redis: Annotated[AsyncRedisClient, Depends(get_redis_client)],
@@ -154,7 +162,7 @@ async def initial_register_user(
         )
 
 
-@router.get("/register", response_class=HTMLResponse)
+@router.get("/register", tags=["auth"], response_class=HTMLResponse)
 async def get_register_page(
     request: Request,
     token: Optional[str] = None,
@@ -195,7 +203,7 @@ async def get_register_page(
     )
 
 
-@router.post("/register", response_class=HTMLResponse)
+@router.post("/register", tags=["auth"], response_class=HTMLResponse)
 async def register_user(
     request: Request,
     service: Annotated[UserService, Depends(get_user_service)],

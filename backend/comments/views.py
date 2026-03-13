@@ -15,7 +15,7 @@ from backend.posts.services import PostService
 router = APIRouter()
 
 
-@router.get("/posts/{post_id}/comments_form")
+@router.get("/posts/{post_id}/comments_form", tags=["comments"])
 async def get_comments_html(
     request: Request,
     post_id: int,
@@ -32,6 +32,7 @@ async def get_comments_html(
 
 @router.post(
     "/posts/{post_id}/comments",
+    tags=["comments"],
     status_code=status.HTTP_201_CREATED,
 )
 async def create_comment(
@@ -48,7 +49,7 @@ async def create_comment(
     )
 
 
-@router.get("/posts/{post_id}/comments")
+@router.get("/posts/{post_id}/comments", tags=["comments"])
 async def get_paginated_comments(
     request: Request,
     post_id: int,

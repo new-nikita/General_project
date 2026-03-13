@@ -43,7 +43,7 @@ class FriendSearchFilters(BaseModel):
     friend_status: Optional[str] = None
 
 
-@router.get("", response_class=HTMLResponse)
+@router.get("", tags=["friends"], response_class=HTMLResponse)
 async def get_friends(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
@@ -91,7 +91,7 @@ async def get_friends(
     )
 
 
-@router.get("/search", response_class=HTMLResponse)
+@router.get("/search", tags=["friends"], response_class=HTMLResponse)
 async def get_search_for_friends_username(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
@@ -127,7 +127,7 @@ async def get_search_for_friends_username(
     )
 
 
-@router.post("/add")
+@router.post("/add", tags=["friends"])
 async def add_friends(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
@@ -162,7 +162,7 @@ async def add_friends(
         )
 
 
-@router.post("/accept", response_class=HTMLResponse)
+@router.post("/accept", tags=["friends"], response_class=HTMLResponse)
 async def accept_friend(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     friend_service: Annotated[FriendsService, Depends(get_friends_service)],
@@ -189,7 +189,7 @@ async def accept_friend(
         )
 
 
-@router.post("/reject")
+@router.post("/reject", tags=["friends"])
 async def reject_friend(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     friend_service: Annotated[FriendsService, Depends(get_friends_service)],

@@ -2,6 +2,9 @@ from datetime import date
 
 from sqlalchemy import String, Text, Date
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import Enum
+
+from backend.core.enums.profile_visibility import ProfileVisibility
 
 from .base import Base
 from .mixins import UserRelationMixin
@@ -16,6 +19,12 @@ class Profile(UserRelationMixin, Base):
     first_name: Mapped[str] = mapped_column(String(50), nullable=False)
     last_name: Mapped[str] = mapped_column(String(50), nullable=False)
     middle_name: Mapped[str | None] = mapped_column(String(50))
+
+    visibility: Mapped[str] = mapped_column(
+        Enum(ProfileVisibility),
+        default=ProfileVisibility.public,
+        nullable=False,
+    )
 
     birth_date: Mapped[date | None] = mapped_column(Date)
     gender: Mapped[str | None]

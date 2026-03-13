@@ -71,7 +71,7 @@ async def create_new_post(
     )
 
 
-@router.post("/posts/delete/{post_id}")
+@router.post("/posts/delete/{post_id}", tags=["posts"])
 async def delete_post(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     post_service: Annotated[PostService, Depends(get_post_service)],
@@ -107,7 +107,7 @@ async def delete_post(
     return {"message": "Пост успешно удален"}
 
 
-@router.patch("/posts/update/{post_id}", status_code=200)
+@router.patch("/posts/update/{post_id}", tags=["posts"], status_code=200)
 async def update_post(
     post_id: int,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
@@ -178,7 +178,7 @@ async def update_post(
     )
 
 
-@router.post("/posts/remove-image/{post_id}")
+@router.post("/posts/remove-image/{post_id}", tags=["posts"])
 async def remove_post_image(
     post_id: int,
     current_user: User = Depends(get_current_user_from_cookie),

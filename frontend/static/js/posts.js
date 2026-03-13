@@ -235,3 +235,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+document.addEventListener("click", function (e) {
+    if (e.target.closest(".edit-post-btn")) {
+        const btn = e.target.closest(".edit-post-btn");
+        const postId = btn.dataset.postId;
+        const form = document.getElementById(`edit-post-form-${postId}`);
+
+        form.style.display =
+            form.style.display === "none" ? "block" : "none";
+    }
+});

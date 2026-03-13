@@ -24,7 +24,11 @@ INVALID_TOKEN_MESSAGE = "Невалидный токен"
 router = APIRouter()
 
 
-@router.get("/forgot_password", response_class=HTMLResponse)
+@router.get(
+    "/forgot_password",
+    tags=["auth"],
+    response_class=HTMLResponse,
+)
 def request_reset_form(request: Request) -> HTMLResponse:
     """Форма запроса сброса пароля."""
     return settings.templates.template_dir.TemplateResponse(
@@ -34,7 +38,7 @@ def request_reset_form(request: Request) -> HTMLResponse:
 
 
 # Обработка запроса на сброс
-@router.post("/forgot_password")
+@router.post("/forgot_password", tags=["auth"])
 async def request_reset(
     request: Request,
     service: Annotated[UserService, Depends(get_user_service)],
@@ -82,7 +86,7 @@ async def request_reset(
         )
 
 
-@router.get("/reset_password", response_class=HTMLResponse)
+@router.get("/reset_password", tags=["auth"], response_class=HTMLResponse)
 async def reset_password_form(
     request: Request,
     token: str,
@@ -107,7 +111,7 @@ async def reset_password_form(
 
 
 # Обработка сброса
-@router.post("/reset_password")
+@router.post("/reset_password", tags=["auth"])
 async def reset_password(
     service: Annotated[UserService, Depends(get_user_service)],
     redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
@@ -143,4 +147,3 @@ async def reset_password(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка при смене пароля",
         )
-        
