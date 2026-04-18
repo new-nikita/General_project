@@ -10,7 +10,7 @@ from fastapi import (
     UploadFile,
     File,
 )
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 
 from backend.posts.dependencies import get_post_service
 from backend.posts.services import PostService
@@ -36,7 +36,14 @@ router = APIRouter(
 )
 
 
-@router.get("/{profile_id}", tags=["user"], response_class=HTMLResponse)
+@router.get("/me")
+async def get_me(
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+):
+    return current_user
+
+
+@router.get("/{profile_id}", tags=["user"])
 async def get_user_profile(
     request: Request,
     profile_id: int,
@@ -44,7 +51,7 @@ async def get_user_profile(
     user_service: Annotated[UserService, Depends(get_user_service)],
     friend_service: Annotated[FriendsService, Depends(get_friends_service)],
     post_service: Annotated[PostService, Depends(get_post_service)],
-) -> HTMLResponse:
+):
     """
     Отображает страницу профиля пользователя.
 
@@ -84,46 +91,30 @@ async def get_user_profile(
                 profile_user.id,
             )
 
-    if is_private and not (is_friend or is_own_profile):
-        return settings.templates.template_dir.TemplateResponse(
-            "users/profile_private.html",
-            {
-                "request": request,
-                "current_user": current_user,
-                "user": profile_user,
-            },
-        )
-
     # Получаем посты с полной информацией о лайках
     posts = await post_service.repository.get_all_posts_by_author_id(
         profile_id, current_user.id if current_user else None
     )
 
-    return settings.templates.template_dir.TemplateResponse(
-        "users/profile.html",
-        {
-            "request": request,
-            "user": profile_user,
-            "is_own_profile": is_own_profile,
-            "current_user": current_user,
-            "posts": posts,
-            "is_friend": is_friend,
-            "is_authenticated": is_authenticated,
-        },
-    )
+    print(profile_user, is_own_profile, is_friend, posts, end="\n\n")
+    return {
+        "user": profile_user,
+        "is_own_profile": is_own_profile,
+        "is_friend": is_friend,
+        "posts": posts,
+    }
 
 
 @router.get(
     "/edit/{profile_id}",
     tags=["user"],
-    response_class=HTMLResponse,
 )
 async def edit_profile(
     request: Request,
     profile_id: int,
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     user_service: Annotated[UserService, Depends(get_user_service)],
-) -> HTMLResponse:
+):
     """
     Отображает форму редактирования профиля пользователя.
 
@@ -147,15 +138,25 @@ async def edit_profile(
         profile_user.profile, from_attributes=True
     ).model_dump(exclude_unset=True)
 
-    return settings.templates.template_dir.TemplateResponse(
-        "users/profile-edit.html",
-        {
-            "request": request,
-            "user": profile_user,
-            "current_user": current_user,
-            "profile_data": profile_data,
-        },
+    return {
+        "user": profile_user,
+        "current_user": current_user,
+        "profile_data": profile_data,
+    }
+
+
+@router.patch("/me")
+async def update_profile(
+    new_profile_data: ProfileUpdate,
+    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+):
+    await user_service.update_profile(
+        user=current_user,
+        dto_profile=new_profile_data,
     )
+
+    return {"status": "updated"}
 
 
 @router.post("/edit/{profile_id}", tags=["user"])
@@ -164,7 +165,7 @@ async def save_profile_data(
     new_profile_data: Annotated[ProfileUpdate, Depends(get_update_form)],
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     user_service: Annotated[UserService, Depends(get_user_service)],
-) -> RedirectResponse:
+):
     """
     Обрабатывает отправку формы редактирования профиля.
 
@@ -197,7 +198,7 @@ async def upload_avatar(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     user_service: Annotated[UserService, Depends(get_user_service)],
     avatar: UploadFile = File(...),
-) -> JSONResponse:
+):
     """
     Обрабатывает загрузку нового аватара пользователя.
 
@@ -217,10 +218,11 @@ async def upload_avatar(
         )
         await user_service.repository.update_user_avatar(current_user, image_url)
 
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={"message": "Аватар успешно обновлен", "avatar_url": image_url},
-        )
+        return {
+            "message": "Avatar update",
+            "avatar_url": image_url,
+        }
+
     except Exception as e:
         raise HTTPException(
             status_code=400, detail=f"Ошибка при загрузке аватара: {str(e)}"
@@ -231,7 +233,7 @@ async def upload_avatar(
 async def remove_avatar(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     user_service: Annotated[UserService, Depends(get_user_service)],
-) -> JSONResponse:
+):
     """
     Удаляет текущий аватар пользователя и устанавливает дефолтный.
 
@@ -245,7 +247,7 @@ async def remove_avatar(
 
     await user_service.repository.delete_user_avatar(current_user)
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"new_avatar": DEFAULT_PATH_TO_AVATAR, "message": "Аватар удален"},
-    )
+    return {
+        "message": "Avatar remove",
+        "avatar_url": DEFAULT_PATH_TO_AVATAR,
+    }

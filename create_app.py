@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
 from backend.core.config import BASE_DIR, settings
@@ -12,7 +13,6 @@ from backend.utils.save_images import BASE_STATIC_DIR
 
 os.makedirs(BASE_STATIC_DIR, exist_ok=True)
 
-STATIC_DIR = BASE_DIR / "frontend" / "static"
 logging.basicConfig(
     level=logging.INFO,
     format=settings.logging.log_format,
@@ -40,22 +40,20 @@ def create_app() -> FastAPI:
     :return: FastAPI: Настроенный экземпляр приложения
     """
     application = FastAPI(lifespan=lifespan)
-    application.mount(
-        "/static",
-        StaticFiles(directory=str(STATIC_DIR)),
-        name="static",
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
     application.mount(
-        "/client_files",
-        StaticFiles(directory=str(BASE_STATIC_DIR)),
-        name="client_files",
+        "/media",
+        StaticFiles(directory="client_files"),
+        name="media",
     )
-    # Альтернативный фронтенд (без Node.js)
-    FRONTEND_ALT_DIR = BASE_DIR / "frontend-alt"
-    if FRONTEND_ALT_DIR.exists():
-        application.mount(
-            "/alt",
-            StaticFiles(directory=str(FRONTEND_ALT_DIR), html=True),
-            name="alt",
-        )
+
     return application

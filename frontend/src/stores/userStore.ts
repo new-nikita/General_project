@@ -1,19 +1,42 @@
 import { defineStore } from "pinia"
 import axios from "axios"
 
-export const useUserStore = defineStore("userStore", {
+export const useUserStore = defineStore("user", {
+
   state: () => ({
-    user: null as null | Record<string, any>,
-    posts: [] as any[],
+    profile: null,
+    posts: []
   }),
+
   actions: {
-    async fetchProfile(id: number) {
-      const res = await axios.get(`/api/users/${id}`)
-      this.user = res.data
-    },
-    async createPost(content: string) {
-      const res = await axios.post("/api/posts", { content })
-      this.posts.push(res.data)
-    },
-  },
+
+    async fetchProfile(userId) {
+      try {
+
+        const res = await axios.get(`/users/${userId}`)
+
+        // 🔥 ВАЖНО: сохраняем в стор
+        this.profile = res.data.user
+        this.posts = res.data.posts || []
+
+        // 🔥 ВАЖНО: возвращаем данные
+        return {
+          user: res.data.user,
+          posts: res.data.posts || [],
+          is_own_profile: res.data.is_own_profile
+        }
+
+      } catch (e) {
+        console.error("FETCH PROFILE ERROR:", e)
+
+        return {
+          user: null,
+          posts: [],
+          is_own_profile: false
+        }
+      }
+    }
+
+  }
+
 })

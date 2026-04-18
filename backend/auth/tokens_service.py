@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -39,25 +40,31 @@ class TokenService:
 
     @classmethod
     def refresh_access_token(cls, refresh_token: str) -> str:
-        """Обновляет Access Token на основе Refresh Token.
-
-        :param refresh_token: Токен обновления.
-        :return: Новый Access Token.
-        :raise ValueError: Если Refresh Token недействителен.
-        :raise HTTPException: Если передан неверный тип токена.
-        """
         payload = cls.decode_and_validate_token(refresh_token)
-        if payload.get("type") == "access":
+
+        # проверка типа
+        if payload.get("type") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
+                detail="Invalid token type",
             )
-        username = payload.get("sub")
-        if not username:
-            raise ValueError("Invalid refresh token")
-        # Создаем новый Access Token
-        new_access_token = cls.create_access_token(data={"sub": username})
-        logger.info("Access Token успешно обновлен для пользователя: {username}")
+
+        user_id = payload.get("sub")
+        username = payload.get("username")
+
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        # создаём новый access с тем же payload
+        new_access_token = cls.create_access_token(
+            data={
+                "sub": user_id,
+                "username": username,
+            }
+        )
+
+        logger.info(f"Access token refreshed for user_id={user_id}")
+
         return new_access_token
 
     @classmethod
@@ -68,6 +75,7 @@ class TokenService:
         :return: Новый Refresh Token.
         """
         data["type"] = "refresh"
+        data["jti"] = str(uuid.uuid4())  # Уникальный id токена
         expires_delta = timedelta(days=settings.jwt.refresh_token_expire_days)
         return cls._create_jwt_token(data, expires_delta)
 
@@ -81,7 +89,12 @@ class TokenService:
         """
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + expires_delta
-        to_encode.update({"exp": int(expire.timestamp())})
+        to_encode.update(
+            {
+                "exp": int(expire.timestamp()),
+                "iat": int(datetime.now().timestamp()),
+            }
+        )
 
         if not settings.jwt.secret_key or not settings.jwt.algorithm:
             raise ValueError(

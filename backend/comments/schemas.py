@@ -11,7 +11,8 @@ from backend.core.schemas.base_content_schemas import (
 
 
 class CommentCreate(ContentCreate):
-    content: str
+    text: str
+    parent_id: int | None = None
 
 
 class CommentUpdate(ContentUpdate):

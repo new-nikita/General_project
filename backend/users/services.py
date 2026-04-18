@@ -87,7 +87,7 @@ class UserService:
         """
         await self.repository.update_profile(user=user, dto_profile=dto_profile)
 
-    async def get_user_by_email(self, email: EmailStr) -> User | None:
+    async def get_user_by_email(self, email) -> User | None:
         """
         Возвращает пользователя по его email пользователя (email).
 

@@ -8,6 +8,7 @@ from starlette.types import ASGIApp
 
 from backend.auth.token_cookie_service import TokenCookieService
 from backend.auth.tokens_service import TokenService
+from backend.auth.token_store import TokenStore
 from backend.core.decorators.handle_errors import handle_token_errors
 from backend.exceptions.token_exceptions import InvalidTokenError
 
@@ -90,26 +91,36 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
     def _needs_refresh(cls, request: Request) -> bool:
         """Проверяет, нуждается ли токен в обновлении."""
         access_token = request.cookies.get("access-token")
-        return not access_token or not TokenService.is_token_valid(access_token)
+
+        if access_token is None:
+            return True
+
+        try:
+            TokenService.decode_and_validate_token(access_token)
+            return False
+        except HTTPException as e:
+            if e.detail == "Token expired":
+                return True
+            raise
 
     @classmethod
     async def _safe_refresh(cls, request: Request) -> str:
-        """Безопасное обновление токена с обработкой ошибок."""
-        try:
-            refresh_token = request.cookies.get("refresh-token")
-            return TokenService.refresh_access_token(refresh_token)
-        except InvalidTokenError as e:
-            logger.warning("Invalid token: %s", e)
-            raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED,
-                "Invalid token",
-            )
-        except Exception as e:
-            logger.error("Refresh failed: %s", e, exc_info=True)
-            raise HTTPException(
-                status.HTTP_500_INTERNAL_SERVER_ERROR,
-                "Refresh failed",
-            )
+        refresh_token = request.cookies.get("refresh-token")
+
+        if not refresh_token:
+            raise HTTPException(401, "Missing refresh token")
+
+        payload = TokenService.decode_and_validate_token(refresh_token)
+
+        if payload.get("type") != "refresh":
+            raise HTTPException(401, "Invalid token type")
+
+        username = payload.get("sub")
+
+        if not username:
+            raise HTTPException(401, "Invalid token payload")
+
+        return TokenService.create_access_token({"sub": username})
 
     @classmethod
     def _set_new_access_token(cls, response: Response, token: str) -> None:

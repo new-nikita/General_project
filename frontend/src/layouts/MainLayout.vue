@@ -1,18 +1,50 @@
 <template>
-  <div>
-    <header>Header</header>
-    <main>
-      <router-view></router-view>
+  <div class="layout">
+
+    <Header @toggle-sidebar="sidebarOpen = !sidebarOpen" />
+
+    <Sidebar :open="sidebarOpen" />
+
+    <main class="content">
+      <router-view />
     </main>
-    <footer>Footer</footer>
+
   </div>
 </template>
 
-<script lang="ts">
-export default {}
+<script setup lang="ts">
+import { ref } from "vue"
+import Header from "@/components/layout/Header.vue"
+import Sidebar from "@/components/layout/Sidebar.vue"
+
+const sidebarOpen = ref(false)
 </script>
 
 <style scoped>
-header, footer { background: #eee; padding: 1rem; }
-main { padding: 2rem; }
+
+.layout{
+  background:#edeef0;
+  min-height:100vh;
+}
+
+/* центральная колонка как в VK */
+.content{
+  margin-top:60px;
+  margin-left:260px;
+
+  padding:20px;
+
+  max-width:700px;
+}
+
+/* мобильная адаптация */
+@media (max-width:992px){
+
+  .content{
+    margin-left:0;
+    padding:15px;
+  }
+
+}
+
 </style>

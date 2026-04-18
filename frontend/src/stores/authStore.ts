@@ -1,25 +1,38 @@
 import { defineStore } from "pinia"
+import api from "@/api/client"
 
 export const useAuthStore = defineStore("authStore", {
   state: () => ({
     user: null as null | { id: number; username: string },
   }),
-  actions: {
-    async login(data: { username: string; password: string }) {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) throw new Error("Неверный логин или пароль")
-      this.user = await res.json()
+  getters: {
+    currentUser(): { id: number; username: string } | null {
+      return this.user
     },
-    async register(data: FormData) {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        body: data,
+  },
+  actions: {
+    async login( { username: string; password: string }) {
+      const form = new URLSearchParams()
+      form.append("username", data.username)
+      form.append("password", data.password)
+
+      const res = await api.post("/api/v1/auth/login", form, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       })
-      if (!res.ok) throw new Error("Ошибка регистрации")
+
+      this.user = {
+        id: res.data.user_id,
+        username: res.data.username,
+      }
+    },
+
+    async register( FormData) {
+      await api.post("/api/v1/users/register", data)
+    },
+
+    async logout() {
+      await api.get("/api/v1/auth/logout")
+      this.user = null
     },
   },
 })

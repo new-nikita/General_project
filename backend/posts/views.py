@@ -23,7 +23,7 @@ async def create_new_post(
     post_service: Annotated[PostService, Depends(get_post_service)],
     content: str = Form(..., description="Текстовое содержимое поста"),
     image: UploadFile = File(None, description="Изображение для поста (опционально)"),
-) -> JSONResponse:
+):
     """
     Создает новый пост для авторизованного пользователя.
     :param current_user: Текущий авторизованный пользователь.
@@ -52,23 +52,7 @@ async def create_new_post(
 
     new_post = await post_service.create_post_and_add_in_db(post_dto)
 
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content={
-            "post": {
-                "id": new_post.id,
-                "content": new_post.content,
-                "image": new_post.image,
-                "author": {
-                    "profile": {
-                        "avatar": current_user.profile.avatar,
-                        "full_name": current_user.profile.full_name,
-                    }
-                },
-                "created_at": new_post.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-            }
-        },
-    )
+    return PostRead.model_validate(new_post)
 
 
 @router.post("/posts/delete/{post_id}", tags=["posts"])
@@ -104,7 +88,7 @@ async def delete_post(
 
     # Удаляем пост
     await post_service.repository.delete(post=post)
-    return {"message": "Пост успешно удален"}
+    return {"status": "deleted"}
 
 
 @router.patch("/posts/update/{post_id}", tags=["posts"], status_code=200)
@@ -114,7 +98,7 @@ async def update_post(
     post_service: Annotated[PostService, Depends(get_post_service)],
     content: str = Form(...),
     image: UploadFile | None = File(None),
-) -> JSONResponse:
+):
     """
     Обработчик обновления поста.
 
@@ -173,9 +157,7 @@ async def update_post(
             detail="Не удалось обновить пост",
         )
 
-    return JSONResponse(
-        content={"post": PostRead.model_validate(updated_post).model_dump()}
-    )
+    return PostRead.model_validate(updated_post)
 
 
 @router.post("/posts/remove-image/{post_id}", tags=["posts"])
@@ -196,4 +178,4 @@ async def remove_post_image(
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result["message"])
 
-    return result
+    return {"status": "image_removed"}

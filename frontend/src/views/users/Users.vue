@@ -1,7 +1,8 @@
+<!-- frontend/src/views/users/Users.vue -->
 <script setup lang="ts">
 import { ref, onMounted } from "vue"
-import { getUsers } from "@/api/users.api.ts"
-import type { User } from "@/types/user.ts"
+import { getUsers } from "@/api/usersApi"
+import type { User } from "@/types/user"
 
 const users = ref<User[]>([])
 

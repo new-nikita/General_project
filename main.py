@@ -13,22 +13,56 @@ from create_app import create_app
 from backend.core.middleware import TokenRefreshMiddleware
 
 
-main_app = create_app()
+app = create_app()
 
-main_app.include_router(profile_router)
-main_app.include_router(auth_router)
-main_app.include_router(posts_router)
-main_app.include_router(likes_router)
-main_app.include_router(comments_router)
-main_app.include_router(friends_router)
-main_app.include_router(followers_router)
-main_app.include_router(messages_router)
+API_PREFIX = "/api/v1"
 
-main_app.add_middleware(TokenRefreshMiddleware)
+app.include_router(
+    profile_router,
+    prefix=f"{API_PREFIX}/users",
+    tags=["users"],
+)
+app.include_router(
+    auth_router,
+    prefix=f"{API_PREFIX}/auth",
+    tags=["auth"],
+)
+app.include_router(
+    posts_router,
+    prefix=f"{API_PREFIX}/posts",
+    tags=["posts"],
+)
+app.include_router(
+    likes_router,
+    prefix=f"{API_PREFIX}/likes",
+    tags=["likes"],
+)
+app.include_router(
+    comments_router,
+    prefix=f"{API_PREFIX}/comments",
+    tags=["comments"],
+)
+app.include_router(
+    friends_router,
+    prefix=f"{API_PREFIX}/friends",
+    tags=["friends"],
+)
+app.include_router(
+    followers_router,
+    prefix=f"{API_PREFIX}/followers",
+    tags=["followers"],
+)
+app.include_router(
+    messages_router,
+    prefix=f"{API_PREFIX}/messages",
+    tags=["messages"],
+)
+
+app.add_middleware(TokenRefreshMiddleware)
 
 if __name__ == "__main__":
     uvicorn.run(
-        "main:main_app",
+        "main:app",
         host="127.0.0.1",
         port=8000,
         reload=True,

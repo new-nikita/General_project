@@ -29,5 +29,6 @@ def print_tree(path, prefix=""):
 if __name__ == "__main__":
     root = "."  # укажи нужную папку
     # root = "frontend"
+    # root = "backend"
     print(root + "/")
     print_tree(root)
