@@ -10,7 +10,7 @@ from fastapi import (
     UploadFile,
     File,
 )
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from backend.posts.dependencies import get_post_service
 from backend.posts.services import PostService
@@ -51,7 +51,8 @@ async def get_user_profile(
     user_service: Annotated[UserService, Depends(get_user_service)],
     friend_service: Annotated[FriendsService, Depends(get_friends_service)],
     post_service: Annotated[PostService, Depends(get_post_service)],
-):
+    is_own_profile: bool = False,
+) -> HTMLResponse:
     """
     Отображает страницу профиля пользователя.
 
@@ -59,7 +60,6 @@ async def get_user_profile(
     :param profile_id: ID профиля пользователя.
     :param current_user: Текущий авторизованный пользователь.
     :param user_service: Сервис для работы с пользователями.
-    :param friend_service: Сервис для работы с друзьями.
     :param post_service: Сервис для работы с постами.
     :param is_own_profile: Флаг, указывающий, является ли профиль собственным.
     :return: HTML-страница профиля пользователя.

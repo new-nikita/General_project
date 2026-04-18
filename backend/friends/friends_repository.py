@@ -2,8 +2,9 @@ from typing import Any, List
 
 from mypy.checker import and_conditional_maps
 from pydantic import EmailStr
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from backend.core.base_repository import BaseRepository
@@ -17,7 +18,6 @@ from backend.users.schemas.users_schemas import UserCreate
 
 class FriendsRepository(BaseRepository[Friendship]):
     """Репозиторий для работы с друзьями.
-
     Содержит методы для взаимодействия с базой данных.
     """
 
@@ -108,33 +108,40 @@ class FriendsRepository(BaseRepository[Friendship]):
         :param your_user_id: ID друга
         :return: None
         """
-        if current_user_id == your_user_id:
-            raise FriendException("Нельзя добавить себя")
+        user_id, friend_id = sorted([current_user_id, your_user_id])
 
-        user_id = min(current_user_id, your_user_id)
-        friend_id = max(current_user_id, your_user_id)
-
-        friendship = await self.get_friendship(
-            user_id,
-            friend_id,
+        result = await self.session.execute(
+            text(
+                """
+                SELECT status
+                FROM friendship
+                WHERE user_id = :user_id AND friend_id = :friend_id
+            """
+            ),
+            {"user_id": user_id, "friend_id": friend_id},
         )
 
-        if friendship:
-            if friendship.status == FollowStatus.PENDING:
-                raise FriendException("Заявка уже отправлена")
-            if friendship.status == FollowStatus.ACCEPTED:
-                raise FriendException("Вы уже друзья")
-            if friendship.status == FollowStatus.BLOCKED:
-                raise FriendException("Пользователь заблокирован")
+        existing_status = result.scalar()
 
-        self.session.add(
-            Friendship(
-                user_id=user_id,
-                friend_id=friend_id,
-                status=FollowStatus.PENDING.value,
-            )
+        if existing_status == FollowStatus.PENDING.value:
+            raise FriendException("Заявка уже отправлена")
+
+        await self.session.execute(
+            text(
+                """
+                INSERT INTO friendship (user_id, friend_id, status)
+                VALUES (:user_id, :friend_id, :status)
+            """
+            ),
+            {
+                "user_id": user_id,
+                "friend_id": friend_id,
+                "status": FollowStatus.PENDING.value,
+            },
         )
+
         await self.session.commit()
+        return {"success": True}
 
     async def friend_accept(
         self,

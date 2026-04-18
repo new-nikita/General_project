@@ -133,18 +133,19 @@ async def add_friends(
     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
     friend_service: Annotated[FriendsService, Depends(get_friends_service)],
     user_service: Annotated[UserService, Depends(get_user_service)],
-    username: str | None = Form(...),
+    username: str = Form(..., min_length=1),
 ):
-    try:
-        friend_user = await user_service.get_user_by_username(username)
-        if not friend_user:
-            return JSONResponse(
-                {
-                    "success": False,
-                    "message": "Пользователь не найден",
-                }
-            )
 
+    friend_user = await user_service.get_user_by_username(username)
+    if not friend_user:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "success": False,
+                "message": "Пользователь не найден",
+            },
+        )
+    try:
         await friend_service.friend_add(current_user.id, friend_user.id)
         return JSONResponse(
             {
@@ -155,10 +156,11 @@ async def add_friends(
 
     except FriendException as e:
         return JSONResponse(
-            {
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
                 "success": False,
                 "message": e.detail,
-            }
+            },
         )
 
 
