@@ -2,7 +2,8 @@ from pydantic import BaseModel, EmailStr
 
 
 class InitialRegisterRequest(BaseModel):
-    email: str
+    email: EmailStr
+    client: str | None = None
 
 
 class RegisterRequest(BaseModel):
@@ -25,6 +26,8 @@ class RegisterRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+    email: str | None = None
+    user_id: int | None = None
 
 
 class LoginRequest(BaseModel):

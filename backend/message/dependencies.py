@@ -20,7 +20,7 @@ async def get_message_repository(
     в базе данных. Этот метод внедряет зависимость через FastAPI.
 
     :param session: Асинхронная сессия базы данных, предоставленная `get_db_session`.
-    :returns: FriendsRepository: Экземпляр репозитория для работы со связкой друзей.
+    :returns: MessageRepository: Экземпляр репозитория для работы со связкой друзей.
     """
     return MessageRepository(session=session)
 
@@ -31,10 +31,9 @@ async def get_message_service(
     """
     Создает и возвращает экземпляр MessageService.
 
-    FriendsRepository предоставляет бизнес-логику для работы с пользователями.
-    Он использует UserRepository для выполнения операций с базой данных.
+
 
     :param repository: Экземпляр репозитория, предоставленный `get_friends_repository`.
-    :returns: FriendsRepository: Экземпляр сервиса для работы с пользователями.
+    :returns: MessageService: Экземпляр сервиса для работы с пользователями.
     """
     return MessageService(repository=repository)

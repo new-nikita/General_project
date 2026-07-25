@@ -90,8 +90,8 @@ async def get_current_user_from_cookie(
     except HTTPException as e:
         return Response(status_code=e.status_code, content={"message": e.detail})
 
-    username: str = payload.get("sub")
-    user: User = await get_user_by_username_from_service(username, service)
+    sub: str = payload.get("sub")
+    user: User = await get_user_from_sub(sub, service)
     return user
 
 
@@ -105,10 +105,43 @@ async def get_current_user_ws(
     if not access_token:
         return None
 
-    payload = TokenService.decode_and_validate_token(access_token)
-    username = payload.get("sub")
+    try:
+        payload = TokenService.decode_and_validate_token(access_token)
+        sub = payload.get("sub")
+        return await get_user_from_sub(sub, service)
 
-    return await get_user_by_username_from_service(username, service)
+    except HTTPException:
+        return None
+
+
+async def get_user_from_sub(sub: str, service: UserService) -> User:
+    """Находит пользователя по sub из JWT (id или username)."""
+    if not sub:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+
+    if sub.isdigit():
+        user = await service.get_user_by_id(int(sub))
+        if user:
+            return user
+
+    return await get_user_by_username_from_service(sub, service)
+
+
+async def require_current_user(
+    user: Annotated[User | Response | None, Depends(get_current_user_from_cookie)],
+) -> User:
+    """Обязательная авторизация для JSON API (SPA)."""
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Требуется вход в систему",
+        )
+    if isinstance(user, Response):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Сессия истекла, войдите снова",
+        )
+    return user
 
 
 async def get_user_by_username_from_service(

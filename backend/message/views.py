@@ -17,7 +17,10 @@ from backend.message.utils import manager
 from backend.message.dependencies import get_message_service
 from backend.users.dependencies import get_user_service
 from backend.users.services import UserService
-from backend.auth.authorization import get_current_user_from_cookie, get_current_user_ws
+from backend.auth.authorization import (
+    require_current_user,
+    get_current_user_ws,
+)
 from backend.core.config import settings
 from backend.core.models import User
 
@@ -35,6 +38,14 @@ async def websocket_endpoint(
     current_user: Annotated[User, Depends(get_current_user_ws)],
     companion_id: int,
 ):
+    if current_user is None:
+        await websocket.close(code=1008)
+        return
+
+    if current_user.id == companion_id:
+        await websocket.close(code=1008)
+        return
+
     dialog = await message_service.create_dialog(
         current_user.id,
         companion_id,
@@ -57,15 +68,11 @@ async def websocket_endpoint(
 
             # ВАЖНО — отправляем всем
             await manager.broadcast(
-                {
-                    "type": "message",
-                    "id": saved_message.id,
-                    "text": saved_message.text,
-                    "sender_id": saved_message.sender_id,
-                    "created_at": saved_message.created_at.isoformat(),
-                },
+                saved_message,
                 dialog.id,
+                current_user.id,
             )
+            # TODO доработать, улучшить !!!
 
     except WebSocketDisconnect:
         manager.disconnect(dialog.id, current_user.id)
@@ -75,7 +82,7 @@ async def websocket_endpoint(
 async def get_dialog(
     request: Request,
     companion_id: int,
-    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    current_user: Annotated[User, Depends(require_current_user)],
     user_service: Annotated[UserService, Depends(get_user_service)],
     message_service: Annotated[MessageService, Depends(get_message_service)],
 ):
@@ -94,16 +101,60 @@ async def get_dialog(
 
     dialog = await message_service.create_dialog(current_user.id, companion.id)
 
-    message = await message_service.get_dialog_messages(dialog.id)
+    messages = await message_service.get_dialog_messages(
+        dialog.id,
+        current_user.id,
+        companion.id,
+    )
 
-    return {"items": message}
+    return {
+        "items": messages,
+        "companion": {
+            "id": companion.id,
+            "username": companion.username,
+        },
+        "dialog_id": dialog.id,
+    }
+
+
+@router.post("/dialog/{companion_id}/read")
+async def mark_dialog_read(
+    companion_id: int,
+    current_user: Annotated[User, Depends(require_current_user)],
+    message_service: Annotated[MessageService, Depends(get_message_service)],
+):
+    dialog = await message_service.create_dialog(current_user.id, companion_id)
+    up_to_message_id = await message_service.mark_dialog_as_read(
+        dialog.id,
+        current_user.id,
+    )
+
+    if up_to_message_id is not None:
+        await manager.broadcast_read(
+            dialog.id,
+            current_user.id,
+            up_to_message_id,
+        )
+
+    return {"ok": True, "up_to_message_id": up_to_message_id}
 
 
 @router.get("/dialogs")
 async def get_dialogs(
-    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+    current_user: Annotated[User, Depends(require_current_user)],
     message_service: Annotated[MessageService, Depends(get_message_service)],
 ):
     dialogs = await message_service.get_user_dialogs(current_user.id)
 
     return {"items": dialogs}
+
+
+# views.py
+@router.post("/messages/{message_id}/read")
+async def mark_read(
+    message_id: int,
+    current_user: Annotated[User, Depends(require_current_user)],
+    message_service: Annotated[MessageService, Depends(get_message_service)],
+):
+    await message_service.mark_message_read(current_user.id, message_id)
+    return {"ok": True}

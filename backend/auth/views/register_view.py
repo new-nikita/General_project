@@ -39,78 +39,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-# async def get_register_form(
-#     username: str = Form(...),
-#     email: EmailStr = Form(...),
-#     password: str = Form(...),
-#     password2: str = Form(...),
-#     first_name: Optional[str] = Form(None),
-#     last_name: Optional[str] = Form(None),
-#     middle_name: Optional[str] = Form(None),
-#     birth_date: Optional[str] = Form(None),
-#     gender: Optional[str] = Form(None),
-#     phone_number: Optional[str] = Form(None),
-#     country: Optional[str] = Form(None),
-#     city: Optional[str] = Form(None),
-#     street: Optional[str] = Form(None),
-#     bio: Optional[str] = Form(None),
-#     avatar: UploadFile | str | None = File(None),
-# ) -> RegisterForm:
-#     """Функция для конвертации данных формы регистрации в JSON'о валидный
-#     формат для схем Pydantic, а точнее для RegisterForm."""
-#     return RegisterForm(
-#         username=username,
-#         email=email,
-#         password=password,
-#         password2=password2,
-#         first_name=first_name,
-#         last_name=last_name,
-#         middle_name=middle_name,
-#         birth_date=birth_date,
-#         gender=gender,
-#         phone_number=phone_number,
-#         country=country,
-#         city=city,
-#         street=street,
-#         bio=bio,
-#         avatar=avatar,
-#     )
-
-
 def get_redis_client() -> AsyncRedisClient:
     return AsyncRedisClient()
-
-
-# @router.get(
-#     "/initial_register",
-#     tags=["auth"],
-#     response_class=HTMLResponse,
-# )
-# async def get_initial_register_page(
-#     request: Request,
-#     current_user: Annotated[
-#         Optional[User], Depends(get_current_user_from_cookie)
-#     ] = None,
-# ) -> Response:
-#     """Отображает страницу для подтверждения регистрации пользователя по почте.
-#
-#     :param request: Запрос FastAPI.
-#     :param current_user: Текущий пользователь (если авторизован).
-#     :return: HTML-страница с формой регистрации.
-#     """
-#     # Если пользователь уже авторизован, перенаправляем на главную
-#     if current_user:
-#         return RedirectResponse(url="/", status_code=303)
-#
-#     return settings.templates.template_dir.TemplateResponse(
-#         "users/initial_register.html",
-#         {
-#             "request": request,
-#             "current_user": current_user,
-#             "form_data": {},
-#             "errors": {},
-#         },
-#     )
 
 
 @router.post(
@@ -141,53 +71,48 @@ async def initial_register_user(
             data.email,
             temporary_user_token,
             str(request.base_url),
+            data.client,
         )
 
         return {"message": "Confirmation email sent"}
 
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=500, detail="Registration init failed")
 
 
-# @router.get("/register", tags=["auth"], response_class=HTMLResponse)
-# async def get_register_page(
-#     request: Request,
-#     token: Optional[str] = None,
-#     current_user: Annotated[
-#         Optional[User], Depends(get_current_user_from_cookie)
-#     ] = None,
-# ) -> Response:
-#     """Отображает страницу регистрации нового пользователя.
-#
-#     А также принимает токен для подтверждения регистрации по email. Если
-#     токен не указан, то отображается форма для ввода данных, в которой
-#     не возможно ввести email.
-#     :param request: Запрос FastAPI.
-#     :param token: Токен подтверждения регистрации.
-#     :param current_user: Пользователь, если он уже авторизован.
-#     :return: HTML-страница с формой регистрации.
-#     """
-#     if current_user:
-#         return RedirectResponse(url="/", status_code=303)
-#     form_data = {}
-#     if token:
-#         try:
-#             payload = TokenService.decode_and_validate_token(token)
-#             email = payload.get("sub")
-#             if email:
-#                 form_data["email"] = email
-#         except Exception as e:
-#             logger.warning(f"Ошибка при декодировании токена: {e}")
-#
-#     return settings.templates.template_dir.TemplateResponse(
-#         "users/register.html",
-#         {
-#             "request": request,
-#             "current_user": current_user,
-#             "form_data": form_data,
-#             "errors": {},
-#         },
-#     )
+@router.get(
+    "/register/confirm",
+    tags=["auth"],
+    response_model=MessageResponse,
+)
+async def confirm_registration_token(
+    token: str,
+    redis: Annotated[AsyncRedisClient, Depends(get_redis_client)],
+):
+    """Проверяет токен из письма и возвращает подтверждённый email."""
+    try:
+        payload = TokenService.decode_and_validate_token(token)
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(status_code=400, detail="Invalid token")
+
+        await redis.connect()
+        if not await redis.token_exists(token):
+            raise HTTPException(
+                status_code=400,
+                detail="Link expired or already used",
+            )
+
+        stored_email = await redis.get_pending_token(token)
+        if stored_email != email:
+            raise HTTPException(status_code=400, detail="Invalid token")
+
+        return {"message": "Email confirmed", "email": email}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning("Registration token confirm failed: %s", e)
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
 
 
 @router.post("/register", tags=["auth"], response_model=MessageResponse)
@@ -202,6 +127,10 @@ async def register_user(
         profile_data = form_data.model_dump(
             exclude={"username", "password", "password2", "email", "avatar"}
         )
+        if not profile_data.get("first_name"):
+            profile_data["first_name"] = form_data.first_name or form_data.username
+        if not profile_data.get("last_name"):
+            profile_data["last_name"] = form_data.last_name or ""
         profile = ProfileCreate(**profile_data)
 
         user_create = UserCreate(
@@ -213,29 +142,22 @@ async def register_user(
 
         # Создаем пользователя и сразу делаем flush, чтобы получить ID
         user = await service.create_user_and_added_in_db(user_create)
-        await service.repository.session.flush()
-
-        # Теперь загружаем аватар, если он был предоставлен
-        if form_data.avatar and form_data.avatar.filename:
-            avatar_url = await upload_image(
-                user_id=user.id,
-                image_file=form_data.avatar,
-                content_path="avatars",
-            )
-            # Обновляем аватар пользователя
-            user.profile.avatar = avatar_url
-            await service.repository.session.commit()  # Фиксируем изменения
+        await service.repository.session.commit()
 
         logger.info(f"New user registered: {user.username}")
 
         await TokenCookieService.set_auth_cookies(response, user)
 
-        return {"message": "User registered successfully"}
+        return {
+            "message": "User registered successfully",
+            "user_id": user.id,
+        }
 
     except ValueError as e:
         await service.repository.session.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
-    except Exception:
+    except Exception as e:
         await service.repository.session.rollback()
+        logger.exception("Registration failed: %s", e)
         raise HTTPException(status_code=500, detail="Registration failed")

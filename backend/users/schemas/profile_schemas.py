@@ -2,7 +2,7 @@ import re
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator, model_validator, ConfigDict
 
 
 class ProfileBase(BaseModel):
@@ -117,3 +117,25 @@ class ProfileUpdate(ProfileBase):
     """
 
     pass
+
+
+class ProfileResponse(BaseModel):
+    id: int | None = None
+    avatar: str | None = None
+
+    first_name: str | None = None
+    last_name: str | None = None
+    middle_name: str | None = None
+
+    birth_date: date | None = None
+
+    gender: str | None = None
+    phone_number: str | None = None
+
+    country: str | None = None
+    city: str | None = None
+    street: str | None = None
+
+    bio: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)

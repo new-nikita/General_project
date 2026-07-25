@@ -28,6 +28,7 @@ def send_confirmation_email_task(
     email_to: str,
     token: str,
     base_url: str,
+    client: str | None = None,
 ) -> None:
     """Задача Celery. Отправляет сообщение пользователю на почту для
     подтверждения регистрации.
@@ -39,7 +40,9 @@ def send_confirmation_email_task(
     :param base_url: Базовая ссылка проекта
     :return:
     """
-    link = EmailService.build_confirmation_link(name_endpoint, base_url, token)
+    link = EmailService.build_confirmation_link(
+        name_endpoint, base_url, token, client=client
+    )
     message = EmailService.compose_email(name_message, email_to, link)
     EmailService.send_email(message, email_to)
 

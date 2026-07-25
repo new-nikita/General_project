@@ -9,6 +9,7 @@ from .friends import Friendship
 from .followers import Follower
 from .dialogs import Dialog, DialogParticipant
 from .messages import Message, MessageRead
+from .user_sessions import UserSession
 
 from .comment import Comment
 
@@ -24,4 +25,5 @@ __all__ = (
     "Friendship",
     "Dialog",
     "Message",
+    "UserSession",
 )

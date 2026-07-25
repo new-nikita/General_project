@@ -2,15 +2,16 @@ from typing import Any
 
 from pydantic import EmailStr
 from sqlalchemy import select, or_
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from fastapi import HTTPException, status
 
 from backend.core.base_repository import BaseRepository
-from backend.core.models import Profile, User
+from backend.core.models import Friendship, LikePost, Post, Profile, User
 from backend.users.password_helper import PasswordHelper
 from backend.users.schemas.profile_schemas import ProfileUpdate
 from backend.users.schemas.users_schemas import UserCreate
-from backend.core.models import Friendship
 from backend.core.enums.follow_status import FollowStatus
 
 
@@ -37,6 +38,34 @@ class UserRepository(BaseRepository[User]):
 
         result = await self.session.execute(stmt)
         return result.scalar_one()
+
+    async def get_profile_user_by_id(self, id_: int) -> User:
+        """Пользователь для профиля: лайки с постами, друзья с данными."""
+        stmt = (
+            select(self.model)
+            .options(
+                selectinload(User.profile),
+                selectinload(User.likes)
+                .selectinload(LikePost.post)
+                .selectinload(Post.likes),
+                selectinload(User.initiated_friendships)
+                .selectinload(Friendship.friend)
+                .selectinload(User.profile),
+                selectinload(User.received_friendships)
+                .selectinload(Friendship.user)
+                .selectinload(User.profile),
+            )
+            .where(self.model.id == id_)
+        )
+
+        try:
+            result = await self.session.execute(stmt)
+            return result.scalar_one()
+        except NoResultFound:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Объект {self.model.__name__} с ID {id_} не найден",
+            )
 
     async def create(self, dto_user: UserCreate) -> User:
         """Создает нового пользователя в базе данных.
@@ -70,7 +99,10 @@ class UserRepository(BaseRepository[User]):
         """
         result = await self.session.execute(
             select(self.model)
-            .options(selectinload(User.likes))
+            .options(
+                selectinload(User.profile),
+                selectinload(User.likes),
+            )
             .where(self.model.id == user_id)
         )
         return result.scalar_one_or_none()
@@ -84,7 +116,10 @@ class UserRepository(BaseRepository[User]):
         """
         result = await self.session.execute(
             select(self.model)
-            .options(selectinload(User.likes))
+            .options(
+                selectinload(User.profile),
+                selectinload(User.likes),
+            )
             .where(self.model.username == username)
         )
         return result.scalar_one_or_none()
@@ -143,7 +178,10 @@ class UserRepository(BaseRepository[User]):
         for user, status, initiator_id in rows:
             users.append(
                 {
-                    **user.__dict__,
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "is_active": user.is_active,
                     "is_friend": status == FollowStatus.ACCEPTED,
                     "friend_request_sent": status == FollowStatus.PENDING
                     and initiator_id == current_user_id,

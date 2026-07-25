@@ -21,9 +21,13 @@ class EmailService:
         name_endpoint: str,
         base_url: str,
         token: str,
+        client: str | None = None,
     ) -> str:
         """Создает валидную ссылку с токеном."""
-        url = urljoin(base_url, f"/{name_endpoint}?token={token}")
+        if client == "mobile":
+            url = f"generalproject://register?token={token}"
+        else:
+            url = urljoin(base_url, f"/{name_endpoint}?token={token}")
         logger.info("Ссылка с токеном создана: %s", url)
         return url
 
@@ -40,12 +44,12 @@ class EmailService:
         message["To"] = to_email
 
         text = f"Пожалуйста, подтвердите свою почту, перейдя по ссылке:\n{confirm_link}"
-        html = settings.templates.template_dir.get_template(
-            f"info/{name_message}.html"
-        ).render(confirm_link=confirm_link)
+        # html = settings.templates.template_dir.get_template(
+        #     f"info/{name_message}.html"
+        # ).render(confirm_link=confirm_link)
 
         message.set_content(text)
-        message.add_alternative(html, subtype="html")
+        # message.add_alternative(html, subtype="html")
 
         logger.info("Email-сообщение собрано.")
         return message

@@ -27,40 +27,40 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 # TODO добавить количество попыток входа и хранить кол-во попыток, например в redis
 
-router = APIRouter(tags=["Auth"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 router.include_router(login_router)
 router.include_router(register_router)
 router.include_router(forgot_router)
 
 
-@router.get("/", response_class=HTMLResponse)
-async def index(
-    request: Request,
-    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
-    post_service: Annotated[PostService, Depends(get_post_service)],
-    page: int = 1,
-):
-    """
-    Отображает главную страницу с постами, отсортированными по лайкам.
-
-    :param request: Запрос FastAPI
-    :param current_user: Текущий пользователь
-    :param post_service: Сервис постов
-    :param page: Номер страницы (query param ?page=1)
-    :return: HTML-страница с постами
-    """
-
-    posts, total_pages = await post_service.repository.get_paginated_posts_by_likes(
-        page=page, current_user_id=current_user.id if current_user is not None else None
-    )
-
-    return settings.templates.template_dir.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "current_user": current_user,
-            "posts": posts,
-            "page": page,
-            "total_pages": total_pages,
-        },
-    )
+# @router.get("/", response_class=HTMLResponse)
+# async def index(
+#     request: Request,
+#     current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+#     post_service: Annotated[PostService, Depends(get_post_service)],
+#     page: int = 1,
+# ):
+#     """
+#     Отображает главную страницу с постами, отсортированными по лайкам.
+#
+#     :param request: Запрос FastAPI
+#     :param current_user: Текущий пользователь
+#     :param post_service: Сервис постов
+#     :param page: Номер страницы (query param ?page=1)
+#     :return: HTML-страница с постами
+#     """
+#
+#     posts, total_pages = await post_service.repository.get_paginated_posts_by_likes(
+#         page=page, current_user_id=current_user.id if current_user is not None else None
+#     )
+#
+#     return settings.templates.template_dir.TemplateResponse(
+#         "index.html",
+#         {
+#             "request": request,
+#             "current_user": current_user,
+#             "posts": posts,
+#             "page": page,
+#             "total_pages": total_pages,
+#         },
+#     )

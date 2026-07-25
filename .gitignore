@@ -167,3 +167,4 @@ redis-data/
 dump.rdb
 .vscode/
 заметки.txt
+tree_view.py

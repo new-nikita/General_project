@@ -3,7 +3,7 @@ from datetime import datetime
 
 from mypy.checker import and_conditional_maps
 from pydantic import EmailStr
-from sqlalchemy import select, and_, or_, update
+from sqlalchemy import select, and_, or_, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -25,7 +25,7 @@ from backend.users.schemas.users_schemas import UserCreate
 
 
 class MessageRepository(BaseRepository[User]):
-    """Репозиторий для работы с друзьями.
+    """Репозиторий для работы с сообщениями.
 
     Содержит методы для взаимодействия с базой данных.
     """
@@ -74,13 +74,74 @@ class MessageRepository(BaseRepository[User]):
         return dialog
 
     async def get_dialog_messages(self, dialog_id: int, limit: int = 50):
-        result = self.session.execute(
+        result = await self.session.execute(
             select(Message)
             .where(Message.dialog_id == dialog_id)
             .order_by(Message.id.desc())
             .limit(limit)
         )
-        return result.scalars().all()
+        messages = list(result.scalars().all())
+        return list(reversed(messages))
+
+    async def get_last_read_message_id(
+        self,
+        dialog_id: int,
+        user_id: int,
+    ) -> int | None:
+        result = await self.session.execute(
+            select(DialogParticipant.last_read_message_id).where(
+                DialogParticipant.dialog_id == dialog_id,
+                DialogParticipant.user_id == user_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_user_dialogs(self, current_user_id: int) -> List[Dict]:
+        """Список диалогов: собеседник, последнее сообщение, непрочитанные."""
+        result = await self.session.execute(
+            select(Dialog, DialogParticipant)
+            .join(
+                DialogParticipant,
+                DialogParticipant.dialog_id == Dialog.id,
+            )
+            .where(DialogParticipant.user_id == current_user_id)
+            .options(selectinload(Dialog.last_message))
+            .order_by(Dialog.updated_at.desc())
+        )
+        rows = result.all()
+        items: List[Dict] = []
+
+        for dialog, participant in rows:
+            companion_id = (
+                dialog.user2_id
+                if dialog.user1_id == current_user_id
+                else dialog.user1_id
+            )
+            user_result = await self.session.execute(
+                select(User).where(User.id == companion_id)
+            )
+            companion = user_result.scalar_one_or_none()
+            if not companion:
+                continue
+
+            last_text = ""
+            last_sender_id = None
+            if dialog.last_message:
+                last_text = dialog.last_message.text or ""
+                last_sender_id = dialog.last_message.sender_id
+
+            items.append(
+                {
+                    "dialog_id": dialog.id,
+                    "user_id": companion.id,
+                    "username": companion.username,
+                    "last_message": last_text,
+                    "unread_count": participant.unread_count or 0,
+                    "last_message_sender_id": last_sender_id,
+                }
+            )
+
+        return items
 
     async def save_message(self, chat_message: ChatMessage) -> Message:
 
@@ -98,11 +159,50 @@ class MessageRepository(BaseRepository[User]):
         await self.session.execute(
             update(Dialog)
             .where(Dialog.id == chat_message.dialog_id)
-            .values(last_message_id=message.id)
+            .values(
+                last_message_id=message.id,
+                updated_at=datetime.utcnow(),
+            )
+        )
+
+        await self.session.execute(
+            update(DialogParticipant)
+            .where(DialogParticipant.dialog_id == chat_message.dialog_id)
+            .where(DialogParticipant.user_id != chat_message.sender_id)
+            .values(unread_count=DialogParticipant.unread_count + 1)
         )
 
         await self.session.commit()
         return message
+
+    async def mark_dialog_as_read(
+        self,
+        dialog_id: int,
+        user_id: int,
+    ) -> int | None:
+        participant_result = await self.session.execute(
+            select(DialogParticipant).where(
+                DialogParticipant.dialog_id == dialog_id,
+                DialogParticipant.user_id == user_id,
+            )
+        )
+        participant = participant_result.scalar_one_or_none()
+        if not participant:
+            return None
+
+        max_id_result = await self.session.execute(
+            select(func.max(Message.id)).where(Message.dialog_id == dialog_id)
+        )
+        max_message_id = max_id_result.scalar_one_or_none()
+        if not max_message_id:
+            participant.unread_count = 0
+            await self.session.commit()
+            return None
+
+        participant.unread_count = 0
+        participant.last_read_message_id = max_message_id
+        await self.session.commit()
+        return max_message_id
 
     async def mark_message_read(self, user_id: int, message_id: int):
         read = MessageRead(

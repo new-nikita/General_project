@@ -1,13 +1,7 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    Response,
-    Form,
-    HTTPException,
-)
+from fastapi import APIRouter, Depends, Response, HTTPException, status
 from fastapi.responses import RedirectResponse
 
 from backend.core.config import settings
@@ -17,6 +11,9 @@ from backend.users.services import UserService
 from backend.auth.authorization import authenticate_user
 from backend.auth.token_cookie_service import TokenCookieService
 from backend.auth.schemas.register_schemas import LoginRequest
+from backend.auth.authorization import get_current_user_from_cookie
+
+from backend.core.models import User
 
 
 logging.basicConfig(
@@ -44,6 +41,20 @@ router = APIRouter(tags=["auth"])
 #             "request": request,
 #         },
 #     )
+# @router.get("/me")
+# async def get_current_user(
+#     current_user: Annotated[
+#         Optional[User],
+#         Depends(get_current_user_from_cookie),
+#     ],
+# ):
+#     if current_user is None:
+#         raise HTTPException(
+#             status_code=401,
+#             detail="Not authenticated",
+#         )
+#
+#     return current_user
 
 
 @router.post("/login")
@@ -83,18 +94,27 @@ async def login(
 
     except Exception as e:
         logger.error(f"Authentication failed: {e}")
+        err = str(e).lower()
+        if "connection refused" in err or "connect" in err:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="База данных недоступна. Запустите PostgreSQL: docker compose up -d pg",
+            )
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-# @router.get("/logout", tags=["auth"])
-# async def logout():
-#     """
-#     Выходит из системы, удаляя токены из HTTP-Only cookies.
-#
-#     :param response: Ответ FastAPI.
-#     :return: Сообщение об успешном выходе.
-#     """
-#     redirect_response = RedirectResponse(status_code=303, url="/login")
-#     redirect_response.delete_cookie("access-token")
-#     redirect_response.delete_cookie("refresh-token")
-#     return redirect_response
+@router.post("/logout")
+async def logout(response: Response):
+    """Удаляет auth-cookies."""
+    response.delete_cookie(
+        key="access-token",
+        httponly=True,
+        samesite="lax",
+    )
+
+    response.delete_cookie(
+        key="refresh-token",
+        httponly=True,
+        samesite="lax",
+    )
+    return {"status": "ok"}

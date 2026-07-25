@@ -38,7 +38,7 @@ class TokenCookieService:
             value=refresh_token,
             httponly=True,
             samesite="lax",
-            secure=True,
+            secure=False,
             max_age=settings.jwt.refresh_token_expire_days * 24 * 60 * 60,
         )
 

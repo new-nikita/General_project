@@ -22,6 +22,7 @@ from backend.friends.services import FriendsService
 from backend.friends.dependencies import get_friends_service
 from backend.auth.authorization import (
     get_current_user_from_cookie,
+    require_current_user,
 )
 from backend.core.config import settings, DEFAULT_PATH_TO_AVATAR
 from backend.core.models import User
@@ -36,11 +37,55 @@ router = APIRouter(
 )
 
 
-@router.get("/me")
-async def get_me(
-    current_user: Annotated[User, Depends(get_current_user_from_cookie)],
+# @router.get("/me")
+# async def get_me(
+#     current_user: Annotated[User, Depends(require_current_user)],
+# ):
+#     profile = current_user.profile
+#
+#     return {
+#         "id": current_user.id,
+#         "username": current_user.username,
+#         "email": current_user.email,
+#         "is_active": current_user.is_active,
+#         "is_superuser": current_user.is_superuser,
+#         "first_name": profile.first_name if profile else None,
+#         "last_name": profile.last_name if profile else None,
+#         "middle_name": profile.middle_name if profile else None,
+#         "birth_date": (
+#             profile.birth_date.isoformat() if profile and profile.birth_date else None
+#         ),
+#         "gender": profile.gender if profile else None,
+#         "phone_number": profile.phone_number if profile else None,
+#         "country": profile.country if profile else None,
+#         "city": profile.city if profile else None,
+#         "street": profile.street if profile else None,
+#         "bio": profile.bio if profile else None,
+#         "avatar": profile.avatar if profile else None,
+#         "visibility": (profile.visibility.value if profile else None),
+#     }
+
+
+@router.get("/list")
+async def list_users(
+    current_user: Annotated[User, Depends(require_current_user)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
 ):
-    return current_user
+    """Список пользователей для контактов / нового чата."""
+    rows = await user_service.get_all_users(current_user.id)
+    items = []
+    for row in rows:
+        user_id = row.get("id")
+        username = row.get("username")
+        if user_id and username:
+            items.append(
+                {
+                    "id": user_id,
+                    "username": username,
+                    "is_friend": bool(row.get("is_friend")),
+                }
+            )
+    return items
 
 
 @router.get("/{profile_id}", tags=["user"])
@@ -65,21 +110,18 @@ async def get_user_profile(
     :return: HTML-страница профиля пользователя.
     :raises HTTPException: 404 если пользователь с указанным ID не найден.
     """
-    profile_user = await user_service.repository.get_by_id(profile_id)
-    if not profile_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Пользователь с ID {profile_id} не найден",
-        )
+    profile_user = await user_service.repository.get_profile_user_by_id(profile_id)
 
     is_authenticated = current_user is not None
     is_own_profile = False
     is_friend = False
     is_private = False
+    current_user_id: int | None = None
 
     if is_authenticated:
         # Определяем, является ли профиль собственным
         is_own_profile = current_user.id == profile_user.id
+        current_user_id = current_user.id
 
         current_user = await user_service.repository.get_by_id_with_likes(
             current_user.id
@@ -93,10 +135,16 @@ async def get_user_profile(
 
     # Получаем посты с полной информацией о лайках
     posts = await post_service.repository.get_all_posts_by_author_id(
-        profile_id, current_user.id if current_user else None
+        profile_id, current_user_id
     )
 
-    print(profile_user, is_own_profile, is_friend, posts, end="\n\n")
+    for like in profile_user.likes:
+        if like.post is not None:
+            post_service.repository._enrich_post_with_likes(
+                like.post,
+                current_user_id,
+            )
+
     return {
         "user": profile_user,
         "is_own_profile": is_own_profile,

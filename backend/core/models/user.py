@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from .comment import Comment
     from .friends import Friendship
     from .followers import Follower
+    from .user_sessions import UserSession
 
 
 class User(TimestampsMixin, Base):
@@ -90,6 +91,13 @@ class User(TimestampsMixin, Base):
         back_populates="following",
         cascade="all, delete-orphan",
         lazy="selectin",
+    )
+
+    sessions: Mapped[list["UserSession"]] = relationship(
+        "UserSession",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="select",  # не selectin — сессии не грузить при каждом User
     )
 
     # Прокси: список друзей (User), а не объектов Friend

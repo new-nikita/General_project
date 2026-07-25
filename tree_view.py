@@ -27,7 +27,9 @@ def print_tree(path, prefix=""):
 
 
 if __name__ == "__main__":
-    root = "."  # укажи нужную папку
+    # root = "/Users/nikita/PycharmProjects/General_project_mobile_app/general_project_modile_app/lib/features"  # укажи нужную папку  # фронт
+    root = "/Users/nikita/PycharmProjects/General_project_mobile_app/general_project_modile_app/lib"
+    # root = "."
     # root = "frontend"
     # root = "backend"
     print(root + "/")

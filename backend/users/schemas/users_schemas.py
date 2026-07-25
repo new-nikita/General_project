@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Annotated
 from annotated_types import MinLen, MaxLen
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from pydantic.functional_validators import AfterValidator
 
 from backend.utils.validated import validate_username
-from backend.users.schemas.profile_schemas import ProfileCreate
+from backend.users.schemas.profile_schemas import ProfileCreate, ProfileResponse
 
 
 class UserBase(BaseModel):
