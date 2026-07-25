@@ -60,8 +60,6 @@ app.include_router(
 
 app.add_middleware(TokenRefreshMiddleware)
 
-main_app = app
-
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

@@ -6,15 +6,14 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from fakeredis.aioredis import FakeRedis
 from httpx import ASGITransport, AsyncClient
-from fakeredis.aioredis import FakeRedis
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.pool import NullPool
 
-from backend.auth.stores.email_token_store import EmailTokenRedisStore
+from backend.auth.redis_client import AsyncRedisClient
 from backend.core.config import settings
 from backend.core.models import Base
 from backend.core.models.db_helper import DatabaseHelper
-from backend.core.redis.client import redis_helper
 from main import main_app
 
 
@@ -95,21 +94,17 @@ async def db_session(
 
 
 @pytest_asyncio.fixture(scope="function")
-async def async_client(
-    fake_redis_client: FakeRedis,
-) -> AsyncGenerator[AsyncClient, None]:
+async def async_client() -> AsyncGenerator[AsyncClient, None]:
     """Фикстура, предоставляющая HTTP клиент для тестирования API.
 
     Использует ASGITransport для тестирования FastAPI приложения.
     """
-    await redis_helper.init(fake_redis_client)
     async with LifespanManager(main_app):
         async with AsyncClient(
             transport=ASGITransport(app=main_app),
             base_url="http://testserver",
         ) as client:
             yield client
-    await redis_helper.close()
 
 
 @pytest_asyncio.fixture
@@ -124,6 +119,8 @@ async def fake_redis_client() -> AsyncGenerator[FakeRedis, None]:
 @pytest_asyncio.fixture
 async def redis_test_client(
     fake_redis_client: FakeRedis,
-) -> AsyncGenerator[EmailTokenRedisStore, None]:
-    """Фикстура, предоставляющая Redis store для тестирования."""
-    yield EmailTokenRedisStore(redis=fake_redis_client)
+) -> AsyncGenerator[Redis, None]:
+    """Фикстура, предоставляющая Redis клиент для тестирования."""
+    redis_client = AsyncRedisClient(redis_instance=fake_redis_client)
+    await redis_client.connect()
+    yield redis_client
