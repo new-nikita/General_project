@@ -5,7 +5,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 
 from backend.auth.Celery.tasks import send_confirmation_email_task
-from backend.auth.redis_client import AsyncRedisClient
+from backend.auth.dependencies import get_email_token_store
+from backend.auth.stores.email_token_store import EmailTokenRedisStore
 from backend.auth.schemas.reset_password_schema import (
     MessageResponse,
     ForgotPasswordRequest,
@@ -50,7 +51,7 @@ async def request_reset(
     request: Request,
     data: ForgotPasswordRequest,
     service: Annotated[UserService, Depends(get_user_service)],
-    redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
+    redis: Annotated[EmailTokenRedisStore, Depends(get_email_token_store)],
 ):
     """Ендпоинт восстановления пароля.
 
@@ -64,7 +65,6 @@ async def request_reset(
         await service.get_user_by_email(data.email)
         reset_token = str(uuid.uuid4())  # одноразовый токен
 
-        await redis.connect()
         await redis.save_pending_disposable_token(reset_token, data.email)
 
         send_confirmation_email_task.delay(
@@ -89,7 +89,7 @@ async def request_reset(
 # async def reset_password_form(
 #     request: Request,
 #     token: str,
-#     redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
+#     redis: Annotated[EmailTokenRedisStore, Depends(get_email_token_store)],
 # ) -> HTMLResponse:
 #     """Страница сброса пароля."""
 #     try:
@@ -114,13 +114,12 @@ async def request_reset(
 async def reset_password(
     data: ResetPasswordRequest,
     service: Annotated[UserService, Depends(get_user_service)],
-    redis: Annotated[AsyncRedisClient, Depends(AsyncRedisClient)],
+    redis: Annotated[EmailTokenRedisStore, Depends(get_email_token_store)],
 ):
     try:
         if data.new_password != data.confirm_password:
             raise HTTPException(status_code=400, detail="Пароли не совпадают")
 
-        await redis.connect()
         email = await redis.get_pending_token(data.token)
         if email is None:
             raise HTTPException(

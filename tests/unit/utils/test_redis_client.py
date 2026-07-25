@@ -1,7 +1,6 @@
 import pytest
 
 
-@pytest.mark.xfail
 async def test_save_and_get_token(redis_test_client):
     token = "token123"
     email = "user@example.com"

@@ -15,7 +15,6 @@ from pydantic import EmailStr, ValidationError
 
 from backend.auth.authorization import get_current_user_from_cookie
 from backend.auth.Celery.tasks import send_confirmation_email_task
-from backend.auth.redis_client import AsyncRedisClient
 from backend.auth.tokens_service import TokenService
 from backend.auth.token_cookie_service import TokenCookieService
 from backend.auth.schemas.register_schemas import (

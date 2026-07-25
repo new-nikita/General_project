@@ -15,7 +15,8 @@ from pydantic import EmailStr, ValidationError
 
 from backend.auth.authorization import get_current_user_from_cookie
 from backend.auth.Celery.tasks import send_confirmation_email_task
-from backend.auth.redis_client import AsyncRedisClient
+from backend.auth.dependencies import get_email_token_store
+from backend.auth.stores.email_token_store import EmailTokenRedisStore
 from backend.auth.tokens_service import TokenService
 from backend.auth.token_cookie_service import TokenCookieService
 from backend.auth.schemas.register_schemas import (
@@ -39,10 +40,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def get_redis_client() -> AsyncRedisClient:
-    return AsyncRedisClient()
-
-
 @router.post(
     "/initial_register",
     tags=["auth"],
@@ -51,7 +48,7 @@ def get_redis_client() -> AsyncRedisClient:
 async def initial_register_user(
     request: Request,
     data: InitialRegisterRequest,
-    redis: Annotated[AsyncRedisClient, Depends(get_redis_client)],
+    redis: Annotated[EmailTokenRedisStore, Depends(get_email_token_store)],
 ):
     """Отправляет письмо с подтверждением регистрации на указанный email.
 
@@ -61,7 +58,6 @@ async def initial_register_user(
     """
     try:
         temporary_user_token = TokenService.create_refresh_token({"sub": data.email})
-        await redis.connect()
         await redis.save_pending_email_token(temporary_user_token, data.email)
 
         # Отправка письма через Celery
@@ -87,7 +83,7 @@ async def initial_register_user(
 )
 async def confirm_registration_token(
     token: str,
-    redis: Annotated[AsyncRedisClient, Depends(get_redis_client)],
+    redis: Annotated[EmailTokenRedisStore, Depends(get_email_token_store)],
 ):
     """Проверяет токен из письма и возвращает подтверждённый email."""
     try:
@@ -96,7 +92,6 @@ async def confirm_registration_token(
         if not email:
             raise HTTPException(status_code=400, detail="Invalid token")
 
-        await redis.connect()
         if not await redis.token_exists(token):
             raise HTTPException(
                 status_code=400,
